@@ -1,14 +1,15 @@
 {
   "expo": {
     "name": "eng_mob",
-    "slug": "eng_mob",
+    "slug": "engmob",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "engmob",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "bundleIdentifier": "com.aziztwelve.engmob"
     },
     "android": {
       "adaptiveIcon": {
@@ -17,7 +18,8 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.aziztwelve.engmob"
     },
     "web": {
       "output": "static",
@@ -39,6 +41,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "026ba0a4-2a5e-4987-a2f8-341498507f0c"
+      }
+    },
+    "owner": "aziztwelve"
   }
 }
