@@ -1,21 +1,35 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, Pressable, ActivityIndicator } from 'react-native';
+import { View, Text, Pressable, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import Toast from 'react-native-toast-message';
 import { useLesson } from '@/hooks/use-lessons';
 import { useCompleteStep } from '@/hooks/use-progress';
-import { Step, VideoContent, TextContent, QuizContent } from '@/types/api';
+import { useLessonGamificationFx } from '@/hooks/use-gamification-fx';
+import { fx } from '@/lib/fx';
+import { VideoContent, TextContent, QuizContent, UserAchievement } from '@/types/api';
 import { VideoStep } from '@/components/lesson/video-step';
 import { TextStep } from '@/components/lesson/text-step';
 import { QuizStep } from '@/components/lesson/quiz-step';
+import {
+  AchievementModal,
+  LevelUpOverlay,
+  XPGainAnimation,
+} from '@/components/gamification';
 
 export default function LessonPlayerScreen() {
   const { lessonId } = useLocalSearchParams<{ lessonId: string }>();
   const router = useRouter();
   const { data: lessonData, isLoading, error } = useLesson(lessonId);
   const completeStepMutation = useCompleteStep();
-  
+  const fireGamificationFx = useLessonGamificationFx();
+
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [startTime] = useState(Date.now());
+
+  // Local FX state — рендерим оверлеи прямо в этом экране.
+  const [xpGain, setXpGain] = useState<{ amount: number; key: number } | null>(null);
+  const [achievementQueue, setAchievementQueue] = useState<UserAchievement[]>([]);
+  const [levelUpTo, setLevelUpTo] = useState<number | null>(null);
 
   if (isLoading) {
     return (
@@ -46,21 +60,55 @@ export default function LessonPlayerScreen() {
 
   const handleStepComplete = (score?: number) => {
     const timeSpent = Math.floor((Date.now() - startTime) / 1000);
-    
-    completeStepMutation.mutate({
-      stepId: currentStep.id,
-      data: {
-        time_spent_seconds: timeSpent,
-        score: score ?? undefined,
-        attempts: 1,
+
+    completeStepMutation.mutate(
+      {
+        stepId: currentStep.id,
+        data: {
+          time_spent_seconds: timeSpent,
+          score: score ?? undefined,
+          attempts: 1,
+        },
       },
-    });
+      {
+        onSuccess: (response) => {
+          // Запускаем FX (silent — отрисуем сами через XPGainAnimation/AchievementModal).
+          // Если gateway пробросил `gamification` в ответе complete-step —
+          // используем его inline; иначе хук фолбэкнется на diff-снимок.
+          fireGamificationFx({ xp: response.gamification ?? null, silent: true })
+            .then((result) => {
+              if (result.xpGained > 0) {
+                setXpGain({ amount: result.xpGained, key: Date.now() });
+                fx.onXPGain();
+              }
+              if (result.leveledUp) {
+                fx.onLevelUp();
+                // Full-screen Lottie оверлей вместо тоста: level-up — это
+                // редкое и яркое событие, оно заслуживает внимания.
+                setLevelUpTo(result.newLevel);
+              }
+              if (result.dailyGoalCompleted) {
+                fx.onDailyGoal();
+                Toast.show({ type: 'success', text1: '🎯 Цель дня выполнена!' });
+              }
+              if (result.newAchievements.length) {
+                // Один haptic+sound на пачку — модалки появляются одна за
+                // другой, не хотим спамить вибрацией.
+                fx.onAchievement();
+                setAchievementQueue((q) => [...q, ...result.newAchievements]);
+              }
+            })
+            .catch(() => {
+              /* noop */
+            });
+        },
+      }
+    );
 
     if (isLastStep) {
       // Lesson completed
       router.back();
     } else {
-      // Move to next step
       setCurrentStepIndex(prev => prev + 1);
     }
   };
@@ -155,6 +203,24 @@ export default function LessonPlayerScreen() {
       <View className="flex-1">
         {renderStep()}
       </View>
+
+      {/* Gamification FX overlays */}
+      {xpGain && (
+        <XPGainAnimation
+          key={xpGain.key}
+          amount={xpGain.amount}
+          onDone={() => setXpGain(null)}
+        />
+      )}
+      <AchievementModal
+        achievement={achievementQueue[0] ?? null}
+        visible={achievementQueue.length > 0}
+        onClose={() => setAchievementQueue((q) => q.slice(1))}
+      />
+      <LevelUpOverlay
+        level={levelUpTo}
+        onDismiss={() => setLevelUpTo(null)}
+      />
 
       {/* Navigation */}
       <View className="bg-card border-t-2 border-border p-4 flex-row space-x-3">

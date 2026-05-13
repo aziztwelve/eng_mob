@@ -309,6 +309,12 @@ export interface CompleteStepRequest {
 export interface CompleteStepResponse {
   step_progress: StepProgress;
   lesson_progress: LessonProgress;
+  /**
+   * Опциональный gamification-payload (см. AddXPResponse). Заполняется
+   * когда course-service настроен на gamification-service. Если поле
+   * отсутствует — useLessonGamificationFx фолбэкнется на diff из кэша.
+   */
+  gamification?: AddXPResponse;
 }
 
 export interface StepProgressResponse {
@@ -324,3 +330,147 @@ export interface LessonProgressResponse {
 export interface EnrollmentCheck {
   has_access: boolean;
 }
+
+// ============================================
+// GAMIFICATION TYPES (proto: gamification/v1)
+// ============================================
+
+/**
+ * Gateway сериализует google.protobuf.Timestamp как объект {seconds, nanos}
+ * (стандартный encoding/json от proto-gen Go), либо иногда как RFC3339 строку
+ * у некоторых обработчиков. Принимаем оба варианта — клиент нормализует
+ * через `tsToDate()` из `lib/gamification-api`.
+ */
+export type ProtoTimestamp =
+  | { seconds?: number | string; nanos?: number }
+  | string
+  | null
+  | undefined;
+
+export interface UserStats {
+  user_id: string;
+  level: number;
+  total_xp: number;
+  weekly_xp: number;
+  next_level_xp: number;
+  current_streak: number;
+  max_streak: number;
+  last_lesson_at?: ProtoTimestamp;
+  hearts: number;
+  max_hearts: number;
+  next_heart_at?: ProtoTimestamp;
+  gems: number;
+  streak_freezes: number;
+  created_at?: ProtoTimestamp;
+  updated_at?: ProtoTimestamp;
+}
+
+export interface Hearts {
+  user_id: string;
+  hearts: number;
+  max_hearts: number;
+  next_heart_at?: ProtoTimestamp;
+  unlimited?: boolean;
+}
+
+export interface DailyGoalProgress {
+  user_id: string;
+  date: string; // YYYY-MM-DD
+  xp_earned: number;
+  goal: number;
+  completed: boolean;
+  completed_at?: ProtoTimestamp;
+}
+
+export interface DailyGoal {
+  user_id: string;
+  target_xp: number;
+  updated_at?: ProtoTimestamp;
+  today?: DailyGoalProgress;
+}
+
+export interface Streak {
+  user_id: string;
+  current_streak: number;
+  max_streak: number;
+  last_lesson_at?: ProtoTimestamp;
+  streak_freezes: number;
+}
+
+export interface StreakDay {
+  date: string; // YYYY-MM-DD
+  completed: boolean;
+  used_freeze: boolean;
+}
+
+export interface StreakHistory {
+  user_id: string;
+  days: StreakDay[];
+}
+
+export type XPReason =
+  | 'XP_REASON_UNSPECIFIED'
+  | 'XP_REASON_STEP_COMPLETED'
+  | 'XP_REASON_LESSON_COMPLETED'
+  | 'XP_REASON_DAILY_GOAL'
+  | 'XP_REASON_ACHIEVEMENT'
+  | 'XP_REASON_STREAK_BONUS'
+  | 'XP_REASON_PRACTICE'
+  | number; // gateway отдает enum как число
+
+export interface XPTransaction {
+  id: string;
+  user_id: string;
+  amount: number;
+  reason: XPReason;
+  source_id: string;
+  created_at?: ProtoTimestamp;
+}
+
+export interface XPHistoryResponse {
+  transactions: XPTransaction[];
+  total: number;
+}
+
+export type AchievementCategory = 'learning' | 'streak' | 'xp' | 'special' | string;
+
+export interface Achievement {
+  id: string;
+  code: string;
+  title: string;
+  description: string;
+  icon_url: string;
+  category: AchievementCategory;
+  tier: number; // 1 bronze | 2 silver | 3 gold
+  xp_reward: number;
+  gems_reward: number;
+  criteria_json: string;
+  is_hidden: boolean;
+  created_at?: ProtoTimestamp;
+}
+
+export interface UserAchievement {
+  user_id: string;
+  achievement: Achievement;
+  progress: number;
+  unlocked_at?: ProtoTimestamp;
+}
+
+export interface AchievementsResponse {
+  achievements: Achievement[];
+}
+
+export interface UserAchievementsResponse {
+  achievements: UserAchievement[];
+}
+
+export interface AddXPResponse {
+  transaction?: XPTransaction;
+  stats?: UserStats;
+  leveled_up: boolean;
+  new_level: number;
+  unlocked_achievements: UserAchievement[];
+  daily_goal_progress?: DailyGoalProgress;
+}
+
+export type RefillReason = 'practice' | 'gems' | 'premium';

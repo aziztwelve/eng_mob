@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, Pressable, ScrollView } from 'react-native';
 import { QuizContent, QuizQuestion } from '@/types/api';
+import { fx } from '@/lib/fx';
 
 interface QuizStepProps {
   content: QuizContent;
@@ -19,10 +20,13 @@ export function QuizStep({ content, onComplete }: QuizStepProps) {
 
   const handleSubmit = () => {
     if (selectedAnswer === null) return;
-    
+
     setShowResult(true);
     if (isCorrect) {
       setCorrectAnswers(prev => prev + 1);
+      fx.onCorrect();
+    } else {
+      fx.onWrong();
     }
   };
 

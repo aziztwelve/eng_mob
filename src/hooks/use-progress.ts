@@ -52,12 +52,8 @@ export function useCompleteStep() {
       queryClient.invalidateQueries({ 
         queryKey: ['courseProgress', response.lesson_progress.course_id] 
       });
-      
-      // Show notification
-      Toast.show({
-        type: 'success',
-        text1: 'Step completed! 🎉',
-      });
+      // Не показываем "Step completed!" — за UX отвечает useLessonGamificationFx
+      // (+XP анимация, level-up, achievement modal, daily-goal toast).
     },
     onError: (error: any) => {
       Toast.show({
