@@ -29,11 +29,15 @@ src/
 │   └── profile/               sub-stack (stats/streak/achievements/settings)
 ├── components/
 │   ├── gamification/          XPBar, StreakBadge, LevelUpOverlay, ...
-│   ├── lesson/                video/text/quiz steps
+│   ├── lesson/                legacy (video/text/quiz) + phase-2
+│   │                          (translate/match-pairs/listening/fill-blank/
+│   │                          tap-words/quiz-interactive/story) +
+│   │                          StepRenderer + FeedbackBar
 │   └── ui/                    common atoms
-├── hooks/                     use-* (use-gamification-fx, use-user-stats, ...)
+├── hooks/                     use-* (use-step-submit, use-gamification-fx, ...)
 ├── lib/
-│   ├── api-client.ts          GamificationApi, AuthApi, ...
+│   ├── api-client.ts          GamificationApi, StepValidationApi,
+│   │                          VocabularyApi, TTSApi, ...
 │   ├── fx.ts                  haptics + sounds engine
 │   ├── fx-prefs.ts            AsyncStorage prefs (haptics/sounds toggle)
 │   ├── sound-manifest.ts      реестр sound-ассетов (null-стубы)
@@ -116,7 +120,48 @@ npm run lint               # expo-lint
   playsInSilentModeIOS: true })` чтобы UI-звуки слышны были и в mute.
   Делается лениво в `fx.ts:ensureAudioMode`.
 
+## Phase 2: интерактивные шаги
+
+В `src/app/learn/[lessonId].tsx` flow раздвоен по типу шага:
+
+```
+step.type == 'quiz' && content.questions  ── legacy ─→ <QuizStep> (показывает несколько вопросов
+                                                       подряд, локальный score)
+isInteractiveStep(step.type)              ── phase-2 ─→ <StepRenderer>
+                                                       ↓ внутри: TranslateStep / MatchPairsStep /
+                                                         ListeningStep / FillBlankStep /
+                                                         TapWordsStep / QuizInteractiveStep /
+                                                         StoryStep
+text/video                                ── legacy ─→ <TextStep> / <VideoStep>
+```
+
+Phase-2 компоненты следуют общему контракту (`step-types.ts`):
+
+```ts
+interface StepComponentProps {
+  step: Step;
+  onSubmit: (answer: Record<string, unknown>) => Promise<SubmitAnswerResponse>;
+  onContinue: () => void;
+  isLast?: boolean;
+}
+```
+
+`onSubmit` дёргает `useStepSubmit().mutateAsync` →
+`POST /api/v1/steps/:id/submit` → step-validation-service. При correct
+триггерим тот же `fireGamificationFx` пайплайн что и legacy
+completeStep (XPGain / Level-up / Daily-goal / Achievement-modal).
+
+Нижний legacy nav-bar (Previous/Continue) скрывается для phase-2 типов
+через флаг `isPhaseTwoInteractive` — у компонентов своя FeedbackBar.
+
+**Tap-only UX** (как Duolingo на mobile-web) — без полного DnD.
+Phase 2.5 TODO: апгрейд translate / tap_words на полноценный
+PanGestureHandler + Reanimated SharedValue DnD.
+
 ## Документация изменений
 
-Бэкенд-логи: `microservices-course/elearning/docs/tasks/PHASE_1_PROGRESS.md`.
+Бэкенд-логи:
+- `microservices-course/elearning/docs/tasks/PHASE_1_PROGRESS.md`
+- `microservices-course/elearning/docs/tasks/PHASE_2_PROGRESS.md`
+
 Здесь — этот файл и READMEs внутри `assets/sounds/` и `assets/lottie/`.

@@ -9,12 +9,18 @@ import {
   ListTracksResponse,
   ProtoTimestamp,
   RefillReason,
+  StepAttempt,
   Streak,
   StreakHistory,
+  SubmitAnswerRequest,
+  SubmitAnswerResponse,
+  TTSCacheEntry,
   TrackFilters,
   TrackWithLessons,
   UserAchievementsResponse,
   UserStats,
+  VocabularyEntry,
+  VocabularyListResponse,
   XPHistoryResponse,
 } from '@/types/api';
 import { AuthService } from './auth-service';
@@ -246,4 +252,64 @@ export const GamificationApi = {
     ApiClient.get<XPHistoryResponse>(
       `/gamification/xp/history?limit=${limit}&offset=${offset}`
     ),
+};
+
+// ============================================
+// PHASE 2 — Step validation / Vocabulary / TTS
+// ============================================
+
+export const StepValidationApi = {
+  submit: (stepId: string, body: SubmitAnswerRequest) =>
+    ApiClient.post<SubmitAnswerResponse>(
+      `/steps/${encodeURIComponent(stepId)}/submit`,
+      body,
+    ),
+
+  listAttempts: (
+    stepId: string,
+    opts: { limit?: number; offset?: number } = {},
+  ) => {
+    const qs = new URLSearchParams();
+    if (opts.limit) qs.set('limit', String(opts.limit));
+    if (opts.offset) qs.set('offset', String(opts.offset));
+    const q = qs.toString();
+    return ApiClient.get<{ attempts: StepAttempt[]; total: number }>(
+      `/steps/${encodeURIComponent(stepId)}/attempts${q ? `?${q}` : ''}`,
+    );
+  },
+};
+
+export const VocabularyApi = {
+  list: (filter: {
+    language?: string;
+    target_language?: string;
+    level?: string;
+    pos?: string;
+    search?: string;
+    limit?: number;
+    offset?: number;
+  } = {}) => {
+    const qs = new URLSearchParams();
+    Object.entries(filter).forEach(([k, v]) => {
+      if (v !== undefined && v !== '') qs.set(k, String(v));
+    });
+    const q = qs.toString();
+    return ApiClient.get<VocabularyListResponse>(
+      `/vocabulary${q ? `?${q}` : ''}`,
+    );
+  },
+  get: (id: string) =>
+    ApiClient.get<{ entry: VocabularyEntry }>(
+      `/vocabulary/${encodeURIComponent(id)}`,
+    ),
+};
+
+export const TTSApi = {
+  getByText: (text: string, language: string, voice?: string) => {
+    const qs = new URLSearchParams({ text, language });
+    if (voice) qs.set('voice', voice);
+    return ApiClient.get<{ entry: TTSCacheEntry }>(
+      `/tts/by-text?${qs.toString()}`,
+    );
+  },
 };

@@ -140,7 +140,30 @@ export interface CourseFilters extends PaginationParams {
 // STEP TYPES
 // ============================================
 
-export type StepType = 'video' | 'text' | 'quiz' | 'task' | 'brain_game' | 'ai_writing';
+export type StepType =
+  // Legacy
+  | 'video'
+  | 'text'
+  | 'quiz'
+  | 'task'
+  | 'brain_game'
+  | 'ai_writing'
+  // Phase 2 interactive
+  | 'translate'
+  | 'match_pairs'
+  | 'listening'
+  | 'fill_blank'
+  | 'tap_words'
+  | 'story';
+
+/** Все phase-2 интерактивные типы, проходящие через step-validation-service. */
+export const INTERACTIVE_STEP_TYPES: StepType[] = [
+  'quiz', 'translate', 'match_pairs', 'listening', 'fill_blank', 'tap_words', 'story',
+];
+
+export function isInteractiveStep(t: StepType): boolean {
+  return INTERACTIVE_STEP_TYPES.includes(t);
+}
 
 export interface Step {
   id: string;
@@ -193,6 +216,146 @@ export interface AIWritingContent {
   prompt: string;
   min_words: number;
   evaluation_criteria: string[];
+}
+
+// ============================================
+// PHASE 2 — Step content schemas
+// ============================================
+
+export interface TranslateContent {
+  instruction?: string;
+  source_text: string;
+  source_language?: string;
+  target_language?: string;
+  correct_translation: string;
+  word_bank: string[];
+  alternative_answers?: string[];
+  hints?: string[];
+  explanation?: string;
+}
+
+export interface MatchPairsPair {
+  left: string;
+  right: string;
+  audio?: string;
+}
+
+export interface MatchPairsContent {
+  instruction?: string;
+  pairs: MatchPairsPair[];
+  explanation?: string;
+}
+
+export interface ListeningContent {
+  instruction?: string;
+  audio_text: string;
+  language?: string;
+  audio_url?: string;
+  translation_hint?: string;
+  alternative_answers?: string[];
+  explanation?: string;
+}
+
+export interface FillBlankContent {
+  instruction?: string;
+  sentence_template: string;
+  options?: string[];
+  correct_answer: string;
+  translation_hint?: string;
+  alternatives?: string[];
+  explanation?: string;
+}
+
+export interface TapWordsContent {
+  instruction?: string;
+  audio_url?: string;
+  audio_text?: string;
+  word_bank: string[];
+  correct_words: string[];
+  explanation?: string;
+}
+
+export interface StoryScene {
+  image_url?: string;
+  character?: string;
+  text?: string;
+  translation?: string;
+  type?: 'narrative' | 'choice';
+  question?: string;
+  options?: Array<{ text: string; is_correct: boolean }>;
+}
+
+export interface StoryContent {
+  title?: string;
+  scenes: StoryScene[];
+  explanation?: string;
+}
+
+// ============================================
+// PHASE 2 — Vocabulary / TTS
+// ============================================
+
+export interface VocabularyEntry {
+  id: string;
+  language: string;
+  word: string;
+  translation: string;
+  target_language: string;
+  audio_url?: string;
+  image_url?: string;
+  level?: string;
+  pos?: string;
+  created_at?: ProtoTimestamp | string;
+  updated_at?: ProtoTimestamp | string;
+}
+
+export interface VocabularyListResponse {
+  entries: VocabularyEntry[];
+  total: number;
+}
+
+export interface TTSCacheEntry {
+  id: string;
+  text: string;
+  language: string;
+  voice: string;
+  audio_url: string;
+  duration_ms?: number;
+  created_at?: ProtoTimestamp | string;
+}
+
+// ============================================
+// PHASE 2 — Step submit (step-validation-service)
+// ============================================
+
+export interface StepAttempt {
+  id: string;
+  user_id: string;
+  step_id: string;
+  lesson_id?: string;
+  step_type: StepType;
+  answer: Record<string, unknown>;
+  is_correct: boolean;
+  score: number;
+  time_spent_ms?: number;
+  created_at?: ProtoTimestamp | string;
+}
+
+export interface SubmitAnswerRequest {
+  answer: Record<string, unknown>;
+  time_spent_ms?: number;
+  source_type?: 'course' | 'track' | 'standalone';
+  source_id?: string;
+}
+
+export interface SubmitAnswerResponse {
+  is_correct: boolean;
+  score: number;
+  correct_answer?: Record<string, unknown>;
+  explanation?: string;
+  attempt?: StepAttempt;
+  gamification?: AddXPResponse;
+  hearts?: Hearts;
 }
 
 // ============================================
