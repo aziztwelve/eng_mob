@@ -154,14 +154,92 @@ completeStep (XPGain / Level-up / Daily-goal / Achievement-modal).
 Нижний legacy nav-bar (Previous/Continue) скрывается для phase-2 типов
 через флаг `isPhaseTwoInteractive` — у компонентов своя FeedbackBar.
 
-**Tap-only UX** (как Duolingo на mobile-web) — без полного DnD.
-Phase 2.5 TODO: апгрейд translate / tap_words на полноценный
-PanGestureHandler + Reanimated SharedValue DnD.
+**Phase 2.5 — DnD word bank** (translate / tap_words):
+`components/lesson/draggable-word-bank.tsx` — общий DnD-движок.
+- Tap по слову банка → append в answer; tap по слову в answer → вернуть в банк.
+- Long-drag (>8px) — Pan + Tap race-композиция через `Gesture.Race`.
+  Drop hit-test'ит зоны через `measure(useAnimatedRef)` в worklet'е.
+  Insert-at-index в answer считается по `onLayout`-картам детей
+  (reading order: row Y → centre X).
+- Во время drag меняем только SharedValues (translate/scale), не
+  React-state — другие слова не re-flow'ятся, drop-position стабильна.
+- `<GestureHandlerRootView>` живёт в `app/_layout.tsx` (обязательно для RNGH v2).
+
+**Phase 2.5 — Story markdown** (`components/lesson/story-step.tsx`):
+`scene.text` и `scene.translation` рендерятся через `react-native-markdown-display`
+с двумя `StyleSheet`-вариантами (`mdMain` 18px / `mdTranslation` 14px). Цвета
+из tailwind config (`#ffffff` / `#b3b3b3` / `#58cc02`). Поддерживаются bold,
+italic, inline/block code, links (auto-openUrl), heading1-3, lists.
+
+## Phase 3: Practice + SRS + Push (mobile)
+
+Phase 3 mobile (2026-05-16 done) — добавили:
+
+**Routes:**
+- `app/(tabs)/practice/index.tsx` — Practice Hub (SRS stats + CTA)
+- `app/(tabs)/practice/session.tsx` — practice session, переиспользует
+  `<StepRenderer>` (Phase 2). Backend pipeline (`/steps/:id/submit` →
+  step-validation) сам пишет SRS-карточки и mistake-resolution.
+- `app/(tabs)/practice/mistakes.tsx` — список ошибок (3 таба + pagination)
+- `app/profile/strength.tsx` — карта `user_skill_decay` (фильтр по
+  module/lesson, sort by strength ASC)
+- `app/profile/notifications.tsx` — push subscribe + 5 channel toggles +
+  quiet hours + список devices
+
+**API + types:**
+- `lib/api-client.ts`: `SrsApi` (8 методов), `NotificationsApi` (8 методов)
+- `types/api.ts`: SRS / Mistake / Practice / SkillDecay / DeviceToken /
+  UserPreferences / NotificationLog + helpers
+  (`itemTypeShort` / `skillTypeShort` / `practiceSourceLabel` /
+  `channelToShort` / `platformToShort`)
+
+**Hooks:**
+- `hooks/use-srs.ts`: `useSrsStats` / `useSrsDue` / `useSrsWeak` /
+  `useSrsReview` / `useGeneratePracticeSession` / `useMistakes` /
+  `useSkillStrengths` / `useWeakSkills` (+ exported keys для invalidation)
+- `hooks/use-notifications.ts`: `useNotifications` (inbox) /
+  `useMarkNotificationRead` / `useMarkAllNotificationsRead` /
+  `useNotificationPreferences` / `useUpdateNotificationPreferences` /
+  `useNotificationDevices` / `useUnregisterDevice`
+- `hooks/use-push-subscription.ts`: state-machine
+  (`unknown | unsupported | denied | undetermined | granted_no_token |
+  subscribed`) + `subscribe()` / `unsubscribe(id)` / `refresh()`
+
+**Push registration (Expo):**
+- `lib/push-registration.ts`:
+  - `setupPushHandler()` — глобально один раз в `app/_layout.tsx`
+    mount-effect.
+  - `registerForPushNotifications()` — full flow: device check →
+    permission → Android channel → `getExpoPushTokenAsync({projectId})`
+    → POST `/notifications/devices` с `platform='expo'`. Возвращает
+    `{deviceId, token, created}` либо null (на симуляторе / без
+    permission / без projectId).
+  - `getExpoProjectId()` — из `Constants.expoConfig.extra.eas.projectId`
+    либо `Constants.easConfig.projectId`. Без EAS / в Expo Go без
+    projectId — null.
+- Зависимости: `expo-notifications`, `expo-device`, `expo-constants`,
+  `expo-localization` (все через `expo install`, SDK 55-совместимые).
+
+**Tabs:**
+- 5 вкладок: Home / Tracks / Courses / **Practice (🧠)** / Profile
+- Practice — group `(tabs)/practice/*` со stack-layout.
+
+**Что НЕ сделано в Phase 3 mobile (отложено):**
+- Notifications inbox UI (отдельный экран для журнала push'ей).
+- Deep-linking из push (`addNotificationResponseReceivedListener`).
+- Auto-prompt subscribe после login (сейчас юзер должен сам зайти в
+  `/profile/notifications`).
 
 ## Документация изменений
 
 Бэкенд-логи:
 - `microservices-course/elearning/docs/tasks/PHASE_1_PROGRESS.md`
 - `microservices-course/elearning/docs/tasks/PHASE_2_PROGRESS.md`
+- `microservices-course/elearning/docs/tasks/PHASE_3_PROGRESS.md`
+- `microservices-course/elearning/docs/tasks/PHASE_4_PROGRESS.md`
+- `microservices-course/elearning/docs/tasks/PHASE_5_PROGRESS.md`
+
+Mobile roadmap:
+- `microservices-course/elearning/docs/tasks/MOBILE_PROGRESS.md`
 
 Здесь — этот файл и READMEs внутри `assets/sounds/` и `assets/lottie/`.

@@ -124,6 +124,16 @@ export default function ProfileScreen() {
             onPress={() => router.push('/profile/achievements')}
           />
           <NavRow
+            emoji="💪"
+            label="Сила навыков"
+            onPress={() => router.push('/profile/strength')}
+          />
+          <NavRow
+            emoji="🔔"
+            label="Уведомления"
+            onPress={() => router.push('/profile/notifications')}
+          />
+          <NavRow
             emoji="⚙️"
             label="Настройки"
             onPress={() => router.push('/profile/settings')}

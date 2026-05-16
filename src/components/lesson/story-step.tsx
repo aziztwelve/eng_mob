@@ -1,35 +1,65 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, ScrollView, Image } from 'react-native';
+import { View, Text, Pressable, ScrollView, Image, StyleSheet } from 'react-native';
+import Markdown from 'react-native-markdown-display';
 import { FeedbackBar, type FeedbackState } from './FeedbackBar';
 import { parseStepContent, type StepComponentProps } from './step-types';
 import type { StoryContent, StoryScene } from '@/types/api';
 
 /**
- * Минимальный strip-markdown: убираем **bold** и *italic* маркеры,
- * оставляем текст. На phase-2 mobile использует plain text — полноценный
- * markdown-рендер (`react-native-markdown-display`) — Phase 2.5 TODO.
+ * Markdown-стили для двух вариантов в story (main / translation).
+ * Цвета из tailwind.config.js (foreground / muted-foreground / primary).
  *
- * Поддерживает:
- *  - `**text**` / `__text__` → text
- *  - `*text*` / `_text_` → text
- *  - `` `code` `` → code
- *  - `[link text](url)` → link text
+ * `body` — обёртка всего markdown. `paragraph`/`heading*`/`bullet_list`
+ * наследуют от body, остальное (bold/italic/code/link) переопределяем.
  */
-function stripMarkdown(s: string): string {
-  return s
-    .replace(/\*\*([^*]+?)\*\*/g, '$1')
-    .replace(/__([^_]+?)__/g, '$1')
-    .replace(/\*([^*]+?)\*/g, '$1')
-    .replace(/(?<![\w_])_([^_]+?)_(?![\w_])/g, '$1')
-    .replace(/`([^`]+?)`/g, '$1')
-    .replace(/\[([^\]]+?)\]\([^)]+\)/g, '$1');
-}
+const mdMain = StyleSheet.create({
+  body: { color: '#ffffff', fontSize: 18, fontWeight: '900', lineHeight: 26 },
+  paragraph: { marginTop: 0, marginBottom: 6 },
+  heading1: { fontSize: 22, fontWeight: '900', marginVertical: 4 },
+  heading2: { fontSize: 20, fontWeight: '900', marginVertical: 4 },
+  heading3: { fontSize: 18, fontWeight: '900', marginVertical: 4 },
+  strong: { fontWeight: '900' },
+  em: { fontStyle: 'italic', fontWeight: '900' },
+  link: { color: '#58cc02', textDecorationLine: 'underline' },
+  code_inline: {
+    color: '#ffffff',
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    fontFamily: 'monospace',
+    paddingHorizontal: 4,
+    borderRadius: 4,
+  },
+  code_block: {
+    color: '#ffffff',
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    fontFamily: 'monospace',
+    padding: 8,
+    borderRadius: 8,
+  },
+  bullet_list: { marginVertical: 2 },
+  ordered_list: { marginVertical: 2 },
+  list_item: { flexDirection: 'row' },
+});
+
+const mdTranslation = StyleSheet.create({
+  body: { color: '#b3b3b3', fontSize: 14, fontWeight: '500', lineHeight: 20 },
+  paragraph: { marginTop: 0, marginBottom: 4 },
+  strong: { color: '#ffffff', fontWeight: '700' },
+  em: { fontStyle: 'italic' },
+  link: { color: '#58cc02', textDecorationLine: 'underline' },
+  code_inline: {
+    color: '#b3b3b3',
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    fontFamily: 'monospace',
+    paddingHorizontal: 3,
+    borderRadius: 4,
+  },
+});
 
 /**
  * Story: последовательные сцены с прогрессом. На choice — кнопки.
  *
- * Markdown в `scene.text` / `scene.translation` сейчас стрипается до plain
- * text. Phase 2.5 TODO: добавить `react-native-markdown-display`.
+ * Markdown в `scene.text` / `scene.translation` рендерится через
+ * `react-native-markdown-display` с двумя style-вариантами (main + translation).
  */
 export function StoryStep({ step, onSubmit, onContinue, isLast }: StepComponentProps) {
   const content = parseStepContent<StoryContent>(step);
@@ -126,14 +156,12 @@ export function StoryStep({ step, onSubmit, onContinue, isLast }: StepComponentP
           </Text>
         )}
         {scene.text && (
-          <Text className="text-foreground text-lg font-black">
-            {stripMarkdown(scene.text)}
-          </Text>
+          <Markdown style={mdMain}>{scene.text}</Markdown>
         )}
         {scene.translation && (
-          <Text className="text-sm text-muted-foreground font-medium mt-1">
-            {stripMarkdown(scene.translation)}
-          </Text>
+          <View className="mt-1">
+            <Markdown style={mdTranslation}>{scene.translation}</Markdown>
+          </View>
         )}
         {isChoice && scene.question && (
           <Text className="text-foreground font-bold text-base mt-3">{scene.question}</Text>

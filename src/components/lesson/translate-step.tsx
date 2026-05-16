@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, ScrollView } from 'react-native';
+import { View, Text, ScrollView } from 'react-native';
 import { FeedbackBar, type FeedbackState } from './FeedbackBar';
+import { DraggableWordBank } from './draggable-word-bank';
 import { parseStepContent, type StepComponentProps } from './step-types';
 import type { TranslateContent } from '@/types/api';
 
 /**
- * Translate (mobile): tap-only UX как Duolingo. Слово из bank → переходит
- * в answer area; обратный тап убирает. Submit отправляет `{ words: [...] }`.
+ * Translate (mobile): tap + DnD UX.
+ *  - Тап слова в банке → добавить в answer area.
+ *  - Тап слова в answer → вернуть в банк.
+ *  - Drag-and-drop из банка/answer / reorder внутри answer (Phase 2.5).
  *
- * TODO Phase 2.5: апгрейд на полноценный DnD через
- * `react-native-gesture-handler` PanGestureHandler + Reanimated worklets.
+ * Submit отправляет `{ words: [...] }`.
  */
 export function TranslateStep({ step, onSubmit, onContinue, isLast }: StepComponentProps) {
   const content = parseStepContent<TranslateContent>(step);
@@ -27,7 +29,6 @@ export function TranslateStep({ step, onSubmit, onContinue, isLast }: StepCompon
     );
   }
 
-  const available = bank.map((_, i) => i).filter((i) => !picked.includes(i));
   const locked = state.kind !== 'idle';
 
   const handleSubmit = async () => {
@@ -64,39 +65,13 @@ export function TranslateStep({ step, onSubmit, onContinue, isLast }: StepCompon
         )}
       </View>
 
-      {/* Answer area */}
-      <View className="min-h-[80px] rounded-2xl border-2 border-dashed border-border bg-muted/20 p-3 mb-4 flex-row flex-wrap gap-2">
-        {picked.length === 0 ? (
-          <Text className="text-muted-foreground text-sm font-medium m-auto">
-            Нажми на слова из банка ниже
-          </Text>
-        ) : (
-          picked.map((i) => (
-            <Pressable
-              key={`p-${i}`}
-              disabled={locked}
-              onPress={() => setPicked((p) => p.filter((x) => x !== i))}
-              className="px-3 py-2 rounded-xl border-2 bg-card"
-            >
-              <Text className="font-bold text-foreground">{bank[i]}</Text>
-            </Pressable>
-          ))
-        )}
-      </View>
-
-      {/* Word bank */}
-      <View className="flex-row flex-wrap gap-2 mb-5">
-        {available.map((i) => (
-          <Pressable
-            key={`b-${i}`}
-            disabled={locked}
-            onPress={() => setPicked((p) => [...p, i])}
-            className="px-3 py-2 rounded-xl border-2 bg-card"
-          >
-            <Text className="font-bold text-foreground">{bank[i]}</Text>
-          </Pressable>
-        ))}
-      </View>
+      <DraggableWordBank
+        bank={bank}
+        picked={picked}
+        onChange={setPicked}
+        disabled={locked}
+        emptyHint="Нажми или перетащи слова сюда"
+      />
 
       <FeedbackBar
         state={state}

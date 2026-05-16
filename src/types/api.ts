@@ -637,3 +637,398 @@ export interface AddXPResponse {
 }
 
 export type RefillReason = 'practice' | 'gems' | 'premium';
+
+// ============================================================================
+// Phase 3 — SRS / Practice / Mistakes / Skill decay
+// ============================================================================
+
+/**
+ * proto enum.ItemType сериализуется как строка ("ITEM_TYPE_STEP") или число.
+ * Принимаем оба варианта — везде есть string-shortcut helper.
+ */
+export type SRSItemTypeProto =
+  | 'ITEM_TYPE_UNSPECIFIED'
+  | 'ITEM_TYPE_VOCABULARY'
+  | 'ITEM_TYPE_STEP'
+  | 'ITEM_TYPE_PHRASE'
+  | number;
+
+/** Удобный shortcut для UI — соответствует query-param ?item_type=. */
+export type SRSItemTypeShort = 'vocabulary' | 'step' | 'phrase';
+
+export interface SRSItem {
+  id: string;
+  user_id: string;
+  item_type: SRSItemTypeProto;
+  item_id: string;
+  easiness_factor: number;
+  interval_days: number;
+  repetitions: number;
+  next_review_at?: ProtoTimestamp;
+  last_reviewed_at?: ProtoTimestamp;
+  total_reviews: number;
+  correct_reviews: number;
+  incorrect_reviews: number;
+  avg_response_time_ms: number;
+  strength: number;
+  created_at?: ProtoTimestamp;
+  updated_at?: ProtoTimestamp;
+}
+
+export interface SRSReviewHistory {
+  id: string;
+  srs_item_id: string;
+  user_id: string;
+  quality: number;
+  response_time_ms: number;
+  used_hint: boolean;
+  reviewed_at?: ProtoTimestamp;
+  new_interval_days: number;
+  new_easiness_factor: number;
+  new_repetitions: number;
+}
+
+export interface SRSStats {
+  total_items: number;
+  due_now: number;
+  mastered: number;
+  learning: number;
+  fresh: number;
+  reviewed_today: number;
+}
+
+export interface SRSDueResponse {
+  items: SRSItem[];
+  total: number;
+}
+
+export interface SRSWeakResponse {
+  items: SRSItem[];
+}
+
+export interface SRSReviewRequest {
+  item_type: SRSItemTypeShort;
+  item_id: string;
+  quality: number;
+  response_time_ms?: number;
+  used_hint?: boolean;
+}
+
+export interface SRSReviewResponse {
+  item: SRSItem;
+  history: SRSReviewHistory;
+}
+
+// --- Mistakes ---
+
+export interface Mistake {
+  id: string;
+  user_id: string;
+  step_id: string;
+  incorrect_answer?: Record<string, unknown>;
+  times_made: number;
+  last_made_at?: ProtoTimestamp;
+  is_resolved: boolean;
+  resolved_at?: ProtoTimestamp;
+  created_at?: ProtoTimestamp;
+}
+
+export interface ListMistakesResponse {
+  mistakes: Mistake[];
+  total: number;
+}
+
+export type MistakeFilter = 'all' | 'unresolved' | 'resolved';
+
+// --- Practice ---
+
+export type PracticeSourceProto =
+  | 'PRACTICE_SOURCE_UNSPECIFIED'
+  | 'PRACTICE_SOURCE_OVERDUE'
+  | 'PRACTICE_SOURCE_MISTAKE'
+  | 'PRACTICE_SOURCE_WEAK'
+  | number;
+
+export interface PracticeItem {
+  source: PracticeSourceProto;
+  srs_item?: SRSItem;
+  mistake?: Mistake;
+  step_id: string;
+}
+
+export interface GeneratePracticeRequest {
+  size?: number;
+  ratio_overdue?: number;
+  ratio_mistake?: number;
+  ratio_weak?: number;
+}
+
+export interface GeneratePracticeResponse {
+  items: PracticeItem[];
+  overdue_count: number;
+  mistake_count: number;
+  weak_count: number;
+}
+
+// --- Skill decay ---
+
+export type SkillTypeProto =
+  | 'SKILL_TYPE_UNSPECIFIED'
+  | 'SKILL_TYPE_MODULE'
+  | 'SKILL_TYPE_LESSON'
+  | number;
+
+export type SkillTypeShort = 'module' | 'lesson';
+
+export interface SkillDecay {
+  user_id: string;
+  skill_id: string;
+  skill_type: SkillTypeProto;
+  initial_strength: number;
+  current_strength: number;
+  decay_rate: number;
+  last_practiced_at?: ProtoTimestamp;
+  created_at?: ProtoTimestamp;
+  updated_at?: ProtoTimestamp;
+}
+
+export interface SkillStrengthsResponse {
+  skills: SkillDecay[];
+  total: number;
+}
+
+export interface WeakSkillsResponse {
+  skills: SkillDecay[];
+}
+
+// --- Helpers ---
+
+export function itemTypeShort(t: SRSItemTypeProto): SRSItemTypeShort | null {
+  if (typeof t === 'number') {
+    if (t === 1) return 'vocabulary';
+    if (t === 2) return 'step';
+    if (t === 3) return 'phrase';
+    return null;
+  }
+  switch (t) {
+    case 'ITEM_TYPE_VOCABULARY':
+      return 'vocabulary';
+    case 'ITEM_TYPE_STEP':
+      return 'step';
+    case 'ITEM_TYPE_PHRASE':
+      return 'phrase';
+    default:
+      return null;
+  }
+}
+
+export function skillTypeShort(t: SkillTypeProto): SkillTypeShort | null {
+  if (typeof t === 'number') {
+    if (t === 1) return 'module';
+    if (t === 2) return 'lesson';
+    return null;
+  }
+  switch (t) {
+    case 'SKILL_TYPE_MODULE':
+      return 'module';
+    case 'SKILL_TYPE_LESSON':
+      return 'lesson';
+    default:
+      return null;
+  }
+}
+
+export function practiceSourceLabel(
+  s: PracticeSourceProto,
+): 'overdue' | 'mistake' | 'weak' | null {
+  if (typeof s === 'number') {
+    if (s === 1) return 'overdue';
+    if (s === 2) return 'mistake';
+    if (s === 3) return 'weak';
+    return null;
+  }
+  switch (s) {
+    case 'PRACTICE_SOURCE_OVERDUE':
+      return 'overdue';
+    case 'PRACTICE_SOURCE_MISTAKE':
+      return 'mistake';
+    case 'PRACTICE_SOURCE_WEAK':
+      return 'weak';
+    default:
+      return null;
+  }
+}
+
+// ============================================================================
+// Phase 3 — Push notifications (notifications-service via gateway).
+// ============================================================================
+
+export type NotificationChannelShort =
+  | 'practice_reminder'
+  | 'streak_risk'
+  | 'daily_goal'
+  | 'achievement'
+  | 'friend_request';
+
+export type NotificationChannelProto =
+  | 'CHANNEL_UNSPECIFIED'
+  | 'CHANNEL_PRACTICE_REMINDER'
+  | 'CHANNEL_STREAK_RISK'
+  | 'CHANNEL_DAILY_GOAL'
+  | 'CHANNEL_ACHIEVEMENT'
+  | 'CHANNEL_FRIEND_REQUEST'
+  | number;
+
+export type DevicePlatformShort = 'web' | 'expo' | 'ios' | 'android';
+export type DevicePlatformProto =
+  | 'PLATFORM_UNSPECIFIED'
+  | 'PLATFORM_WEB'
+  | 'PLATFORM_EXPO'
+  | 'PLATFORM_IOS'
+  | 'PLATFORM_ANDROID'
+  | number;
+
+export type SendStatusShort = 'queued' | 'sent' | 'failed' | 'skipped';
+export type SendStatusProto =
+  | 'SEND_STATUS_UNSPECIFIED'
+  | 'SEND_STATUS_QUEUED'
+  | 'SEND_STATUS_SENT'
+  | 'SEND_STATUS_FAILED'
+  | 'SEND_STATUS_SKIPPED'
+  | number;
+
+export interface DeviceToken {
+  id: string;
+  user_id: string;
+  platform: DevicePlatformProto;
+  token: string;
+  endpoint?: string;
+  p256dh?: string;
+  auth?: string;
+  user_agent?: string;
+  locale?: string;
+  created_at?: string;
+  last_seen_at?: string;
+  revoked_at?: string | null;
+}
+
+export interface RegisterDeviceRequest {
+  platform: DevicePlatformShort;
+  token: string;
+  endpoint?: string;
+  p256dh?: string;
+  auth?: string;
+  user_agent?: string;
+  locale?: string;
+}
+
+export interface RegisterDeviceResponse {
+  device: DeviceToken;
+  created: boolean;
+}
+
+export interface ListDevicesResponse {
+  devices: DeviceToken[];
+}
+
+export interface UserPreferences {
+  user_id: string;
+  practice_reminder_enabled: boolean;
+  streak_risk_enabled: boolean;
+  daily_goal_enabled: boolean;
+  achievement_enabled: boolean;
+  friend_request_enabled: boolean;
+  quiet_hours_start: number;
+  quiet_hours_end: number;
+  timezone?: string;
+}
+
+export interface GetPreferencesResponse {
+  prefs: UserPreferences;
+  defaults_used?: boolean;
+}
+
+export type UpdatePreferencesRequest = Omit<UserPreferences, 'user_id'>;
+
+export interface UpdatePreferencesResponse {
+  prefs: UserPreferences;
+}
+
+export interface NotificationLog {
+  id: string;
+  user_id: string;
+  channel: NotificationChannelProto;
+  kind: string;
+  title: string;
+  body: string;
+  data?: Record<string, unknown> | null;
+  dedup_key?: string;
+  status: SendStatusProto;
+  read_at?: string | null;
+  created_at?: string;
+  sent_at?: string | null;
+  devices_succeeded?: number;
+}
+
+export type NotificationsReadFilter = 'all' | 'read' | 'unread';
+
+export interface ListNotificationsResponse {
+  notifications: NotificationLog[];
+  total: number;
+  unread: number;
+}
+
+export interface MarkReadResponse {
+  marked: number;
+}
+
+export function platformToShort(
+  p: DevicePlatformProto,
+): DevicePlatformShort | null {
+  if (typeof p === 'number') {
+    if (p === 1) return 'web';
+    if (p === 2) return 'expo';
+    if (p === 3) return 'ios';
+    if (p === 4) return 'android';
+    return null;
+  }
+  switch (p) {
+    case 'PLATFORM_WEB':
+      return 'web';
+    case 'PLATFORM_EXPO':
+      return 'expo';
+    case 'PLATFORM_IOS':
+      return 'ios';
+    case 'PLATFORM_ANDROID':
+      return 'android';
+    default:
+      return null;
+  }
+}
+
+export function channelToShort(
+  c: NotificationChannelProto,
+): NotificationChannelShort | null {
+  if (typeof c === 'number') {
+    if (c === 1) return 'practice_reminder';
+    if (c === 2) return 'streak_risk';
+    if (c === 3) return 'daily_goal';
+    if (c === 4) return 'achievement';
+    if (c === 5) return 'friend_request';
+    return null;
+  }
+  switch (c) {
+    case 'CHANNEL_PRACTICE_REMINDER':
+      return 'practice_reminder';
+    case 'CHANNEL_STREAK_RISK':
+      return 'streak_risk';
+    case 'CHANNEL_DAILY_GOAL':
+      return 'daily_goal';
+    case 'CHANNEL_ACHIEVEMENT':
+      return 'achievement';
+    case 'CHANNEL_FRIEND_REQUEST':
+      return 'friend_request';
+    default:
+      return null;
+  }
+}

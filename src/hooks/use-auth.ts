@@ -2,6 +2,7 @@ import React from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ApiClient } from '@/lib/api-client';
 import { AuthService } from '@/lib/auth-service';
+import { isOnboarded } from '@/lib/onboarding-storage';
 import {
   LoginRequest,
   RegisterRequest,
@@ -46,7 +47,11 @@ export const useLogin = () => {
         type: 'success',
         text1: 'Welcome back!',
       });
-      router.replace('/(tabs)');
+      // Sprint 2: новые юзеры (и старые, не прошедшие onboarding)
+      // отправляются в флоу. completed_at хранится локально per-device,
+      // поэтому на новом устройстве onboarding пройдёт заново.
+      const onboarded = await isOnboarded();
+      router.replace(onboarded ? '/(tabs)' : '/onboarding/welcome');
     },
     onError: (error: any) => {
       Toast.show({
@@ -72,7 +77,10 @@ export const useRegister = () => {
         type: 'success',
         text1: 'Account created successfully!',
       });
-      router.replace('/(tabs)');
+      // Sprint 2: новый аккаунт = onboarding обязателен. На новом
+      // устройстве флаг тоже сбросится (storage per-device).
+      const onboarded = await isOnboarded();
+      router.replace(onboarded ? '/(tabs)' : '/onboarding/welcome');
     },
     onError: (error: any) => {
       Toast.show({

@@ -4,11 +4,30 @@ import {
   CompleteStepRequest,
   CompleteStepResponse,
   DailyGoal,
+  GeneratePracticeRequest,
+  GeneratePracticeResponse,
+  GetPreferencesResponse,
   Hearts,
   LessonWithSteps,
+  ListDevicesResponse,
+  ListMistakesResponse,
+  ListNotificationsResponse,
   ListTracksResponse,
+  MarkReadResponse,
+  MistakeFilter,
+  NotificationsReadFilter,
   ProtoTimestamp,
   RefillReason,
+  RegisterDeviceRequest,
+  RegisterDeviceResponse,
+  SRSDueResponse,
+  SRSItemTypeShort,
+  SRSReviewRequest,
+  SRSReviewResponse,
+  SRSStats,
+  SRSWeakResponse,
+  SkillStrengthsResponse,
+  SkillTypeShort,
   StepAttempt,
   Streak,
   StreakHistory,
@@ -17,10 +36,13 @@ import {
   TTSCacheEntry,
   TrackFilters,
   TrackWithLessons,
+  UpdatePreferencesRequest,
+  UpdatePreferencesResponse,
   UserAchievementsResponse,
   UserStats,
   VocabularyEntry,
   VocabularyListResponse,
+  WeakSkillsResponse,
   XPHistoryResponse,
 } from '@/types/api';
 import { AuthService } from './auth-service';
@@ -312,4 +334,153 @@ export const TTSApi = {
       `/tts/by-text?${qs.toString()}`,
     );
   },
+};
+
+// ============================================
+// PHASE 3 — SRS / Practice / Mistakes / Skills
+// ============================================
+
+function mistakeFilterToParam(f: MistakeFilter): string | null {
+  if (f === 'unresolved') return 'false';
+  if (f === 'resolved') return 'true';
+  return null;
+}
+
+/**
+ * Phase 3: srs-service через gateway. См. eng_next2/src/lib/srs-api.ts.
+ *   GET  /srs/stats
+ *   GET  /srs/due?item_type=&limit=
+ *   GET  /srs/weak?item_type=&limit=
+ *   POST /srs/review
+ *   POST /practice/session
+ *   GET  /mistakes?resolved=&limit=&offset=
+ *   GET  /skills?skill_type=&limit=&offset=
+ *   GET  /skills/weak?skill_type=&limit=
+ */
+export const SrsApi = {
+  // === SRS ===
+  getStats: () => ApiClient.get<SRSStats>('/srs/stats'),
+
+  getDue: (opts: { item_type?: SRSItemTypeShort; limit?: number } = {}) => {
+    const qs = new URLSearchParams();
+    if (opts.item_type) qs.set('item_type', opts.item_type);
+    if (opts.limit) qs.set('limit', String(opts.limit));
+    const q = qs.toString();
+    return ApiClient.get<SRSDueResponse>(`/srs/due${q ? `?${q}` : ''}`);
+  },
+
+  getWeak: (opts: { item_type?: SRSItemTypeShort; limit?: number } = {}) => {
+    const qs = new URLSearchParams();
+    if (opts.item_type) qs.set('item_type', opts.item_type);
+    if (opts.limit) qs.set('limit', String(opts.limit));
+    const q = qs.toString();
+    return ApiClient.get<SRSWeakResponse>(`/srs/weak${q ? `?${q}` : ''}`);
+  },
+
+  review: (body: SRSReviewRequest) =>
+    ApiClient.post<SRSReviewResponse>('/srs/review', body),
+
+  // === Practice ===
+  generatePracticeSession: (body: GeneratePracticeRequest = {}) =>
+    ApiClient.post<GeneratePracticeResponse>('/practice/session', body),
+
+  // === Mistakes ===
+  listMistakes: (
+    opts: { resolved?: MistakeFilter; limit?: number; offset?: number } = {},
+  ) => {
+    const qs = new URLSearchParams();
+    const r = mistakeFilterToParam(opts.resolved ?? 'all');
+    if (r) qs.set('resolved', r);
+    if (opts.limit) qs.set('limit', String(opts.limit));
+    if (opts.offset) qs.set('offset', String(opts.offset));
+    const q = qs.toString();
+    return ApiClient.get<ListMistakesResponse>(`/mistakes${q ? `?${q}` : ''}`);
+  },
+
+  // === Skill decay ===
+  listSkills: (
+    opts: { skill_type?: SkillTypeShort; limit?: number; offset?: number } = {},
+  ) => {
+    const qs = new URLSearchParams();
+    if (opts.skill_type) qs.set('skill_type', opts.skill_type);
+    if (opts.limit) qs.set('limit', String(opts.limit));
+    if (opts.offset) qs.set('offset', String(opts.offset));
+    const q = qs.toString();
+    return ApiClient.get<SkillStrengthsResponse>(`/skills${q ? `?${q}` : ''}`);
+  },
+
+  getWeakSkills: (opts: { skill_type?: SkillTypeShort; limit?: number } = {}) => {
+    const qs = new URLSearchParams();
+    if (opts.skill_type) qs.set('skill_type', opts.skill_type);
+    if (opts.limit) qs.set('limit', String(opts.limit));
+    const q = qs.toString();
+    return ApiClient.get<WeakSkillsResponse>(`/skills/weak${q ? `?${q}` : ''}`);
+  },
+};
+
+// ============================================
+// PHASE 3 — Push notifications
+// ============================================
+
+function readFilterToParam(f: NotificationsReadFilter): string | null {
+  if (f === 'unread') return 'unread';
+  if (f === 'read') return 'read';
+  return null;
+}
+
+/**
+ * Phase 3: notifications-service через gateway. См. eng_next2/src/lib/notifications-api.ts.
+ *   POST   /notifications/devices
+ *   GET    /notifications/devices
+ *   DELETE /notifications/devices/:id
+ *   GET    /notifications/preferences
+ *   PUT    /notifications/preferences
+ *   GET    /notifications?read=&limit=&offset=
+ *   POST   /notifications/:id/read
+ *   POST   /notifications/read-all
+ */
+export const NotificationsApi = {
+  // === Devices ===
+  registerDevice: (body: RegisterDeviceRequest) =>
+    ApiClient.post<RegisterDeviceResponse>('/notifications/devices', body),
+
+  listDevices: () =>
+    ApiClient.get<ListDevicesResponse>('/notifications/devices'),
+
+  unregisterDevice: (id: string) =>
+    ApiClient.delete<unknown>(
+      `/notifications/devices/${encodeURIComponent(id)}`,
+    ),
+
+  // === Preferences ===
+  getPreferences: () =>
+    ApiClient.get<GetPreferencesResponse>('/notifications/preferences'),
+
+  updatePreferences: (body: UpdatePreferencesRequest) =>
+    ApiClient.put<UpdatePreferencesResponse>(
+      '/notifications/preferences',
+      body,
+    ),
+
+  // === Inbox ===
+  list: (
+    opts: { read?: NotificationsReadFilter; limit?: number; offset?: number } = {},
+  ) => {
+    const qs = new URLSearchParams();
+    const r = readFilterToParam(opts.read ?? 'all');
+    if (r) qs.set('read', r);
+    if (opts.limit) qs.set('limit', String(opts.limit));
+    if (opts.offset) qs.set('offset', String(opts.offset));
+    const q = qs.toString();
+    return ApiClient.get<ListNotificationsResponse>(
+      `/notifications${q ? `?${q}` : ''}`,
+    );
+  },
+
+  markRead: (id: string) =>
+    ApiClient.post<MarkReadResponse>(
+      `/notifications/${encodeURIComponent(id)}/read`,
+    ),
+
+  markAllRead: () => ApiClient.post<MarkReadResponse>('/notifications/read-all'),
 };

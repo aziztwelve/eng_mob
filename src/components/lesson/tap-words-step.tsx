@@ -3,11 +3,13 @@ import { View, Text, Pressable, ScrollView } from 'react-native';
 import { Volume2 } from 'lucide-react-native';
 import { Audio } from 'expo-av';
 import { FeedbackBar, type FeedbackState } from './FeedbackBar';
+import { DraggableWordBank } from './draggable-word-bank';
 import { parseStepContent, type StepComponentProps } from './step-types';
 import type { TapWordsContent } from '@/types/api';
 
 /**
- * Tap What You Hear: audio + word bank, порядок слов важен.
+ * Tap What You Hear (mobile): аудио + tap + DnD word bank.
+ * Порядок слов важен — submit проверяет per-position match.
  */
 export function TapWordsStep({ step, onSubmit, onContinue, isLast }: StepComponentProps) {
   const content = parseStepContent<TapWordsContent>(step);
@@ -24,7 +26,6 @@ export function TapWordsStep({ step, onSubmit, onContinue, isLast }: StepCompone
     );
   }
 
-  const available = bank.map((_, i) => i).filter((i) => !picked.includes(i));
   const locked = state.kind !== 'idle';
 
   const play = async () => {
@@ -85,37 +86,13 @@ export function TapWordsStep({ step, onSubmit, onContinue, isLast }: StepCompone
         )}
       </View>
 
-      <View className="min-h-[80px] rounded-2xl border-2 border-dashed border-border bg-muted/20 p-3 mb-4 flex-row flex-wrap gap-2">
-        {picked.length === 0 ? (
-          <Text className="text-muted-foreground text-sm font-medium m-auto">
-            Нажми на слова в правильном порядке
-          </Text>
-        ) : (
-          picked.map((i) => (
-            <Pressable
-              key={`p-${i}`}
-              disabled={locked}
-              onPress={() => setPicked((p) => p.filter((x) => x !== i))}
-              className="px-3 py-2 rounded-xl border-2 bg-card"
-            >
-              <Text className="font-bold text-foreground">{bank[i]}</Text>
-            </Pressable>
-          ))
-        )}
-      </View>
-
-      <View className="flex-row flex-wrap gap-2 mb-5">
-        {available.map((i) => (
-          <Pressable
-            key={`b-${i}`}
-            disabled={locked}
-            onPress={() => setPicked((p) => [...p, i])}
-            className="px-3 py-2 rounded-xl border-2 bg-card"
-          >
-            <Text className="font-bold text-foreground">{bank[i]}</Text>
-          </Pressable>
-        ))}
-      </View>
+      <DraggableWordBank
+        bank={bank}
+        picked={picked}
+        onChange={setPicked}
+        disabled={locked}
+        emptyHint="Нажми или перетащи слова в правильном порядке"
+      />
 
       <FeedbackBar
         state={state}

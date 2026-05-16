@@ -1,9 +1,44 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
+
+import { AuthService } from '@/lib/auth-service';
+import { isOnboarded } from '@/lib/onboarding-storage';
 
 export default function IndexScreen() {
   const router = useRouter();
+  const [checking, setChecking] = useState(true);
+
+  // Sprint 2: Global guard.
+  // - Если есть валидная сессия (access token) и onboarding пройден →
+  //   сразу в /(tabs).
+  // - Если есть сессия, но onboarding не пройден → /onboarding/welcome.
+  // - Без сессии — показываем sign-in/sign-up экран.
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const authed = await AuthService.isAuthenticated();
+      if (cancelled) return;
+      if (!authed) {
+        setChecking(false);
+        return;
+      }
+      const onboarded = await isOnboarded();
+      if (cancelled) return;
+      router.replace(onboarded ? '/(tabs)' : '/onboarding/welcome');
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
+
+  if (checking) {
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator color="#58cc02" size="large" />
+      </View>
+    );
+  }
 
   const handleSignIn = () => {
     console.log('Sign In clicked');
