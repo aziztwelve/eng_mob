@@ -1032,3 +1032,414 @@ export function channelToShort(
       return null;
   }
 }
+
+// ==========================================================================
+// Phase 4: Social / Leagues
+// ==========================================================================
+//
+// Бэкенд: social-service (:50061) через gateway:
+//   GET  /api/v1/leagues                       — public каталог 10 лиг
+//   GET  /api/v1/leagues/mine                  — моя лига + cohort + rank
+//   GET  /api/v1/leagues/mine/leaderboard      — топ 30 моей когорты
+//   GET  /api/v1/leagues/history?limit=&offset=
+//
+// Шейпы — JSON-проекция socialv1 protobuf'а (protojson: snake_case + ISO time).
+
+export interface League {
+  id: number;
+  code: string;
+  name: string;
+  icon_url: string;
+  color: string;
+  tier: number;
+}
+
+export interface UserLeague {
+  user_id: string;
+  league: League;
+  cohort_id: string;
+  weekly_xp: number;
+  rank_in_cohort: number;
+  joined_at?: string;
+  last_updated_at?: string;
+}
+
+export interface LeaderboardEntry {
+  rank: number;
+  user_id: string;
+  weekly_xp: number;
+  full_name: string;
+  avatar_url: string;
+  is_me: boolean;
+}
+
+export interface LeagueHistoryEntry {
+  id: string;
+  user_id: string;
+  league_id: number;
+  cohort_id: string;
+  cycle_start_at: string;
+  cycle_end_at: string;
+  final_xp: number;
+  final_rank: number;
+  promoted: boolean;
+  demoted: boolean;
+  gems_earned: number;
+  created_at?: string;
+}
+
+export interface ListLeaguesResponse {
+  leagues: League[];
+}
+
+export interface GetMyLeagueResponse {
+  user_league: UserLeague;
+  cycle_end_at: string;
+}
+
+export interface GetMyLeaderboardResponse {
+  league: League;
+  cohort_id: string;
+  cycle_end_at: string;
+  my_rank: number;
+  my_weekly_xp: number;
+  entries: LeaderboardEntry[];
+  promotion_count: number;
+  demotion_count: number;
+}
+
+export interface GetLeagueHistoryResponse {
+  entries: LeagueHistoryEntry[];
+  total: number;
+}
+
+// ==========================================================================
+// Phase 4.5: Friends (social-service via gateway)
+// ==========================================================================
+//
+// Gateway routes (auth required):
+//   GET    /api/v1/friends                      — список accepted друзей
+//   GET    /api/v1/friends/pending?direction=   — pending (incoming|outgoing|all)
+//   POST   /api/v1/friends/request              { user_id }
+//   POST   /api/v1/friends/accept/:friendshipId
+//   POST   /api/v1/friends/reject/:friendshipId
+//   DELETE /api/v1/friends/:friendId
+//   GET    /api/v1/friends/search?q=&limit=     — поиск по username
+//   GET    /api/v1/friends/leaderboard?limit=   — sort по weekly_xp DESC
+
+/** FriendshipStatus — proto enum в JSON-проекции (string или number). */
+export type FriendshipStatusProto =
+  | 'FRIENDSHIP_STATUS_UNSPECIFIED'
+  | 'FRIENDSHIP_STATUS_PENDING'
+  | 'FRIENDSHIP_STATUS_ACCEPTED'
+  | 'FRIENDSHIP_STATUS_BLOCKED'
+  | number;
+
+export type FriendshipStatusShort = 'pending' | 'accepted' | 'blocked';
+
+export function friendshipStatusToShort(
+  s: FriendshipStatusProto,
+): FriendshipStatusShort | null {
+  if (typeof s === 'number') {
+    if (s === 1) return 'pending';
+    if (s === 2) return 'accepted';
+    if (s === 3) return 'blocked';
+    return null;
+  }
+  switch (s) {
+    case 'FRIENDSHIP_STATUS_PENDING':
+      return 'pending';
+    case 'FRIENDSHIP_STATUS_ACCEPTED':
+      return 'accepted';
+    case 'FRIENDSHIP_STATUS_BLOCKED':
+      return 'blocked';
+    default:
+      return null;
+  }
+}
+
+export interface Friendship {
+  id: string;
+  user_id_1: string;
+  user_id_2: string;
+  status: FriendshipStatusProto;
+  requested_by: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface FriendInfo {
+  user_id: string;
+  username: string;
+  full_name: string;
+  avatar_url: string;
+  weekly_xp: number;
+  total_xp?: number;
+  friendship_status: FriendshipStatusProto;
+  /** Если pending: true → caller получатель, false → caller отправитель. */
+  is_incoming: boolean;
+  friendship_id: string;
+}
+
+export interface LeaderboardFriendEntry {
+  rank: number;
+  user_id: string;
+  username: string;
+  full_name: string;
+  avatar_url: string;
+  weekly_xp: number;
+  is_me: boolean;
+}
+
+export type PendingDirection = 'all' | 'incoming' | 'outgoing';
+
+// --- Requests / Responses ---
+
+export interface ListFriendsResponse {
+  friends: FriendInfo[];
+  total: number;
+}
+
+export interface ListPendingRequestsResponse {
+  requests: FriendInfo[];
+  total: number;
+}
+
+export interface SendFriendRequestRequest {
+  user_id: string;
+}
+
+export interface SendFriendRequestResponse {
+  friendship: Friendship;
+  auto_accepted: boolean;
+}
+
+export interface AcceptFriendRequestResponse {
+  friendship: Friendship;
+}
+
+export interface SearchFriendsResponse {
+  users: FriendInfo[];
+}
+
+export interface GetFriendsLeaderboardResponse {
+  entries: LeaderboardFriendEntry[];
+}
+
+// ==========================================================================
+// Phase 5: AI Integration
+// ==========================================================================
+//
+// Бэкенд: ai-service (:50063) через gateway (auth required):
+//   # Conversations / Roleplay / Tutor (persistent)
+//   POST   /api/v1/ai/conversations               { scenario, target_language?, user_level?, title? }
+//   GET    /api/v1/ai/conversations?limit=&offset=
+//   GET    /api/v1/ai/conversations/:id
+//   DELETE /api/v1/ai/conversations/:id
+//   POST   /api/v1/ai/conversations/:id/messages  { content, want_audio? }
+//   GET    /api/v1/ai/scenarios?language=&user_level=
+//   # Single-shot
+//   POST   /api/v1/ai/explain                     { step_id, incorrect_answer, correct_answer?, ... }
+//   POST   /api/v1/ai/writing/assess              { prompt, user_text, target_language?, user_level? }
+//   POST   /api/v1/ai/pronunciation/check         multipart: audio + target_text + language
+//   POST   /api/v1/ai/tutor                       { question, target_language?, native_language? }
+//   GET    /api/v1/ai/quota
+//
+// Все шейпы — JSON-проекция aiv1 protobuf (snake_case + ISO timestamps).
+
+/** Роль автора сообщения. proto enum MessageRole. */
+export type AIMessageRole =
+  | 'MESSAGE_ROLE_USER'
+  | 'MESSAGE_ROLE_ASSISTANT'
+  | 'MESSAGE_ROLE_SYSTEM';
+
+/** Поправка грамматики, рассчитанная провайдером для предыдущего user-сообщения. */
+export interface AICorrection {
+  original: string;
+  corrected: string;
+  explanation: string;
+}
+
+/** Одно сообщение в conversation. */
+export interface AIMessage {
+  id: string;
+  conversation_id: string;
+  role: AIMessageRole;
+  content: string;
+  audio_url?: string;
+  corrections?: AICorrection[];
+  /** Перевод reply на native-язык (для assistant). Для user — пусто. */
+  translation?: string;
+  tokens_used?: number;
+  cost_usd?: number;
+  created_at?: string;
+}
+
+/** AI-сессия (free chat / roleplay / tutor). */
+export interface AIConversation {
+  id: string;
+  user_id: string;
+  title: string;
+  /** free_chat | roleplay_<id> | tutor_qa | ... */
+  scenario: string;
+  target_language: string;
+  user_level: string;
+  model: string;
+  message_count: number;
+  total_tokens: number;
+  cost_usd: number;
+  started_at?: string;
+  last_message_at?: string;
+  ended_at?: string;
+}
+
+/** Roleplay-сценарий. Статика бэкенда. */
+export interface AIScenario {
+  id: string;
+  title: string;
+  description: string;
+  user_level: string;
+  language: string;
+  ai_role: string;
+  context: string;
+  initial_message: string;
+  vocabulary_focus?: string[];
+  success_criteria?: string[];
+}
+
+// --- Conversation RPC shapes ---
+
+export interface StartConversationRequest {
+  scenario: string;
+  target_language?: string;
+  user_level?: string;
+  title?: string;
+}
+
+export interface StartConversationResponse {
+  conversation: AIConversation;
+  initial_message?: AIMessage;
+}
+
+export interface SendMessageRequest {
+  content: string;
+  want_audio?: boolean;
+}
+
+export interface SendMessageResponse {
+  user_message: AIMessage;
+  assistant_message: AIMessage;
+}
+
+export interface ListConversationsResponse {
+  conversations: AIConversation[];
+  total: number;
+}
+
+export interface GetConversationResponse {
+  conversation: AIConversation;
+  messages: AIMessage[];
+}
+
+export interface ListScenariosResponse {
+  scenarios: AIScenario[];
+}
+
+// --- Explain ---
+
+export interface ExplainMistakeRequest {
+  step_id?: string;
+  incorrect_answer: string;
+  correct_answer?: string;
+  question?: string;
+  target_language?: string;
+  native_language?: string;
+}
+
+export interface ExplainMistakeResponse {
+  explanation: string;
+  cached: boolean;
+}
+
+// --- Writing assessment ---
+
+export interface AssessWritingRequest {
+  prompt?: string;
+  user_text: string;
+  target_language?: string;
+  user_level?: string;
+}
+
+/** Категории фидбэка writing assessment. */
+export type WritingFeedbackCategory =
+  | 'grammar'
+  | 'vocabulary'
+  | 'coherence'
+  | 'style'
+  | string;
+
+export interface AIWritingFeedback {
+  category: WritingFeedbackCategory;
+  issue: string;
+  suggestion: string;
+}
+
+export interface AssessWritingResponse {
+  assessment_id: string;
+  /** 0..100 */
+  overall_score: number;
+  grammar_score: number;
+  vocabulary_score: number;
+  coherence_score: number;
+  style_score: number;
+  corrected_text: string;
+  feedback: AIWritingFeedback[];
+}
+
+// --- Pronunciation ---
+
+export interface AIWordScore {
+  word: string;
+  /** 0.0..1.0 */
+  score: number;
+  feedback?: string;
+}
+
+export interface CheckPronunciationResponse {
+  attempt_id: string;
+  transcribed_text: string;
+  /** 0.0..1.0 */
+  accuracy_score: number;
+  word_scores: AIWordScore[];
+  feedback: string;
+  audio_url?: string;
+}
+
+// --- Tutor ---
+
+export interface AskTutorRequest {
+  question: string;
+  target_language?: string;
+  native_language?: string;
+}
+
+export interface AskTutorResponse {
+  answer: string;
+  tokens_used?: number;
+  cost_usd?: number;
+}
+
+// --- Quota ---
+
+/** GetQuotaStatusResponse — `*_limit = -1` означает unlimited (premium). */
+export interface AIQuotaStatus {
+  chat_used: number;
+  chat_limit: number;
+  voice_minutes_used: number;
+  voice_minutes_limit: number;
+  writing_used: number;
+  writing_limit: number;
+  /** "free" | "premium" */
+  plan: string;
+  resets_at?: string;
+}

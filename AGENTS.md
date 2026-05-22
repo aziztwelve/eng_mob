@@ -230,6 +230,141 @@ Phase 3 mobile (2026-05-16 done) — добавили:
 - Auto-prompt subscribe после login (сейчас юзер должен сам зайти в
   `/profile/notifications`).
 
+## Phase 4 + 4.5: Leagues + Friends (mobile)
+
+Phase 4 mobile (2026-05-16 done) — Sprint 3:
+
+**Routes:**
+- `app/leagues/_layout.tsx` + `index.tsx` — Hero (Crown + tier + cycle
+  timer + my rank/XP) + Zone hints (promotion/demotion) + Leaderboard
+  top-30 (Medal top-3 + is_me highlight + zone-окраска рядов).
+- `app/leagues/history.tsx` — список выступлений с pagination
+  (PAGE_SIZE=20) + promotion/demotion badges + gems.
+- `app/friends/_layout.tsx` + `index.tsx` — главный hub: 3 action-карты
+  (Search / Pending / Leaderboard, badge с incoming-count) + accepted
+  friends-list с Remove (через `Alert.alert` confirm).
+- `app/friends/pending.tsx` — incoming (Accept/Reject) + outgoing
+  (Cancel) сессии с group-секциями.
+- `app/friends/search.tsx` — debounce 250ms input + per-row Add /
+  status badge (accepted / pending / blocked).
+- `app/friends/leaderboard.tsx` — друзья + self, Medal top-3, self-row
+  highlight.
+- Sub-routes структура (вместо inline-tabs) для native-feel UX.
+
+**API + types:**
+- `lib/api-client.ts`: `SocialApi` (4 метода: listLeagues / getMyLeague /
+  getMyLeaderboard / getHistory) + `FriendsApi` (8 методов: list /
+  listPending / sendRequest / accept / reject / remove / search /
+  leaderboard).
+- `types/api.ts`: League / UserLeague / LeaderboardEntry /
+  LeagueHistoryEntry + 4 response shapes (Phase 4); FriendInfo /
+  Friendship / FriendshipStatusProto+Short + `friendshipStatusToShort` /
+  LeaderboardFriendEntry / PendingDirection + 8 response shapes
+  (Phase 4.5).
+
+**Hooks:**
+- `hooks/use-leagues.ts`: `useLeaguesCatalog` / `useMyLeague` /
+  `useMyLeaderboard` / `useLeagueHistory` (+ exported keys для
+  invalidation).
+- `hooks/use-friends.ts`: 4 query (`useFriends` / `usePendingFriends` /
+  `useFriendsSearch` / `useFriendsLeaderboard`) + 4 mutation
+  (`useSendFriendRequest` / `useAcceptFriendRequest` /
+  `useRejectFriendRequest` / `useRemoveFriend`). Все mutation-success
+  делают `invalidateQueries({ queryKey: ['friends'] })` сразу для всех
+  friends-кэшей.
+
+**Shared atoms:**
+- `components/ui/avatar.tsx` — небольшой Avatar-компонент: круг с
+  `<Image>` из `avatar_url` либо инициалы на цветном фоне.
+  Используется в leagues / friends.
+
+**Profile entry:**
+- В `(tabs)/profile.tsx` добавлены NavRow «🏆 Лиги» → `/leagues` и
+  «👥 Друзья» → `/friends` (рядом с «💪 Сила навыков»).
+- 5 нижних табов не трогали — точки входа только через Profile.
+
+**Что НЕ сделано в Phase 4 mobile (отложено):**
+- Push deep-linking из канала `friend_request`
+  (`addNotificationResponseReceivedListener`).
+- Lottie promotion celebration (как level-up — требует ассет).
+- Banner / mini-card на Home tab для текущей лиги.
+
+## Phase 5: AI Integration (mobile)
+
+Phase 5 mobile (2026-05-16 done) — Sprint 4: 5 AI-фич + quota.
+
+**Routes (`app/ai/*`):**
+- `_layout.tsx` — Stack.
+- `index.tsx` — Hub: 5 фич + `<QuotaWidget>` сверху.
+- `chat/index.tsx` — список конверсаций + «Новый чат» (`scenario=free_chat`,
+  выбор языка). Per-row Delete с `Alert.alert`.
+- `chat/[id].tsx` — экран одного диалога. ScrollView + auto-scroll-to-end.
+  `<KeyboardAvoidingView>` (iOS padding) для нормального поведения
+  keyboard. AI-печатает индикатор + error banner.
+- `roleplay.tsx` — каталог сценариев + filter pills (язык / уровень).
+  Клик по карточке → `start({scenario: 'roleplay_<id>', target_language,
+  user_level, title})` → router push в `/ai/chat/<id>`.
+- `writing.tsx` — форма (lang + level pills, optional prompt, multiline
+  text + word counter, MIN_WORDS=10) → `<AssessmentResult>`.
+- `tutor.tsx` — single Q&A с pills для target/native lang. Markdown в
+  ответе (react-native-markdown-display).
+- `pronunciation.tsx` — target text input + lang pills + `<VoiceRecorder>`
+  → результат с overall progress + word-level badges.
+
+**Components (`components/ai/*`):**
+- `quota-widget.tsx` — full-card (на hub) и compact pill-набор (для
+  chat / writing / tutor / pron). Также экспортирует `hasQuotaLeft(q,
+  kind)` helper.
+- `chat-message.tsx` — bubble user (right) / assistant (left) +
+  Markdown body + corrections (orig→corrected + explanation) +
+  translation toggle + `<MessageAudio>` (expo-av Audio.Sound
+  play/pause).
+- `chat-input.tsx` — multiline TextInput + want_audio toggle +
+  Send-button (disabled при пустой строке / loading).
+- `scenario-card.tsx` — карточка roleplay-сценария (title + description
+  + level badge + AI-роль + vocabulary_focus pills + Start CTA).
+- `assessment-result.tsx` — overall + 4 score-bars + corrected_text +
+  feedback rows с category-окраской.
+- `voice-recorder.tsx` — expo-av Audio.Recording state machine:
+  `idle | recording | recorded | denied`. `Audio.requestPermissionsAsync`
+  + `setAudioModeAsync({allowsRecordingIOS: true, playsInSilentModeIOS:
+  true})`. После stop восстанавливаем mode для playback. Возвращает
+  `{ uri, type, name }` для multipart upload (RN-FormData ждёт file-
+  объект, не Blob). MAX_DURATION_SEC=60, авто-stop по timer.
+
+**API + types:**
+- `lib/ai-api.ts`: `AIApi` (9 методов: startConversation, list,
+  get, delete, sendMessage, listScenarios, explainMistake,
+  assessWriting, askTutor, checkPronunciation (multipart), getQuota).
+  Pronunciation идёт мимо `ApiClient` — отдельный `fetch` с подстановкой
+  Bearer-токена через `AuthService.getAccessToken()` (FormData ставит
+  multipart-boundary автоматически, явный Content-Type не задаём).
+- `types/api.ts`: AIMessage / AICorrection / AIConversation /
+  AIScenario / 6 RPC-shapes / AssessWritingResponse + AIWritingFeedback
+  / CheckPronunciationResponse + AIWordScore / AskTutor* /
+  ExplainMistake* / AIQuotaStatus.
+
+**Hooks:**
+- `hooks/use-ai.ts`: 4 query (`useAIQuota` / `useAIConversations` /
+  `useAIConversation` / `useAIScenarios`) + 6 mutation
+  (`useStartConversation` / `useSendMessage(id)` / `useDeleteConversation`
+  / `useExplainMistake` / `useAssessWriting` / `useAskTutor` /
+  `useCheckPronunciation`). Mutation-success инвалидирует пересекающиеся
+  ключи: list / specific conversation / quota.
+
+**Profile entry:**
+- `(tabs)/profile.tsx` — NavRow «🤖 AI помощник» → `/ai`. Рядом с Лиги
+  и Друзья. 5 нижних табов не трогаем.
+
+**Что НЕ сделано в Phase 5 mobile (отложено):**
+- Mistake explain UI: hook готов (`useExplainMistake`), но интегрировать
+  в `mistakes.tsx` / lesson-fail flow — отдельная итерация.
+- Pronunciation step type — сделать `pronunciation`-шаг в lesson player
+  с auto-target-text (post-MVP).
+- Воспроизведение `audio_url` через downloadable URI (сейчас MockProvider
+  возвращает пустой `audio_url` — кнопка прослушивания просто скрыта).
+- Real provider (OpenAI / Anthropic / Whisper) — backend Phase 5.X-real.
+
 ## Документация изменений
 
 Бэкенд-логи:

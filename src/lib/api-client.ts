@@ -1,4 +1,5 @@
 import {
+  AcceptFriendRequestResponse,
   AchievementsResponse,
   ApiError,
   CompleteStepRequest,
@@ -6,16 +7,24 @@ import {
   DailyGoal,
   GeneratePracticeRequest,
   GeneratePracticeResponse,
+  GetFriendsLeaderboardResponse,
+  GetLeagueHistoryResponse,
+  GetMyLeaderboardResponse,
+  GetMyLeagueResponse,
   GetPreferencesResponse,
   Hearts,
   LessonWithSteps,
   ListDevicesResponse,
+  ListFriendsResponse,
+  ListLeaguesResponse,
   ListMistakesResponse,
   ListNotificationsResponse,
+  ListPendingRequestsResponse,
   ListTracksResponse,
   MarkReadResponse,
   MistakeFilter,
   NotificationsReadFilter,
+  PendingDirection,
   ProtoTimestamp,
   RefillReason,
   RegisterDeviceRequest,
@@ -26,6 +35,8 @@ import {
   SRSReviewResponse,
   SRSStats,
   SRSWeakResponse,
+  SearchFriendsResponse,
+  SendFriendRequestResponse,
   SkillStrengthsResponse,
   SkillTypeShort,
   StepAttempt,
@@ -483,4 +494,112 @@ export const NotificationsApi = {
     ),
 
   markAllRead: () => ApiClient.post<MarkReadResponse>('/notifications/read-all'),
+};
+
+// ============================================
+// PHASE 4 — Social / Leagues
+// ============================================
+
+/**
+ * Phase 4: social-service через gateway. См. eng_next2/src/lib/social-api.ts.
+ *
+ *   GET  /leagues                        — public каталог 10 лиг
+ *   GET  /leagues/mine                   — моя лига + cohort + rank (auth)
+ *   GET  /leagues/mine/leaderboard       — топ 30 моей когорты (auth)
+ *   GET  /leagues/history?limit=&offset= — история циклов (auth)
+ */
+export const SocialApi = {
+  listLeagues: () => ApiClient.get<ListLeaguesResponse>('/leagues'),
+
+  getMyLeague: () => ApiClient.get<GetMyLeagueResponse>('/leagues/mine'),
+
+  getMyLeaderboard: () =>
+    ApiClient.get<GetMyLeaderboardResponse>('/leagues/mine/leaderboard'),
+
+  getHistory: (opts: { limit?: number; offset?: number } = {}) => {
+    const qs = new URLSearchParams();
+    if (opts.limit) qs.set('limit', String(opts.limit));
+    if (opts.offset) qs.set('offset', String(opts.offset));
+    const q = qs.toString();
+    return ApiClient.get<GetLeagueHistoryResponse>(
+      `/leagues/history${q ? `?${q}` : ''}`,
+    );
+  },
+};
+
+// ============================================
+// PHASE 4.5 — Friends
+// ============================================
+
+/**
+ * Phase 4.5: Friends API через gateway.
+ *
+ *   GET    /friends?limit=&offset=
+ *   GET    /friends/pending?direction=&limit=&offset=
+ *   POST   /friends/request           { user_id }
+ *   POST   /friends/accept/:friendshipId
+ *   POST   /friends/reject/:friendshipId
+ *   DELETE /friends/:friendId
+ *   GET    /friends/search?q=&limit=
+ *   GET    /friends/leaderboard?limit=
+ */
+export const FriendsApi = {
+  list: (opts: { limit?: number; offset?: number } = {}) => {
+    const qs = new URLSearchParams();
+    if (opts.limit) qs.set('limit', String(opts.limit));
+    if (opts.offset) qs.set('offset', String(opts.offset));
+    const q = qs.toString();
+    return ApiClient.get<ListFriendsResponse>(`/friends${q ? `?${q}` : ''}`);
+  },
+
+  listPending: (
+    opts: {
+      direction?: PendingDirection;
+      limit?: number;
+      offset?: number;
+    } = {},
+  ) => {
+    const qs = new URLSearchParams();
+    if (opts.direction && opts.direction !== 'all') {
+      qs.set('direction', opts.direction);
+    }
+    if (opts.limit) qs.set('limit', String(opts.limit));
+    if (opts.offset) qs.set('offset', String(opts.offset));
+    const q = qs.toString();
+    return ApiClient.get<ListPendingRequestsResponse>(
+      `/friends/pending${q ? `?${q}` : ''}`,
+    );
+  },
+
+  sendRequest: (userId: string) =>
+    ApiClient.post<SendFriendRequestResponse>('/friends/request', {
+      user_id: userId,
+    }),
+
+  accept: (friendshipId: string) =>
+    ApiClient.post<AcceptFriendRequestResponse>(
+      `/friends/accept/${encodeURIComponent(friendshipId)}`,
+    ),
+
+  reject: (friendshipId: string) =>
+    ApiClient.post<{ ok: boolean }>(
+      `/friends/reject/${encodeURIComponent(friendshipId)}`,
+    ),
+
+  remove: (friendId: string) =>
+    ApiClient.delete<{ ok: boolean }>(
+      `/friends/${encodeURIComponent(friendId)}`,
+    ),
+
+  search: (query: string, limit = 20) => {
+    const qs = new URLSearchParams({ q: query, limit: String(limit) });
+    return ApiClient.get<SearchFriendsResponse>(`/friends/search?${qs}`);
+  },
+
+  leaderboard: (limit = 50) => {
+    const qs = new URLSearchParams({ limit: String(limit) });
+    return ApiClient.get<GetFriendsLeaderboardResponse>(
+      `/friends/leaderboard?${qs}`,
+    );
+  },
 };
