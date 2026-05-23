@@ -19,7 +19,8 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.aziztwelve.engmob"
+      "package": "com.aziztwelve.engmob",
+      "usesCleartextTraffic": true
     },
     "web": {
       "output": "static",
@@ -37,7 +38,15 @@
           }
         }
       ],
-      "expo-localization"
+      "expo-localization",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
