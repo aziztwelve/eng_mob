@@ -56,9 +56,83 @@ import {
   WeakSkillsResponse,
   XPHistoryResponse,
 } from '@/types/api';
+import { Platform } from 'react-native';
+
 import { AuthService } from './auth-service';
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8081/api/v1';
+/**
+ * Resolve base URL with platform-aware host rewrite.
+ *
+ * `.env` обычно содержит `10.0.2.2` (Android emulator alias to host loopback).
+ * Этот адрес не работает ни в браузере (`web`), ни в iOS-симуляторе — там
+ * нужен `localhost`. Поэтому на не-Android платформах автоматически
+ * подменяем `10.0.2.2` на `localhost`.
+ */
+function resolveApiBaseUrl(): string {
+  const raw = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8081/api/v1';
+  if (Platform.OS !== 'android' && raw.includes('10.0.2.2')) {
+    return raw.replace('10.0.2.2', 'localhost');
+  }
+  return raw;
+}
+
+const API_BASE_URL = resolveApiBaseUrl();
+
+/**
+ * Эндпоинты, на которых 401-redirect не делаем — иначе получим петлю
+ * (`/auth/claim` без токена → redirect → `/auth/claim` без токена...).
+ * `/auth/guest` сам публичный — 401 от него не приходит, но включаем
+ * для надёжности.
+ */
+function isAuthEndpoint(endpoint: string): boolean {
+  return (
+    endpoint.startsWith('/auth/login') ||
+    endpoint.startsWith('/auth/register') ||
+    endpoint.startsWith('/auth/refresh') ||
+    endpoint.startsWith('/auth/claim') ||
+    endpoint.startsWith('/auth/guest')
+  );
+}
+
+/** Sentinel чтобы не дёргать redirect/clear много раз подряд. */
+let unauthorizedHandling: Promise<void> | null = null;
+
+/**
+ * Глобальный обработчик 401: чистит токены и редиректит на /auth/login.
+ * Импорт `expo-router` лениво, чтобы api-client не тащил RN-навигацию
+ * в SSR / тестах.
+ *
+ * Экспортируется для прямых fetch-вызовов в обход `ApiClient.request`
+ * (например, multipart-загрузки в `ai-api.ts:checkPronunciation`).
+ */
+export async function handleUnauthorized(): Promise<void> {
+  if (unauthorizedHandling) return unauthorizedHandling;
+  unauthorizedHandling = (async () => {
+    try {
+      await AuthService.clearTokens();
+      const { router } = await import('expo-router');
+      router.replace('/auth/login');
+    } catch (err) {
+      if (__DEV__) {
+        console.warn('[api-client] handleUnauthorized failed:', err);
+      }
+    } finally {
+      // Сбрасываем sentinel через 1s — если юзер залогинится и снова
+      // получит 401, повторно отработаем.
+      setTimeout(() => {
+        unauthorizedHandling = null;
+      }, 1000);
+    }
+  })();
+  return unauthorizedHandling;
+}
+
+/**
+ * Жёсткий таймаут на каждый fetch.
+ * Без него на unreachable host (например, неподнятый бэкенд) запрос
+ * висит десятки секунд, blocking UI flows вроде онбординг-CTA.
+ */
+const REQUEST_TIMEOUT_MS = 10_000;
 
 export class ApiClient {
   private static baseURL = API_BASE_URL;
@@ -80,17 +154,30 @@ export class ApiClient {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
     try {
       const response = await fetch(url, {
         ...options,
         headers,
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
 
       // Handle non-JSON responses
       const contentType = response.headers.get('content-type');
       const isJson = contentType?.includes('application/json');
 
       if (!response.ok) {
+        // Global 401 handler: токен невалиден / истёк / отсутствует на
+        // protected роуте. Чистим хранилище и кидаем юзера на root —
+        // index.tsx сам решит, куда (welcome/login/tabs).
+        // Не делаем редирект для auth-эндпоинтов (claim/login/refresh)
+        // и для /auth/guest, чтобы caller сам обработал ошибку без петли.
+        if (response.status === 401 && !isAuthEndpoint(endpoint)) {
+          await handleUnauthorized();
+        }
         if (isJson) {
           const errorData = await response.json();
           throw {
@@ -117,6 +204,13 @@ export class ApiClient {
 
       return {} as T;
     } catch (error) {
+      // AbortController — таймаут или явный abort.
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw {
+          message: `Request timed out after ${REQUEST_TIMEOUT_MS / 1000}s`,
+          statusCode: 0,
+        } as ApiError;
+      }
       // Network errors or other fetch errors
       if (error instanceof TypeError) {
         throw {
@@ -125,6 +219,8 @@ export class ApiClient {
         } as ApiError;
       }
       throw error;
+    } finally {
+      clearTimeout(timeoutId);
     }
   }
 
@@ -602,4 +698,55 @@ export const FriendsApi = {
       `/friends/leaderboard?${qs}`,
     );
   },
+};
+
+// =========================================================================
+// Onboarding v3 (Oki-style) — guest mode + state PATCH + claim.
+// Маршруты gateway:
+//   POST   /auth/guest                    — bootstrap guest user
+//   POST   /auth/claim                    — claim guest (email/password)
+//   POST   /auth/claim/oauth              — claim guest (OAuth Google/Apple)
+//   GET    /onboarding                    — read current state
+//   PATCH  /onboarding                    — partial update (после каждого шага)
+//   POST   /onboarding/complete           — финал онбординга
+// =========================================================================
+
+import type {
+  ClaimGuestOAuthRequest,
+  ClaimGuestRequest,
+  ClaimGuestResponse,
+  GuestSessionResponse,
+  OnboardingStateResponse,
+  PatchOnboardingRequest,
+} from '@/types/api';
+
+export const AuthApi = {
+  /** createGuestSession — bootstrap анонимного юзера, idempotent на device_id. */
+  createGuestSession: (deviceId: string) =>
+    ApiClient.post<GuestSessionResponse>('/auth/guest', { device_id: deviceId }),
+
+  /**
+   * claim — claim гостя через email/password. Требует guest JWT.
+   *
+   * `idempotencyKey` — UUID, передаётся в заголовок `Idempotency-Key`.
+   * Защищает от создания дубликата при retry / double-tap. Backend
+   * может пока игнорировать заголовок (forward-compatible).
+   */
+  claim: (req: ClaimGuestRequest, idempotencyKey?: string) =>
+    ApiClient.post<ClaimGuestResponse>('/auth/claim', req, {
+      headers: idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : undefined,
+    }),
+
+  /** claimOAuth — claim гостя через Google / Apple / guest_fake stub. */
+  claimOAuth: (req: ClaimGuestOAuthRequest, idempotencyKey?: string) =>
+    ApiClient.post<ClaimGuestResponse>('/auth/claim/oauth', req, {
+      headers: idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : undefined,
+    }),
+};
+
+export const OnboardingApi = {
+  getState: () => ApiClient.get<OnboardingStateResponse>('/onboarding'),
+  patchState: (patch: PatchOnboardingRequest) =>
+    ApiClient.patch<OnboardingStateResponse>('/onboarding', patch),
+  complete: () => ApiClient.post<OnboardingStateResponse>('/onboarding/complete', {}),
 };

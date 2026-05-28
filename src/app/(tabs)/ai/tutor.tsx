@@ -19,20 +19,14 @@ import Markdown from 'react-native-markdown-display';
 import Toast from 'react-native-toast-message';
 
 import { QuotaWidget, hasQuotaLeft } from '@/components/ai/quota-widget';
+import { LangPills } from '@/components/ai/lang-pills';
 import { useAIQuota, useAskTutor } from '@/hooks/use-ai';
-
-const TARGET_LANGS = [
-  { value: '', label: '—' },
-  { value: 'en', label: 'EN' },
-  { value: 'es', label: 'ES' },
-  { value: 'de', label: 'DE' },
-  { value: 'fr', label: 'FR' },
-];
-
-const NATIVE_LANGS = [
-  { value: 'ru', label: 'Русский' },
-  { value: 'en', label: 'English' },
-];
+import {
+  AI_NATIVE_LANGS,
+  AI_TARGET_LANGS,
+  DEFAULT_NATIVE_LANG,
+  DEFAULT_TARGET_LANG,
+} from '@/lib/ai-languages';
 
 /**
  * /ai/tutor — однократный Q&A. Без persistence — родственник /ai/chat,
@@ -40,8 +34,8 @@ const NATIVE_LANGS = [
  */
 export default function TutorScreen() {
   const [question, setQuestion] = useState('');
-  const [targetLang, setTargetLang] = useState('en');
-  const [nativeLang, setNativeLang] = useState('ru');
+  const [targetLang, setTargetLang] = useState(DEFAULT_TARGET_LANG);
+  const [nativeLang, setNativeLang] = useState(DEFAULT_NATIVE_LANG);
 
   const quota = useAIQuota();
   const mut = useAskTutor();
@@ -133,31 +127,22 @@ export default function TutorScreen() {
               <Text className="text-muted-foreground font-bold text-xs uppercase tracking-wider">
                 Язык изучения
               </Text>
-              <View className="flex-row flex-wrap gap-2">
-                {TARGET_LANGS.map((o) => (
-                  <Pill
-                    key={o.value || 'no-lang'}
-                    active={targetLang === o.value}
-                    label={o.label}
-                    onPress={() => setTargetLang(o.value)}
-                  />
-                ))}
-              </View>
+              <LangPills
+                options={AI_TARGET_LANGS}
+                value={targetLang}
+                onChange={setTargetLang}
+              />
             </View>
             <View className="gap-1">
               <Text className="text-muted-foreground font-bold text-xs uppercase tracking-wider">
                 Язык ответа
               </Text>
-              <View className="flex-row flex-wrap gap-2">
-                {NATIVE_LANGS.map((o) => (
-                  <Pill
-                    key={o.value}
-                    active={nativeLang === o.value}
-                    label={o.label}
-                    onPress={() => setNativeLang(o.value)}
-                  />
-                ))}
-              </View>
+              <LangPills
+                options={AI_NATIVE_LANGS}
+                value={nativeLang}
+                onChange={setNativeLang}
+                variant="full"
+              />
             </View>
 
             <View className="gap-1">
@@ -219,33 +204,6 @@ export default function TutorScreen() {
         )}
       </ScrollView>
     </View>
-  );
-}
-
-function Pill({
-  active,
-  label,
-  onPress,
-}: {
-  active: boolean;
-  label: string;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      className={`rounded-xl px-3 py-1.5 border-2 ${
-        active ? 'bg-primary border-primary' : 'bg-card border-border'
-      } active:opacity-80`}
-    >
-      <Text
-        className={`font-bold text-sm ${
-          active ? 'text-primary-foreground' : 'text-foreground'
-        }`}
-      >
-        {label}
-      </Text>
-    </Pressable>
   );
 }
 

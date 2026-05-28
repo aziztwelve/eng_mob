@@ -16,19 +16,13 @@ import {
 } from 'lucide-react-native';
 import Toast from 'react-native-toast-message';
 
+import { LangPills } from '@/components/ai/lang-pills';
 import { VoiceRecorder } from '@/components/ai/voice-recorder';
 import { QuotaWidget, hasQuotaLeft } from '@/components/ai/quota-widget';
 import { useAIQuota, useCheckPronunciation } from '@/hooks/use-ai';
 import type { AIWordScore, CheckPronunciationResponse } from '@/types/api';
 import type { PronunciationAudioInput } from '@/lib/ai-api';
-
-const LANG_OPTIONS = [
-  { value: 'en', label: 'EN' },
-  { value: 'es', label: 'ES' },
-  { value: 'de', label: 'DE' },
-  { value: 'fr', label: 'FR' },
-  { value: 'it', label: 'IT' },
-];
+import { AI_TARGET_LANGS, DEFAULT_TARGET_LANG } from '@/lib/ai-languages';
 
 /**
  * /ai/pronunciation — записываем аудио, отправляем + target_text +
@@ -36,7 +30,7 @@ const LANG_OPTIONS = [
  */
 export default function PronunciationScreen() {
   const [target, setTarget] = useState('');
-  const [language, setLanguage] = useState('en');
+  const [language, setLanguage] = useState(DEFAULT_TARGET_LANG);
   const [resetSignal, setResetSignal] = useState(0);
 
   const quota = useAIQuota();
@@ -117,29 +111,11 @@ export default function PronunciationScreen() {
             <Text className="text-muted-foreground font-bold text-xs uppercase tracking-wider">
               Язык
             </Text>
-            <View className="flex-row flex-wrap gap-2">
-              {LANG_OPTIONS.map((o) => (
-                <Pressable
-                  key={o.value}
-                  onPress={() => setLanguage(o.value)}
-                  className={`rounded-xl px-2.5 py-1.5 border-2 ${
-                    language === o.value
-                      ? 'bg-primary border-primary'
-                      : 'bg-card border-border'
-                  } active:opacity-80`}
-                >
-                  <Text
-                    className={`font-bold text-xs ${
-                      language === o.value
-                        ? 'text-primary-foreground'
-                        : 'text-foreground'
-                    }`}
-                  >
-                    {o.label}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
+            <LangPills
+              options={AI_TARGET_LANGS}
+              value={language}
+              onChange={setLanguage}
+            />
           </View>
 
           {!canVoice && (
@@ -199,7 +175,9 @@ function Result({
   data: CheckPronunciationResponse;
   onReset: () => void;
 }) {
-  const overall = Math.round(data.accuracy_score * 100);
+  const overall = Number.isFinite(data.accuracy_score)
+    ? Math.round(data.accuracy_score * 100)
+    : 0;
   const isGood = overall >= 75;
 
   return (
@@ -307,7 +285,7 @@ function Result({
 }
 
 function WordScoreBadge({ item }: { item: AIWordScore }) {
-  const pct = Math.round(item.score * 100);
+  const pct = Number.isFinite(item.score) ? Math.round(item.score * 100) : 0;
   const bg =
     pct >= 80
       ? 'bg-emerald-500/15'

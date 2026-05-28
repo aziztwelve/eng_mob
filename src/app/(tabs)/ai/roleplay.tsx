@@ -18,12 +18,12 @@ import {
   useStartConversation,
 } from '@/hooks/use-ai';
 
-const LANG_OPTIONS = [
+const LANG_OPTIONS: { value: string; label: string; disabled?: boolean }[] = [
   { value: '', label: 'Все' },
   { value: 'en', label: 'EN' },
-  { value: 'es', label: 'ES' },
-  { value: 'de', label: 'DE' },
-  { value: 'fr', label: 'FR' },
+  { value: 'es', label: 'ES', disabled: true },
+  { value: 'de', label: 'DE', disabled: true },
+  { value: 'fr', label: 'FR', disabled: true },
 ];
 
 const LEVEL_OPTIONS = [
@@ -134,6 +134,7 @@ export default function RoleplayScreen() {
                   key={o.value || 'all-lang'}
                   active={language === o.value}
                   label={o.label}
+                  disabled={o.disabled}
                   onPress={() => setLanguage(o.value)}
                 />
               ))}
@@ -190,25 +191,37 @@ function FilterPill({
   active,
   label,
   onPress,
+  disabled,
 }: {
   active: boolean;
   label: string;
   onPress: () => void;
+  disabled?: boolean;
 }) {
   return (
     <Pressable
-      onPress={onPress}
-      className={`rounded-xl px-3 py-1.5 border-2 ${
-        active ? 'bg-primary border-primary' : 'bg-card border-border'
-      } active:opacity-80`}
+      onPress={() => !disabled && onPress()}
+      disabled={disabled}
+      className={`rounded-xl px-3 py-1.5 border-2 flex-row items-center gap-1.5 ${
+        disabled
+          ? 'bg-muted border-border opacity-50'
+          : active
+            ? 'bg-primary border-primary'
+            : 'bg-card border-border'
+      } ${disabled ? '' : 'active:opacity-80'}`}
     >
       <Text
         className={`font-bold text-sm ${
-          active ? 'text-primary-foreground' : 'text-foreground'
+          active && !disabled ? 'text-primary-foreground' : 'text-foreground'
         }`}
       >
         {label}
       </Text>
+      {disabled && (
+        <Text className="text-muted-foreground font-bold text-[10px] uppercase">
+          Скоро
+        </Text>
+      )}
     </Pressable>
   );
 }

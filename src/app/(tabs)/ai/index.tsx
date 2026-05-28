@@ -1,6 +1,6 @@
 import React from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
-import { Stack, Link, router } from 'expo-router';
+import { Stack, Link, router, type Href } from 'expo-router';
 import {
   ArrowLeft,
   BookOpen,
@@ -104,7 +104,7 @@ function FeatureCard({
   title,
   description,
 }: {
-  href: string;
+  href: Href;
   icon: React.ReactNode;
   iconBg: string;
   title: string;

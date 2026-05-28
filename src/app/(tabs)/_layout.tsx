@@ -29,24 +29,24 @@ export default function TabsLayout() {
             }}
           />
           <Tabs.Screen
-            name="tracks"
-            options={{
-              title: 'Tracks',
-              tabBarIcon: () => <Text style={{ fontSize: 24 }}>🧭</Text>,
-            }}
-          />
-          <Tabs.Screen
-            name="courses"
-            options={{
-              title: 'Courses',
-              tabBarIcon: () => <Text style={{ fontSize: 24 }}>📚</Text>,
-            }}
-          />
-          <Tabs.Screen
             name="practice"
             options={{
               title: 'Practice',
               tabBarIcon: () => <Text style={{ fontSize: 24 }}>🧠</Text>,
+            }}
+          />
+          <Tabs.Screen
+            name="ai"
+            options={{
+              title: 'AI',
+              tabBarIcon: () => <Text style={{ fontSize: 24 }}>🤖</Text>,
+            }}
+          />
+          <Tabs.Screen
+            name="social"
+            options={{
+              title: 'Social',
+              tabBarIcon: () => <Text style={{ fontSize: 24 }}>🏆</Text>,
             }}
           />
           <Tabs.Screen
@@ -55,6 +55,18 @@ export default function TabsLayout() {
               title: 'Profile',
               tabBarIcon: () => <Text style={{ fontSize: 24 }}>👤</Text>,
             }}
+          />
+          {/* Hidden routes - still routable as /tracks/[id], /courses/[id]
+              from Home cards, but not shown in the bottom tab bar.
+              `href: null` иногда не работает на web → дополнительно
+              скрываем кнопку через tabBarButton: () => null. */}
+          <Tabs.Screen
+            name="tracks"
+            options={{ tabBarButton: () => null }}
+          />
+          <Tabs.Screen
+            name="courses"
+            options={{ tabBarButton: () => null }}
           />
         </Tabs>
       </View>

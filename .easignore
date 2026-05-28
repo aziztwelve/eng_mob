@@ -1,0 +1,31 @@
+# Same as .gitignore — EAS reads this when project is not a git repo
+node_modules/
+.expo/
+dist/
+web-build/
+
+# Native folders (EAS regenerates on the build server)
+/ios
+/android
+
+# Build artifacts
+*.aab
+*.apk
+
+# Local env / IDE
+.env*.local
+.idea/
+.vscode/
+*.tsbuildinfo
+.DS_Store
+
+# Secrets
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.pem
+
+# Git (just in case)
+.git/

@@ -12,15 +12,10 @@ import { ArrowLeft, PenLine, RotateCcw } from 'lucide-react-native';
 import Toast from 'react-native-toast-message';
 
 import { AssessmentResult } from '@/components/ai/assessment-result';
+import { LangPills } from '@/components/ai/lang-pills';
 import { QuotaWidget, hasQuotaLeft } from '@/components/ai/quota-widget';
 import { useAIQuota, useAssessWriting } from '@/hooks/use-ai';
-
-const LANG_OPTIONS = [
-  { value: 'en', label: 'EN' },
-  { value: 'es', label: 'ES' },
-  { value: 'de', label: 'DE' },
-  { value: 'fr', label: 'FR' },
-];
+import { AI_TARGET_LANGS, DEFAULT_TARGET_LANG } from '@/lib/ai-languages';
 
 const LEVEL_OPTIONS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
 
@@ -34,7 +29,7 @@ const MIN_WORDS = 10;
 export default function WritingScreen() {
   const [prompt, setPrompt] = useState('');
   const [text, setText] = useState('');
-  const [lang, setLang] = useState('en');
+  const [lang, setLang] = useState(DEFAULT_TARGET_LANG);
   const [level, setLevel] = useState('B1');
 
   const quota = useAIQuota();
@@ -117,29 +112,11 @@ export default function WritingScreen() {
                 <Text className="text-muted-foreground font-bold text-xs uppercase tracking-wider">
                   Язык
                 </Text>
-                <View className="flex-row flex-wrap gap-2">
-                  {LANG_OPTIONS.map((o) => (
-                    <Pressable
-                      key={o.value}
-                      onPress={() => setLang(o.value)}
-                      className={`rounded-xl px-2.5 py-1.5 border-2 ${
-                        lang === o.value
-                          ? 'bg-primary border-primary'
-                          : 'bg-card border-border'
-                      } active:opacity-80`}
-                    >
-                      <Text
-                        className={`font-bold text-xs ${
-                          lang === o.value
-                            ? 'text-primary-foreground'
-                            : 'text-foreground'
-                        }`}
-                      >
-                        {o.label}
-                      </Text>
-                    </Pressable>
-                  ))}
-                </View>
+                <LangPills
+                  options={AI_TARGET_LANGS}
+                  value={lang}
+                  onChange={setLang}
+                />
               </View>
             </View>
 

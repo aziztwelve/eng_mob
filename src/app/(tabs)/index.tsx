@@ -6,6 +6,7 @@ import { useDailyLesson } from '@/hooks/use-daily-lesson';
 import { useCourses } from '@/hooks/use-courses';
 import { TrackCard } from '@/components/tracks/track-card';
 import { DailyLessonCard } from '@/components/tracks/daily-lesson-card';
+import { MyLanguagesSection } from '@/components/home/MyLanguagesSection';
 import type { Course } from '@/types/api';
 
 /**
@@ -30,6 +31,9 @@ export default function HomeScreen() {
           Daily lessons, tracks and structured courses — all in one place.
         </Text>
       </View>
+
+      {/* === My Languages === */}
+      <MyLanguagesSection />
 
       {/* === Daily Lesson === */}
       <View className="px-4 pt-5">

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { ArrowLeft } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
+
+import { analytics } from '@/lib/analytics';
 
 /**
  * Общая обёртка для onboarding-экранов.
@@ -32,6 +35,11 @@ export interface OnboardingShellProps {
   showBack?: boolean;
   /** Дополнительный slot между body и кнопкой (например, secondary action). */
   footerExtra?: React.ReactNode;
+  /**
+   * Ключ шага для analytics. Если задан, при mount шлём
+   * `onboarding_step_viewed` с этим ключом + step/total.
+   */
+  trackKey?: string;
 }
 
 export function OnboardingShell({
@@ -41,13 +49,25 @@ export function OnboardingShell({
   subtitle,
   children,
   onContinue,
-  continueLabel = 'Дальше',
+  continueLabel,
   continueDisabled = false,
   continueLoading = false,
   showBack = true,
   footerExtra,
+  trackKey,
 }: OnboardingShellProps) {
+  const { t } = useTranslation();
+  const resolvedContinueLabel = continueLabel ?? t('onboarding.common.continue');
   const pct = Math.round((step / total) * 100);
+
+  useEffect(() => {
+    if (!trackKey) return;
+    analytics.track('onboarding_step_viewed', {
+      step_key: trackKey,
+      step,
+      total,
+    });
+  }, [trackKey, step, total]);
 
   return (
     <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1 }}>
@@ -62,19 +82,30 @@ export function OnboardingShell({
               onPress={() => router.back()}
               hitSlop={12}
               className="active:opacity-60"
+              accessibilityRole="button"
+              accessibilityLabel={t('onboarding.common.back')}
             >
               <ArrowLeft size={22} color="#9ca3af" />
             </Pressable>
           ) : (
             <View style={{ width: 22 }} />
           )}
-          <View className="flex-1 h-3 bg-muted rounded-full overflow-hidden border-2 border-border">
+          <View
+            className="flex-1 h-3 bg-muted rounded-full overflow-hidden border-2 border-border"
+            accessibilityRole="progressbar"
+            accessibilityLabel={t('onboarding.common.step_progress', { step, total })}
+            accessibilityValue={{ min: 0, max: total, now: step }}
+          >
             <View
               className="h-full bg-primary"
               style={{ width: `${pct}%` }}
             />
           </View>
-          <Text className="text-muted-foreground font-bold text-xs tabular-nums w-10 text-right">
+          <Text
+            className="text-muted-foreground font-bold text-xs tabular-nums w-10 text-right"
+            accessibilityElementsHidden
+            importantForAccessibility="no"
+          >
             {step}/{total}
           </Text>
         </View>
@@ -88,7 +119,12 @@ export function OnboardingShell({
           }}
           keyboardShouldPersistTaps="handled"
         >
-          <Text className="text-foreground font-black text-3xl">{title}</Text>
+          <Text
+            className="text-foreground font-black text-3xl"
+            accessibilityRole="header"
+          >
+            {title}
+          </Text>
           {subtitle ? (
             <Text className="text-muted-foreground font-medium text-base">
               {subtitle}
@@ -103,6 +139,12 @@ export function OnboardingShell({
           <Pressable
             onPress={() => void onContinue?.()}
             disabled={continueDisabled || continueLoading || !onContinue}
+            accessibilityRole="button"
+            accessibilityLabel={resolvedContinueLabel}
+            accessibilityState={{
+              disabled: continueDisabled || continueLoading || !onContinue,
+              busy: continueLoading,
+            }}
             className={`rounded-2xl py-4 items-center ${
               !continueDisabled && !continueLoading && onContinue
                 ? 'bg-primary active:opacity-80'
@@ -113,7 +155,7 @@ export function OnboardingShell({
               <ActivityIndicator color="#ffffff" />
             ) : (
               <Text className="text-primary-foreground font-black text-base">
-                {continueLabel}
+                {resolvedContinueLabel}
               </Text>
             )}
           </Pressable>

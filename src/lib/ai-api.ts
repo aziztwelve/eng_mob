@@ -1,4 +1,6 @@
-import { ApiClient } from './api-client';
+import { Platform } from 'react-native';
+
+import { ApiClient, handleUnauthorized } from './api-client';
 import { AuthService } from './auth-service';
 import type {
   AIQuotaStatus,
@@ -25,8 +27,16 @@ import type {
  * (multipart/form-data) — отдельный fetch с подстановкой Bearer-токена.
  */
 
-const API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8081/api/v1';
+function resolveApiBaseUrl(): string {
+  const raw = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8081/api/v1';
+  // На web / iOS подменяем Android-emulator alias 10.0.2.2 -> localhost.
+  if (Platform.OS !== 'android' && raw.includes('10.0.2.2')) {
+    return raw.replace('10.0.2.2', 'localhost');
+  }
+  return raw;
+}
+
+const API_BASE_URL = resolveApiBaseUrl();
 
 /**
  * Параметры pronunciation-аудио для RN: file uri (из expo-av Recording),
@@ -100,13 +110,23 @@ export const AIApi = {
     step_id?: string;
   }): Promise<CheckPronunciationResponse> {
     const fd = new FormData();
-    // RN-специфичный append с file-объектом — каст к unknown через
-    // any-аналог Blob, чтобы TS не ругался.
-    fd.append('audio', {
-      uri: input.audio.uri,
-      type: input.audio.type,
-      name: input.audio.name,
-    } as unknown as Blob);
+    // На native (iOS/Android) RN-FormData принимает file-объект
+    // `{ uri, type, name }`. На вебе FormData ждёт настоящий Blob —
+    // объект сериализуется в строку `[object Object]`. Поэтому web-флоу
+    // отдельно: fetch'им Blob из object-URL (MediaRecorder отдаёт его).
+    if (Platform.OS === 'web') {
+      const blobResp = await fetch(input.audio.uri);
+      const blob = await blobResp.blob();
+      // Третий аргумент `append` — имя файла; gateway читает его в
+      // multipart-header и парсит как FormFile.
+      fd.append('audio', blob, input.audio.name);
+    } else {
+      fd.append('audio', {
+        uri: input.audio.uri,
+        type: input.audio.type,
+        name: input.audio.name,
+      } as unknown as Blob);
+    }
     fd.append('target_text', input.target_text);
     if (input.language) fd.append('language', input.language);
     if (input.step_id) fd.append('step_id', input.step_id);
@@ -122,6 +142,11 @@ export const AIApi = {
     });
 
     if (!res.ok) {
+      // Direct fetch обходит ApiClient.request, поэтому 401-redirect
+      // подключаем здесь явно (см. api-client.ts:handleUnauthorized).
+      if (res.status === 401) {
+        await handleUnauthorized();
+      }
       const text = await safeText(res);
       throw {
         message: text || `HTTP ${res.status}`,

@@ -129,21 +129,6 @@ export default function ProfileScreen() {
             onPress={() => router.push('/profile/strength')}
           />
           <NavRow
-            emoji="🏆"
-            label="Лиги"
-            onPress={() => router.push('/leagues')}
-          />
-          <NavRow
-            emoji="👥"
-            label="Друзья"
-            onPress={() => router.push('/friends')}
-          />
-          <NavRow
-            emoji="🤖"
-            label="AI помощник"
-            onPress={() => router.push('/ai')}
-          />
-          <NavRow
             emoji="🔔"
             label="Уведомления"
             onPress={() => router.push('/profile/notifications')}

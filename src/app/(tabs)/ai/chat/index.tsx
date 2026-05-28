@@ -26,20 +26,15 @@ import {
 } from '@/hooks/use-ai';
 import type { AIConversation } from '@/types/api';
 
-const LANG_OPTIONS = [
-  { value: 'en', label: 'English' },
-  { value: 'es', label: 'Español' },
-  { value: 'de', label: 'Deutsch' },
-  { value: 'fr', label: 'Français' },
-  { value: 'it', label: 'Italiano' },
-];
+import { AI_TARGET_LANGS, DEFAULT_TARGET_LANG } from '@/lib/ai-languages';
+import { LangPills } from '@/components/ai/lang-pills';
 
 /**
  * /ai/chat — список конверсаций + кнопка «Новый чат» (free_chat scenario).
  * Roleplay-конкретные сценарии — на /ai/roleplay.
  */
 export default function ChatListScreen() {
-  const [targetLang, setTargetLang] = useState('en');
+  const [targetLang, setTargetLang] = useState(DEFAULT_TARGET_LANG);
 
   const list = useAIConversations({ limit: 50 });
   const quota = useAIQuota();
@@ -128,29 +123,12 @@ export default function ChatListScreen() {
             <Text className="text-muted-foreground font-bold text-xs uppercase tracking-wider">
               Язык
             </Text>
-            <View className="flex-row flex-wrap gap-2">
-              {LANG_OPTIONS.map((o) => (
-                <Pressable
-                  key={o.value}
-                  onPress={() => setTargetLang(o.value)}
-                  className={`rounded-2xl px-3 py-2 border-2 ${
-                    targetLang === o.value
-                      ? 'bg-primary border-primary'
-                      : 'bg-card border-border'
-                  } active:opacity-80`}
-                >
-                  <Text
-                    className={`font-bold text-sm ${
-                      targetLang === o.value
-                        ? 'text-primary-foreground'
-                        : 'text-foreground'
-                    }`}
-                  >
-                    {o.label}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
+            <LangPills
+              options={AI_TARGET_LANGS}
+              value={targetLang}
+              onChange={setTargetLang}
+              variant="full"
+            />
           </View>
 
           <Pressable

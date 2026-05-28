@@ -1,109 +1,65 @@
-import React, { useState } from 'react';
-import { View, Text, Pressable } from 'react-native';
-import { router } from 'expo-router';
-import { Check } from 'lucide-react-native';
+import React, { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 
+import { CollapsibleOptions } from '@/components/onboarding/CollapsibleOptions';
 import { OnboardingShell } from '@/components/onboarding/OnboardingShell';
-import {
-  useOnboardingState,
-  usePatchOnboarding,
-} from '@/hooks/use-onboarding';
-import type { ProficiencyLevel } from '@/lib/onboarding-storage';
+import { useOnboardingStep } from '@/hooks/use-onboarding-step';
+import type { ProficiencyLevelProto } from '@/types/api';
 
-const TOTAL = 5;
+const TOTAL_STEPS = 14;
 
-interface LevelOption {
-  value: ProficiencyLevel;
-  label: string;
-  description: string;
-}
+type LevelChoice = ProficiencyLevelProto | 'placement_test';
 
-const LEVELS: LevelOption[] = [
-  {
-    value: 'beginner',
-    label: 'С нуля',
-    description: 'Никогда не учил этот язык.',
-  },
-  {
-    value: 'a1',
-    label: 'A1 — Beginner',
-    description: 'Знаю базовые слова и фразы.',
-  },
-  {
-    value: 'a2',
-    label: 'A2 — Elementary',
-    description: 'Могу строить простые предложения.',
-  },
-  {
-    value: 'b1',
-    label: 'B1 — Intermediate',
-    description: 'Понимаю обыденную речь, общаюсь в большинстве ситуаций.',
-  },
-  {
-    value: 'b2',
-    label: 'B2 — Upper-Intermediate',
-    description: 'Свободно говорю и понимаю сложные тексты.',
-  },
-  {
-    value: 'just_for_fun',
-    label: 'Just for fun',
-    description: 'Просто хочу попробовать без целей.',
-  },
-];
+const LEVEL_ORDER: LevelChoice[] = ['beginner', 'a1', 'a2', 'b1', 'b2', 'just_for_fun', 'placement_test'];
+const LEVEL_EMOJI: Record<LevelChoice, string> = {
+  beginner: '🌱', a1: '🌿', a2: '🌳', b1: '🌲', b2: '🏔️', just_for_fun: '🎈', placement_test: '📝',
+};
 
 export default function LevelScreen() {
-  const state = useOnboardingState();
-  const patch = usePatchOnboarding();
-  const [selected, setSelected] = useState<ProficiencyLevel | null>(
-    state.data?.level ?? null,
-  );
+  const { t } = useTranslation();
 
-  const handleContinue = async () => {
-    if (!selected) return;
-    await patch.mutateAsync({ level: selected });
-    router.push('/onboarding/goal');
-  };
+  // `placement_test` — особый случай: patch без proficiency_level,
+  // переход на отдельный экран теста. В остальных случаях — обычный
+  // patch + переход на daily-commit.
+  const { value, setValue, submitting, canContinue, handleContinue } =
+    useOnboardingStep<LevelChoice>({
+      step: 'level',
+      next: (v) =>
+        v === 'placement_test' ? '/onboarding/placement-test' : '/onboarding/daily-commit',
+      buildPatch: (v) =>
+        v === 'placement_test' ? {} : { proficiency_level: v },
+      // placement_test — это не сохранённое значение, а маршрутный
+      // выбор; гидратируем только реальные уровни.
+      loadValue: (s) => s.level,
+    });
+
+  const options = useMemo(
+    () =>
+      LEVEL_ORDER.map((v) => ({
+        value: v,
+        emoji: LEVEL_EMOJI[v],
+        title: t(`onboarding.level.options.${v}.title` as const),
+        subtitle: t(`onboarding.level.options.${v}.subtitle` as const),
+      })),
+    [t],
+  );
 
   return (
     <OnboardingShell
-      step={3}
-      total={TOTAL}
-      title="Какой у тебя уровень?"
-      subtitle="Это поможет подобрать материал. Можно ответить честно — мы не пропустим базу, если она нужна."
+      trackKey="level"
+      step={4}
+      total={TOTAL_STEPS}
+      title={t('onboarding.level.title')}
+      subtitle={t('onboarding.level.subtitle')}
       onContinue={handleContinue}
-      continueDisabled={!selected}
-      continueLoading={patch.isPending}
+      continueDisabled={!canContinue}
+      continueLoading={submitting}
     >
-      <View className="gap-2 mt-2">
-        {LEVELS.map((lvl) => {
-          const active = selected === lvl.value;
-          return (
-            <Pressable
-              key={lvl.value}
-              onPress={() => setSelected(lvl.value)}
-              className={`bg-card rounded-2xl border-4 p-4 active:opacity-80 ${
-                active ? 'border-primary' : 'border-border'
-              }`}
-            >
-              <View className="flex-row items-start gap-3">
-                <View className="flex-1 gap-1">
-                  <Text className="text-foreground font-black text-base">
-                    {lvl.label}
-                  </Text>
-                  <Text className="text-muted-foreground font-medium text-sm">
-                    {lvl.description}
-                  </Text>
-                </View>
-                {active && (
-                  <View className="w-7 h-7 rounded-full bg-primary items-center justify-center mt-0.5">
-                    <Check size={16} color="#ffffff" strokeWidth={3} />
-                  </View>
-                )}
-              </View>
-            </Pressable>
-          );
-        })}
-      </View>
+      <CollapsibleOptions
+        options={options}
+        value={value}
+        onChange={setValue}
+      />
     </OnboardingShell>
   );
 }

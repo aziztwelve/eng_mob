@@ -12,6 +12,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { CheckCircle2, Sparkles, Target, Flame } from 'lucide-react-native';
 import Toast from 'react-native-toast-message';
+import { useTranslation } from 'react-i18next';
 
 import { OnboardingShell } from '@/components/onboarding/OnboardingShell';
 import {
@@ -31,6 +32,7 @@ const TOTAL = 5;
  *   replace, чтобы юзер не мог вернуться gesture-back'ом в /onboarding/*.
  */
 export default function OnboardingDoneScreen() {
+  const { t } = useTranslation();
   const state = useOnboardingState();
   const complete = useCompleteOnboarding();
   const celebrated = useRef(false);
@@ -67,24 +69,25 @@ export default function OnboardingDoneScreen() {
 
   const summary = useMemo(() => {
     const s = state.data;
+    const dash = t('onboarding.done.value_dash');
     return [
       {
         icon: <Sparkles size={18} color="#a855f7" />,
-        label: 'Язык',
-        value: s?.target_language?.toUpperCase() ?? '—',
+        label: t('onboarding.done.plan_lang'),
+        value: s?.target_language?.toUpperCase() ?? dash,
       },
       {
         icon: <Flame size={18} color="#f97316" />,
-        label: 'Уровень',
-        value: levelLabel(s?.level),
+        label: t('onboarding.done.plan_level'),
+        value: levelLabel(t, s?.level),
       },
       {
         icon: <Target size={18} color="#f59e0b" />,
-        label: 'Дневная цель',
-        value: s?.daily_goal_xp ? `${s.daily_goal_xp} XP` : '—',
+        label: t('onboarding.done.plan_goal_xp'),
+        value: s?.daily_goal_xp ? t('onboarding.done.xp_suffix', { xp: s.daily_goal_xp }) : dash,
       },
     ];
-  }, [state.data]);
+  }, [state.data, t]);
 
   const handleContinue = async () => {
     try {
@@ -93,7 +96,7 @@ export default function OnboardingDoneScreen() {
     } catch (err) {
       Toast.show({
         type: 'error',
-        text1: 'Не удалось завершить',
+        text1: t('onboarding.done.toast_failed'),
         text2: err instanceof Error ? err.message : '',
       });
     }
@@ -101,13 +104,14 @@ export default function OnboardingDoneScreen() {
 
   return (
     <OnboardingShell
+      trackKey="done"
       step={5}
       total={TOTAL}
       showBack={false}
-      title="Готово!"
-      subtitle="Профиль настроен. Можно начинать первый урок."
+      title={t('onboarding.done.title')}
+      subtitle={t('onboarding.done.subtitle')}
       onContinue={handleContinue}
-      continueLabel="К урокам"
+      continueLabel={t('onboarding.done.continue_label')}
       continueLoading={complete.isPending}
     >
       <View className="items-center py-6">
@@ -120,7 +124,7 @@ export default function OnboardingDoneScreen() {
 
       <View className="bg-card rounded-3xl border-4 border-border p-5 gap-3">
         <Text className="text-muted-foreground font-bold text-xs uppercase tracking-wider">
-          Твой план
+          {t('onboarding.done.plan_title')}
         </Text>
         {summary.map((row) => (
           <View
@@ -141,27 +145,30 @@ export default function OnboardingDoneScreen() {
       </View>
 
       <Text className="text-muted-foreground font-medium text-xs text-center mt-3">
-        Настройки всегда можно изменить в профиле.
+        {t('onboarding.done.footer_note')}
       </Text>
     </OnboardingShell>
   );
 }
 
-function levelLabel(level: string | null | undefined): string {
+function levelLabel(
+  t: (key: string) => string,
+  level: string | null | undefined,
+): string {
   switch (level) {
     case 'beginner':
-      return 'С нуля';
+      return t('onboarding.done.level.beginner');
     case 'a1':
-      return 'A1';
+      return t('onboarding.done.level.a1');
     case 'a2':
-      return 'A2';
+      return t('onboarding.done.level.a2');
     case 'b1':
-      return 'B1';
+      return t('onboarding.done.level.b1');
     case 'b2':
-      return 'B2';
+      return t('onboarding.done.level.b2');
     case 'just_for_fun':
-      return 'Just for fun';
+      return t('onboarding.done.level.just_for_fun');
     default:
-      return '—';
+      return t('onboarding.done.level.unknown');
   }
 }

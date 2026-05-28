@@ -46,3 +46,9 @@ app-example
 .expo
 dist/
 web-build/
+# Build artifacts
+*.apk
+*.aab
+
+# Devin internal
+.devin/
