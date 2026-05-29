@@ -12,7 +12,6 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
-    "@lottiefiles/dotlottie-react": "^0.19.4",
     "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-native-community/netinfo": "11.5.2",
     "@react-native-google-signin/google-signin": "^16.1.2",
