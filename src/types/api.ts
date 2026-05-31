@@ -1588,3 +1588,123 @@ export interface ClaimGuestOAuthRequest {
   email: string;
   display_name?: string;
 }
+
+// ============================================================================
+// Phase 7: Word Flashcards
+// ============================================================================
+
+export interface Flashcard {
+  id: string;
+  user_id: string;
+  source: 'manual' | 'lesson' | 'mistake' | 'ai_suggestion';
+  vocabulary_id?: string;
+  word: string;
+  translation: string;
+  language: string;
+  target_language: string;
+  definition?: string;
+  example_sentence?: string;
+  audio_url?: string;
+  image_url?: string;
+  created_at: string;
+  pinned_today?: boolean;
+  // SRS projection (optional)
+  strength?: number;
+  repetitions?: number;
+  next_review_at?: string;
+}
+
+export interface FlashcardStats {
+  today_due: number;
+  today_completed: number;
+  learning_count: number;
+  mastered_count: number;
+  total_count: number;
+}
+
+export interface ListFlashcardsRequest {
+  source?: string;
+  pinned_today?: boolean;
+  search?: string;
+  include_archived?: boolean;
+  include_srs?: boolean;
+  limit?: number;
+  offset?: number;
+}
+
+export interface ListFlashcardsResponse {
+  items: Flashcard[];
+  total: number;
+}
+
+export interface CreateFlashcardRequest {
+  word: string;
+  translation: string;
+  language: string;
+  target_language: string;
+  definition?: string;
+  example_sentence?: string;
+  audio_url?: string;
+  image_url?: string;
+}
+
+export interface UpdateFlashcardRequest {
+  word?: string;
+  translation?: string;
+  definition?: string;
+  example_sentence?: string;
+  audio_url?: string;
+  image_url?: string;
+}
+
+export interface BulkCreateFlashcardsRequest {
+  items: Array<{
+    word: string;
+    translation: string;
+    language: string;
+    target_language: string;
+    definition?: string;
+    example_sentence?: string;
+    source?: string;
+    vocabulary_id?: string;
+  }>;
+}
+
+export interface BulkCreateFlashcardsResponse {
+  created: number;
+  skipped: number;
+  items: Flashcard[];
+}
+
+export interface PinForTodayRequest {
+  queued_for_date?: string; // YYYY-MM-DD
+}
+
+export interface ListTodayQueueResponse {
+  items: Flashcard[];
+  queued_for_date: string;
+}
+
+export interface FlashcardSuggestion {
+  word: string;
+  translation: string;
+  definition?: string;
+  example_sentence?: string;
+  reason?: string;
+  vocabulary_id?: string;
+}
+
+export interface SuggestFlashcardsRequest {
+  level?: string;
+  goal?: string;
+  pain_point?: string;
+  target_language?: string;
+  native_language?: string;
+  count?: number;
+  exclude_words?: string[];
+}
+
+export interface SuggestFlashcardsResponse {
+  items: FlashcardSuggestion[];
+  exhausted: boolean;
+}

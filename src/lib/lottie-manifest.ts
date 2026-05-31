@@ -16,11 +16,12 @@
  *   achievement — звезда/трофей burst, 1.2-2 с, transparent canvas
  */
 
-export type LottieAnimation = 'level-up' | 'achievement';
+export type LottieAnimation = 'level-up' | 'achievement' | 'flashcard-results';
 
 export const LOTTIE_ASSETS: Record<LottieAnimation, unknown | null> = {
   'level-up': null,
   achievement: null,
+  'flashcard-results': null,
 };
 
 export function hasLottieAsset(name: LottieAnimation): boolean {

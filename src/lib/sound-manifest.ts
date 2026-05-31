@@ -21,7 +21,9 @@ export type FxSound =
   | 'xp-gain'
   | 'level-up'
   | 'achievement'
-  | 'daily-goal';
+  | 'daily-goal'
+  | 'flashcard-flip'
+  | 'practice-complete';
 
 /**
  * Возвращает Asset-source для `Audio.Sound.createAsync()` или null, если
@@ -36,6 +38,8 @@ export const SOUND_ASSETS: Record<FxSound, unknown | null> = {
   'level-up': null,
   achievement: null,
   'daily-goal': null,
+  'flashcard-flip': null,
+  'practice-complete': null,
 };
 
 export function hasSoundAsset(name: FxSound): boolean {

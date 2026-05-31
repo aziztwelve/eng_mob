@@ -1,0 +1,197 @@
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { View, Text, Pressable } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  interpolate,
+} from 'react-native-reanimated';
+import { Audio } from 'expo-av';
+import { Check, X, Undo2, SkipForward, Volume2 } from 'lucide-react-native';
+
+import { fx } from '@/lib/fx';
+import { getFxPreferences } from '@/lib/fx-prefs';
+
+export interface FlashcardViewProps {
+  word: string;
+  translation: string;
+  definition?: string;
+  example?: string;
+  audioUrl?: string;
+  ttsLanguage?: string;
+  onRemember: () => void;
+  onForgot: () => void;
+  onSkip?: () => void;
+  onUndo?: () => void;
+  canUndo?: boolean;
+}
+
+export function FlashcardView({
+  word,
+  translation,
+  definition,
+  example,
+  audioUrl,
+  ttsLanguage,
+  onRemember,
+  onForgot,
+  onSkip,
+  onUndo,
+  canUndo = false,
+}: FlashcardViewProps) {
+  const [isFlipped, setIsFlipped] = useState(false);
+  const rotation = useSharedValue(0);
+  const ttsPlayedRef = useRef(false);
+  const soundRef = useRef<Audio.Sound | null>(null);
+
+  const playTTS = useCallback(async () => {
+    if (!audioUrl) return;
+    try {
+      if (soundRef.current) {
+        await soundRef.current.unloadAsync();
+        soundRef.current = null;
+      }
+      const { sound } = await Audio.Sound.createAsync(
+        { uri: audioUrl },
+        { shouldPlay: true, volume: 0.9 },
+      );
+      soundRef.current = sound;
+    } catch {
+      /* noop */
+    }
+  }, [audioUrl]);
+
+  useEffect(() => {
+    if (isFlipped && audioUrl && !ttsPlayedRef.current && getFxPreferences().sounds) {
+      ttsPlayedRef.current = true;
+      const timer = setTimeout(playTTS, 200);
+      return () => clearTimeout(timer);
+    }
+  }, [isFlipped, audioUrl, playTTS]);
+
+  useEffect(() => {
+    return () => {
+      if (soundRef.current) {
+        void soundRef.current.unloadAsync();
+      }
+    };
+  }, []);
+
+  const handleFlip = () => {
+    const nextFlipped = !isFlipped;
+    rotation.value = withSpring(nextFlipped ? 180 : 0, { damping: 15, stiffness: 100 });
+    setIsFlipped(nextFlipped);
+    if (!nextFlipped) {
+      ttsPlayedRef.current = false;
+    }
+    fx.tap();
+  };
+
+  const frontAnimatedStyle = useAnimatedStyle(() => {
+    const rotateY = interpolate(rotation.value, [0, 180], [0, 180]);
+    const opacity = interpolate(rotation.value, [0, 90, 180], [1, 0, 0]);
+    return {
+      transform: [{ rotateY: `${rotateY}deg` }],
+      opacity,
+      backfaceVisibility: 'hidden',
+    };
+  });
+
+  const backAnimatedStyle = useAnimatedStyle(() => {
+    const rotateY = interpolate(rotation.value, [0, 180], [180, 360]);
+    const opacity = interpolate(rotation.value, [0, 90, 180], [0, 0, 1]);
+    return {
+      transform: [{ rotateY: `${rotateY}deg` }],
+      opacity,
+      backfaceVisibility: 'hidden',
+    };
+  });
+
+  return (
+    <View className="gap-6">
+      {/* Top actions */}
+      <View className="flex-row items-center justify-between px-2">
+        {canUndo && onUndo ? (
+          <Pressable onPress={onUndo} className="p-2 active:opacity-60">
+            <Undo2 size={24} color="#999" />
+          </Pressable>
+        ) : (
+          <View className="w-10" />
+        )}
+        {onSkip && (
+          <Pressable onPress={onSkip} className="p-2 active:opacity-60">
+            <SkipForward size={24} color="#999" />
+          </Pressable>
+        )}
+      </View>
+
+      {/* Card */}
+      <Pressable onPress={handleFlip} className="h-96">
+        <View className="flex-1 relative">
+          {/* Front */}
+          <Animated.View
+            style={[frontAnimatedStyle]}
+            className="absolute inset-0 bg-card border-4 border-border rounded-3xl p-8 items-center justify-center"
+          >
+            <Text className="text-foreground font-black text-4xl text-center">{word}</Text>
+            <Text className="text-muted-foreground text-sm mt-4">Нажмите для перевода</Text>
+          </Animated.View>
+
+          {/* Back */}
+          <Animated.View
+            style={[backAnimatedStyle]}
+            className="absolute inset-0 bg-primary/10 border-4 border-primary rounded-3xl p-8 justify-center"
+          >
+            <View className="flex-row items-center justify-center gap-2 mb-2">
+              <Text className="text-foreground font-black text-3xl text-center">
+                {translation}
+              </Text>
+              {audioUrl && (
+                <Pressable onPress={playTTS} className="p-1 active:opacity-60">
+                  <Volume2 size={22} color="#58cc02" />
+                </Pressable>
+              )}
+            </View>
+            {definition && (
+              <Text className="text-muted-foreground text-base text-center mb-2">
+                {definition}
+              </Text>
+            )}
+            {example && (
+              <Text className="text-muted-foreground text-sm text-center italic">
+                &ldquo;{example}&rdquo;
+              </Text>
+            )}
+          </Animated.View>
+        </View>
+      </Pressable>
+
+      {/* Buttons */}
+      {isFlipped && (
+        <View className="flex-row gap-4">
+          <Pressable
+            onPress={() => {
+              fx.onWrong();
+              onForgot();
+            }}
+            className="flex-1 bg-red-500 rounded-2xl p-4 flex-row items-center justify-center gap-2 active:opacity-80"
+          >
+            <X size={24} color="white" />
+            <Text className="text-white font-bold text-lg">Не помню</Text>
+          </Pressable>
+
+          <Pressable
+            onPress={() => {
+              fx.onCorrect();
+              onRemember();
+            }}
+            className="flex-1 bg-primary rounded-2xl p-4 flex-row items-center justify-center gap-2 active:opacity-80"
+          >
+            <Check size={24} color="white" />
+            <Text className="text-white font-bold text-lg">Помню</Text>
+          </Pressable>
+        </View>
+      )}
+    </View>
+  );
+}

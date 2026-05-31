@@ -373,8 +373,48 @@ Phase 5 mobile (2026-05-16 done) — Sprint 4: 5 AI-фич + quota.
 - `microservices-course/elearning/docs/tasks/PHASE_3_PROGRESS.md`
 - `microservices-course/elearning/docs/tasks/PHASE_4_PROGRESS.md`
 - `microservices-course/elearning/docs/tasks/PHASE_5_PROGRESS.md`
+- `microservices-course/elearning/docs/tasks/PHASE_7_PROGRESS.md`
 
 Mobile roadmap:
 - `microservices-course/elearning/docs/tasks/MOBILE_PROGRESS.md`
 
 Здесь — этот файл и READMEs внутри `assets/sounds/` и `assets/lottie/`.
+
+## Phase 7: Word Flashcards (mobile)
+
+Phase 7 mobile — done. Библиотека слов + практика flashcard-стилем + AI suggestions.
+
+**Routes:**
+- `app/(tabs)/practice/library.tsx` — библиотека flashcards:
+  Stats tiles (на сегодня / учу / выучено / всего), search, список карточек,
+  AI SuggestionsWidget, CTA «Повторить N слов», AddFlashcardSheet.
+- `app/(tabs)/practice/flashcards.tsx` — practice session:
+  today_queue → последовательность карточек, progress bar, undo-stack (5 карт),
+  skip, quality (5=помню / 2=не помню) → SRS review.
+- `app/(tabs)/practice/flashcard-results.tsx` — результаты:
+  Lottie/emoji trophy, stats (total/remembered/forgot/%), motivational message.
+
+**Components (`components/flashcards/`):**
+- `FlashcardView.tsx` — 3D flip card (Reanimated rotateY + backfaceVisibility),
+  TTS auto-play на back-side (200ms delay, respects fx-prefs), skip/undo buttons,
+  fx.onCorrect/fx.onWrong на «Помню»/«Не помню».
+- `AddFlashcardSheet.tsx` — bottom sheet (word + translation + optional
+  definition/example), useCreateFlashcard mutation.
+- `SuggestionsWidget.tsx` — горизонтальная карусель AI-предложений
+  (SuggestFlashcards), bulk-create «Добавить все».
+
+**API + types:**
+- `lib/api-client.ts`: FlashcardsApi (12 методов: list/get/create/update/archive/
+  bulkCreate/fromVocabulary/stats/listToday/pinForToday/unpinFromToday/suggestions).
+- `types/api.ts`: 13 интерфейсов (Flashcard, FlashcardStats, FlashcardSuggestion, etc).
+
+**Hooks:**
+- `hooks/use-flashcards.ts`: 11 hooks (5 query + 6 mutation) с auto-invalidation
+  FLASHCARDS_KEY / FLASHCARD_STATS_KEY / TODAY_QUEUE_KEY.
+
+**FX:**
+- `sound-manifest.ts`: `flashcard-flip` + `practice-complete` stubs.
+- `lottie-manifest.ts`: `flashcard-results` stub.
+- FlashcardView: `fx.tap()` на flip, `fx.onCorrect()` на «Помню», `fx.onWrong()` на «Не помню».
+
+**Verification:** `npx tsc --noEmit` clean, lint clean (Phase 7 files only).

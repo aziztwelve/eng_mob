@@ -750,3 +750,85 @@ export const OnboardingApi = {
     ApiClient.patch<OnboardingStateResponse>('/onboarding', patch),
   complete: () => ApiClient.post<OnboardingStateResponse>('/onboarding/complete', {}),
 };
+
+// =========================================================================
+// Phase 7: Word Flashcards API
+// =========================================================================
+
+import type {
+  Flashcard,
+  FlashcardStats,
+  ListFlashcardsRequest,
+  ListFlashcardsResponse,
+  CreateFlashcardRequest,
+  UpdateFlashcardRequest,
+  BulkCreateFlashcardsRequest,
+  BulkCreateFlashcardsResponse,
+  PinForTodayRequest,
+  ListTodayQueueResponse,
+  SuggestFlashcardsRequest,
+  SuggestFlashcardsResponse,
+} from '@/types/api';
+
+export const FlashcardsApi = {
+  list: (params?: ListFlashcardsRequest) => {
+    const qs = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([k, v]) => {
+        if (v !== undefined && v !== '') qs.set(k, String(v));
+      });
+    }
+    const q = qs.toString();
+    return ApiClient.get<ListFlashcardsResponse>(`/flashcards${q ? `?${q}` : ''}`);
+  },
+
+  get: (id: string, includeSrs = false) =>
+    ApiClient.get<Flashcard>(`/flashcards/${encodeURIComponent(id)}${includeSrs ? '?include_srs=true' : ''}`),
+
+  create: (data: CreateFlashcardRequest) =>
+    ApiClient.post<Flashcard>('/flashcards', data),
+
+  update: (id: string, data: UpdateFlashcardRequest) =>
+    ApiClient.put<Flashcard>(`/flashcards/${encodeURIComponent(id)}`, data),
+
+  archive: (id: string) =>
+    ApiClient.delete(`/flashcards/${encodeURIComponent(id)}`),
+
+  bulkCreate: (data: BulkCreateFlashcardsRequest) =>
+    ApiClient.post<BulkCreateFlashcardsResponse>('/flashcards/bulk', data),
+
+  fromVocabulary: (vocabularyId: string, source = 'lesson') =>
+    ApiClient.post<Flashcard>('/flashcards/from-vocabulary', { vocabulary_id: vocabularyId, source }),
+
+  stats: () =>
+    ApiClient.get<FlashcardStats>('/flashcards/stats'),
+
+  // Today queue
+  listToday: (queuedForDate?: string, includeSrs = false) => {
+    const qs = new URLSearchParams();
+    if (queuedForDate) qs.set('queued_for_date', queuedForDate);
+    if (includeSrs) qs.set('include_srs', 'true');
+    const q = qs.toString();
+    return ApiClient.get<ListTodayQueueResponse>(`/flashcards/today${q ? `?${q}` : ''}`);
+  },
+
+  pinForToday: (flashcardId: string, data?: PinForTodayRequest) =>
+    ApiClient.post(`/flashcards/today/${encodeURIComponent(flashcardId)}`, data),
+
+  unpinFromToday: (flashcardId: string, queuedForDate?: string) => {
+    const qs = queuedForDate ? `?queued_for_date=${encodeURIComponent(queuedForDate)}` : '';
+    return ApiClient.delete(`/flashcards/today/${encodeURIComponent(flashcardId)}${qs}`);
+  },
+
+  // AI suggestions
+  suggestions: (params?: SuggestFlashcardsRequest) => {
+    const qs = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([k, v]) => {
+        if (v !== undefined && v !== '') qs.set(k, String(v));
+      });
+    }
+    const q = qs.toString();
+    return ApiClient.get<SuggestFlashcardsResponse>(`/ai/flashcard-suggestions${q ? `?${q}` : ''}`);
+  },
+};
