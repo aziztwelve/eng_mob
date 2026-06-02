@@ -35,7 +35,7 @@ export default function AIHubScreen() {
 
         <View className="gap-2">
           <View className="flex-row items-center gap-2">
-            <Bot size={28} color="#58cc02" />
+            <Bot size={28} color="#00FFA3" />
             <Text className="text-foreground font-black text-3xl">
               AI помощник
             </Text>
@@ -51,7 +51,7 @@ export default function AIHubScreen() {
         <View className="gap-3">
           <FeatureCard
             href="/ai/chat"
-            icon={<Sparkles size={22} color="#58cc02" />}
+            icon={<Sparkles size={22} color="#00FFA3" />}
             iconBg="bg-primary/15"
             title="Свободный чат"
             description="Поговорите с AI на изучаемом языке. История диалогов сохраняется."

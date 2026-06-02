@@ -5,25 +5,30 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Migrated from web app OKLCH colors to RGB
-        background: "#1a1b26",
+        // Neon Dark theme
+        background: "#06070D",
         foreground: "#ffffff",
-        card: "#252736",
+        card: "#141A24",
         "card-foreground": "#ffffff",
-        popover: "#252736",
+        popover: "#141A24",
         "popover-foreground": "#ffffff",
-        primary: "#58cc02", // Green - main brand color
-        "primary-foreground": "#1a1a1a",
-        secondary: "#1cb0f6", // Blue
-        "secondary-foreground": "#1a1a1a",
-        muted: "#3d3f54",
-        "muted-foreground": "#b3b3b3",
-        accent: "#3d3f54",
+        primary: "#00FFA3", // Neon green - main brand color
+        "primary-foreground": "#04130C",
+        secondary: "#36E3FF", // Neon cyan
+        "secondary-foreground": "#04130C",
+        muted: "#1C2433",
+        "muted-foreground": "#9FB0C8",
+        accent: "#A855FF", // Neon purple
         "accent-foreground": "#ffffff",
-        destructive: "#ff4b4b",
-        border: "rgba(255, 255, 255, 0.1)",
-        input: "rgba(255, 255, 255, 0.15)",
-        ring: "#58cc02",
+        destructive: "#FF4B7E",
+        border: "rgba(255, 255, 255, 0.09)",
+        input: "rgba(255, 255, 255, 0.14)",
+        ring: "#00FFA3",
+        // Semantic gamification accents
+        streak: "#FF8A3D",
+        xp: "#FFC83D",
+        hearts: "#FF4B7E",
+        info: "#36E3FF",
       },
       borderRadius: {
         lg: "16px",

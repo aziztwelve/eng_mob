@@ -92,7 +92,7 @@ export default function OnboardingNotificationsScreen() {
           description={t('onboarding.notifications.channels.streak_desc')}
         />
         <Channel
-          icon={<Brain size={20} color="#58cc02" />}
+          icon={<Brain size={20} color="#00FFA3" />}
           title={t('onboarding.notifications.channels.practice_title')}
           description={t('onboarding.notifications.channels.practice_desc')}
         />
@@ -119,7 +119,7 @@ export default function OnboardingNotificationsScreen() {
       )}
       {!push.ready && (
         <View className="flex-row items-center justify-center py-2">
-          <ActivityIndicator color="#58cc02" />
+          <ActivityIndicator color="#00FFA3" />
         </View>
       )}
     </OnboardingShell>

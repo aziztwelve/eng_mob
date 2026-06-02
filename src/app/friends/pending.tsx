@@ -80,7 +80,7 @@ export default function FriendsPendingScreen() {
 
         <View className="gap-2">
           <View className="flex-row items-center gap-2">
-            <Bell size={28} color="#1cb0f6" />
+            <Bell size={28} color="#36E3FF" />
             <Text className="text-foreground font-black text-3xl">Запросы</Text>
           </View>
           <Text className="text-muted-foreground font-medium">
@@ -91,7 +91,7 @@ export default function FriendsPendingScreen() {
 
         {pending.isLoading ? (
           <View className="bg-card rounded-3xl border-4 border-border p-12 items-center">
-            <ActivityIndicator color="#58cc02" />
+            <ActivityIndicator color="#00FFA3" />
           </View>
         ) : list.length === 0 ? (
           <View className="bg-card rounded-3xl border-4 border-border p-8 items-center gap-2">

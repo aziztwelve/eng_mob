@@ -34,7 +34,7 @@ export default function LibraryScreen() {
               onPress={() => setShowAddSheet(true)}
               className="p-2"
             >
-              <Plus size={24} color="#58cc02" />
+              <Plus size={24} color="#00FFA3" />
             </Pressable>
           ),
         }}
@@ -44,7 +44,7 @@ export default function LibraryScreen() {
         {/* Header */}
         <View className="gap-2">
           <View className="flex-row items-center gap-2">
-            <BookOpen size={28} color="#58cc02" />
+            <BookOpen size={28} color="#00FFA3" />
             <Text className="text-foreground font-black text-3xl">Библиотека</Text>
           </View>
           <Text className="text-muted-foreground font-medium">
@@ -55,7 +55,7 @@ export default function LibraryScreen() {
         {/* Stats tiles */}
         {stats.isLoading ? (
           <View className="bg-card rounded-3xl border-4 border-border p-12 items-center">
-            <ActivityIndicator color="#58cc02" />
+            <ActivityIndicator color="#00FFA3" />
           </View>
         ) : total === 0 ? (
           <EmptyState onAdd={() => setShowAddSheet(true)} />
@@ -103,7 +103,7 @@ export default function LibraryScreen() {
 
             {/* Flashcards list */}
             {flashcards.isLoading ? (
-              <ActivityIndicator color="#58cc02" />
+              <ActivityIndicator color="#00FFA3" />
             ) : (
               <View className="gap-2">
                 {flashcards.data?.items.map((card) => (
@@ -134,7 +134,7 @@ function StatTile({
   value: number;
   accent?: 'primary' | 'success' | 'warning';
 }) {
-  const color = accent === 'primary' ? '#58cc02' : accent === 'success' ? '#00cd9c' : accent === 'warning' ? '#ff9600' : '#777';
+  const color = accent === 'primary' ? '#00FFA3' : accent === 'success' ? '#00cd9c' : accent === 'warning' ? '#ff9600' : '#777';
   return (
     <View className="flex-1 min-w-[45%] gap-1 p-2">
       <Text className="text-muted-foreground text-xs font-bold uppercase">{label}</Text>

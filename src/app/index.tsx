@@ -51,7 +51,7 @@ export default function IndexScreen() {
 
   return (
     <View style={styles.container}>
-      <ActivityIndicator color="#58cc02" size="large" />
+      <ActivityIndicator color="#00FFA3" size="large" />
     </View>
   );
 }
@@ -59,7 +59,7 @@ export default function IndexScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1a1b26',
+    backgroundColor: '#06070D',
     alignItems: 'center',
     justifyContent: 'center',
   },

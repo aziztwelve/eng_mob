@@ -50,7 +50,7 @@ export function SuggestionsWidget({ level, goal, targetLanguage }: SuggestionsWi
   if (suggestions.isLoading) {
     return (
       <View className="bg-card rounded-3xl border-4 border-border p-6 items-center">
-        <ActivityIndicator color="#58cc02" />
+        <ActivityIndicator color="#00FFA3" />
       </View>
     );
   }
@@ -64,7 +64,7 @@ export function SuggestionsWidget({ level, goal, targetLanguage }: SuggestionsWi
       {/* Header */}
       <View className="flex-row items-center justify-between">
         <View className="flex-row items-center gap-2">
-          <Sparkles size={20} color="#58cc02" />
+          <Sparkles size={20} color="#00FFA3" />
           <Text className="text-foreground font-bold text-lg">AI рекомендует</Text>
         </View>
         <Pressable

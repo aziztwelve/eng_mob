@@ -258,9 +258,9 @@ export function VoiceRecorder({
               className="bg-primary/15 border-4 border-primary h-16 w-16 rounded-full items-center justify-center active:opacity-80"
             >
               {playing ? (
-                <Pause size={24} color="#58cc02" fill="#58cc02" />
+                <Pause size={24} color="#00FFA3" fill="#00FFA3" />
               ) : (
-                <Play size={24} color="#58cc02" fill="#58cc02" />
+                <Play size={24} color="#00FFA3" fill="#00FFA3" />
               )}
             </Pressable>
             <Text className="text-muted-foreground font-medium text-xs">

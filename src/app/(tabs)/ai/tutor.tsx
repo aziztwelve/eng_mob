@@ -213,7 +213,7 @@ const tutorMd = StyleSheet.create({
   heading1: { color: '#fff', fontSize: 22, fontWeight: '900' as const, marginTop: 8 },
   heading2: { color: '#fff', fontSize: 19, fontWeight: '900' as const, marginTop: 8 },
   heading3: { color: '#fff', fontSize: 16, fontWeight: '900' as const, marginTop: 8 },
-  link: { color: '#58cc02', textDecorationLine: 'underline' as const },
+  link: { color: '#00FFA3', textDecorationLine: 'underline' as const },
   code_inline: {
     backgroundColor: 'rgba(255,255,255,0.1)',
     color: '#fff',

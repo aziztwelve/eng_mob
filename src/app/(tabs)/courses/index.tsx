@@ -114,7 +114,7 @@ export default function CoursesScreen() {
       {/* Course List */}
       {isLoading ? (
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#58cc02" />
+          <ActivityIndicator size="large" color="#00FFA3" />
           <Text className="text-muted-foreground mt-4">Loading courses...</Text>
         </View>
       ) : error ? (

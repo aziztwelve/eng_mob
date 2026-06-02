@@ -65,7 +65,7 @@ export default function FlashcardResultsScreen() {
             <Text className="text-foreground font-black text-lg">Успешность:</Text>
             <Text
               className="font-black text-3xl"
-              style={{ color: isGood ? '#58cc02' : '#ff9600' }}
+              style={{ color: isGood ? '#00FFA3' : '#ff9600' }}
             >
               {percentage}%
             </Text>

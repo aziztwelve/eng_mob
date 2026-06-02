@@ -58,7 +58,7 @@ export default function HomeScreen() {
 
         {tracksQuery.isLoading ? (
           <View className="bg-card rounded-3xl border-4 border-border p-6 items-center">
-            <ActivityIndicator size="small" color="#58cc02" />
+            <ActivityIndicator size="small" color="#00FFA3" />
           </View>
         ) : tracksQuery.error ? (
           <View className="bg-card rounded-3xl border-4 border-border p-6">
@@ -90,7 +90,7 @@ export default function HomeScreen() {
 
         {coursesQuery.isLoading ? (
           <View className="bg-card rounded-3xl border-4 border-border p-6 items-center">
-            <ActivityIndicator size="small" color="#58cc02" />
+            <ActivityIndicator size="small" color="#00FFA3" />
           </View>
         ) : coursesQuery.error ? (
           <View className="bg-card rounded-3xl border-4 border-border p-6">

@@ -20,7 +20,7 @@ export function DailyLessonCard({ track, lesson, isLoading }: Props) {
   if (isLoading) {
     return (
       <View className="bg-card rounded-3xl border-4 border-border p-6 items-center justify-center min-h-[140px]">
-        <ActivityIndicator size="small" color="#58cc02" />
+        <ActivityIndicator size="small" color="#00FFA3" />
       </View>
     );
   }

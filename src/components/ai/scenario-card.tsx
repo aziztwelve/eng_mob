@@ -24,7 +24,7 @@ export function ScenarioCard({
       <View className="flex-row items-start gap-2">
         <View className="flex-1 gap-1 min-w-0">
           <View className="flex-row items-center gap-1.5">
-            <Sparkles size={16} color="#58cc02" />
+            <Sparkles size={16} color="#00FFA3" />
             <Text
               className="text-foreground font-black text-base flex-shrink"
               numberOfLines={2}

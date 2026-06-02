@@ -74,7 +74,7 @@ function SettingsRow({
       <Switch
         value={value}
         onValueChange={onValueChange}
-        trackColor={{ false: '#3f3f46', true: '#58cc02' }}
+        trackColor={{ false: '#3f3f46', true: '#00FFA3' }}
         thumbColor="#ffffff"
         ios_backgroundColor="#3f3f46"
       />
