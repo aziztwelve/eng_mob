@@ -158,7 +158,7 @@ function scoreColor(v: number): string {
 function scoreBarColor(v: number): string {
   if (v >= 80) return '#10b981';
   if (v >= 60) return '#f59e0b';
-  return '#ff4b4b';
+  return '#FF4B7E';
 }
 
 function scoreBadgeBg(v: number): string {

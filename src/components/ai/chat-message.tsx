@@ -245,7 +245,7 @@ function TranslationToggle({ translation }: { translation: string }) {
 const mdBase = {
   body: { color: '#fff', fontSize: 15, fontWeight: '500' as const },
   paragraph: { marginTop: 0, marginBottom: 0 },
-  link: { color: '#58cc02', textDecorationLine: 'underline' as const },
+  link: { color: '#00FFA3', textDecorationLine: 'underline' as const },
   code_inline: {
     backgroundColor: 'rgba(255,255,255,0.1)',
     color: '#fff',

@@ -67,7 +67,7 @@ export default function FlashcardsPracticeScreen() {
   if (todayQueue.isLoading) {
     return (
       <View className="flex-1 bg-background items-center justify-center">
-        <ActivityIndicator size="large" color="#58cc02" />
+        <ActivityIndicator size="large" color="#00FFA3" />
       </View>
     );
   }

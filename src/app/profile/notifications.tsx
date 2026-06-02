@@ -147,7 +147,7 @@ export default function NotificationsSettingsScreen() {
         </Pressable>
 
         <View className="flex-row items-center gap-2">
-          <Bell size={28} color="#58cc02" />
+          <Bell size={28} color="#00FFA3" />
           <Text className="text-foreground font-black text-3xl">
             Уведомления
           </Text>
@@ -165,7 +165,7 @@ export default function NotificationsSettingsScreen() {
         {/* Channels */}
         {prefs.isLoading || !form ? (
           <View className="bg-card rounded-3xl border-4 border-border p-8 items-center">
-            <ActivityIndicator color="#58cc02" />
+            <ActivityIndicator color="#00FFA3" />
           </View>
         ) : (
           <>
@@ -260,13 +260,13 @@ export default function NotificationsSettingsScreen() {
         {/* Devices */}
         <View className="bg-card rounded-3xl border-4 border-border p-4 gap-3">
           <View className="flex-row items-center gap-2">
-            <Smartphone size={18} color="#58cc02" />
+            <Smartphone size={18} color="#00FFA3" />
             <Text className="text-foreground font-black text-lg">
               Устройства
             </Text>
           </View>
           {devices.isLoading ? (
-            <ActivityIndicator color="#58cc02" />
+            <ActivityIndicator color="#00FFA3" />
           ) : (devices.data?.devices?.length ?? 0) === 0 ? (
             <Text className="text-muted-foreground font-medium text-sm">
               Нет зарегистрированных устройств.
@@ -305,7 +305,7 @@ function PushSubCard({
   if (!ready) {
     return (
       <View className="bg-card rounded-3xl border-4 border-border p-6 items-center">
-        <ActivityIndicator color="#58cc02" />
+        <ActivityIndicator color="#00FFA3" />
       </View>
     );
   }
@@ -363,7 +363,7 @@ function PushSubCard({
   return (
     <View className="bg-primary/10 rounded-3xl border-4 border-primary p-4 gap-3">
       <View className="flex-row items-center gap-2">
-        <Bell size={20} color="#58cc02" />
+        <Bell size={20} color="#00FFA3" />
         <Text className="text-foreground font-black text-lg">
           Включить уведомления
         </Text>
@@ -414,7 +414,7 @@ function ChannelToggle({
       <Switch
         value={value}
         onValueChange={onValueChange}
-        trackColor={{ false: '#3f3f46', true: '#58cc02' }}
+        trackColor={{ false: '#3f3f46', true: '#00FFA3' }}
         thumbColor={value ? '#ffffff' : '#9ca3af'}
       />
     </View>

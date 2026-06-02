@@ -1,7 +1,7 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { DarkTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
-import { useColorScheme } from 'react-native';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { PaperProvider } from 'react-native-paper';
@@ -16,13 +16,27 @@ import { drainOnboardingQueue } from '@/hooks/use-onboarding';
 
 import '../global.css';
 
+// Neon Dark — force a consistent dark navigation theme regardless of the
+// device color scheme so chrome (stack/tab backgrounds) matches the app.
+const NeonDarkTheme = {
+  ...DarkTheme,
+  colors: {
+    ...DarkTheme.colors,
+    background: '#06070D',
+    card: '#141A24',
+    primary: '#00FFA3',
+    text: '#ffffff',
+    border: 'rgba(255, 255, 255, 0.09)',
+    notification: '#FF4B7E',
+  },
+};
+
 // Onboarding v3: guest-сессия теперь создаётся лениво при первом
 // тапе «Начать учиться» (см. `ensureGuestSession` в `lib/auth-service.ts`).
 // Это избавляет БД от orphan-аккаунтов юзеров, открывших app и сразу
 // закрывших.
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
   const [i18nReady, setI18nReady] = useState(false);
 
   // i18n init (load persisted UI lang from AsyncStorage).
@@ -64,9 +78,10 @@ export default function TabLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <QueryClientProvider client={queryClient}>
         <PaperProvider>
-          <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+          <ThemeProvider value={NeonDarkTheme}>
+            <StatusBar style="light" />
             <AnimatedSplashOverlay />
-            <Stack screenOptions={{ headerShown: false }} />
+            <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#06070D' } }} />
             <Toast />
           </ThemeProvider>
         </PaperProvider>

@@ -5,7 +5,7 @@ export default function CoursesStack() {
   return (
     <Stack
       screenOptions={{
-        headerStyle: { backgroundColor: '#252736' },
+        headerStyle: { backgroundColor: '#141A24' },
         headerTintColor: '#fff',
         headerTitleStyle: { fontWeight: '900' },
       }}

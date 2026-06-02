@@ -104,7 +104,7 @@ function LeaguesView() {
   if (myLeague.isLoading || board.isLoading) {
     return (
       <View className="flex-1 items-center justify-center">
-        <ActivityIndicator size="large" color="#58cc02" />
+        <ActivityIndicator size="large" color="#00FFA3" />
       </View>
     );
   }
@@ -200,14 +200,14 @@ function FriendsView() {
         <ActionCard
           emoji="🔍"
           label="Найти"
-          icon={<Search size={20} color="#58cc02" />}
+          icon={<Search size={20} color="#00FFA3" />}
           onPress={() => router.push('/friends/search')}
         />
         <ActionCard
           emoji="📥"
           label="Заявки"
           badge={incomingCount}
-          icon={<Inbox size={20} color="#58cc02" />}
+          icon={<Inbox size={20} color="#00FFA3" />}
           onPress={() => router.push('/friends/pending')}
         />
       </View>
@@ -223,7 +223,7 @@ function FriendsView() {
         </View>
 
         {friends.isLoading ? (
-          <ActivityIndicator color="#58cc02" />
+          <ActivityIndicator color="#00FFA3" />
         ) : (friends.data?.friends?.length ?? 0) === 0 ? (
           <View className="items-center py-8">
             <Users size={48} color="#666" />
@@ -313,7 +313,7 @@ function LeaderboardView() {
   if (board.isLoading) {
     return (
       <View className="flex-1 items-center justify-center">
-        <ActivityIndicator size="large" color="#58cc02" />
+        <ActivityIndicator size="large" color="#00FFA3" />
       </View>
     );
   }

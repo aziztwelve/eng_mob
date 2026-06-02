@@ -65,7 +65,7 @@ export default function StrengthScreen() {
 
         <View className="gap-2">
           <View className="flex-row items-center gap-2">
-            <Layers size={28} color="#58cc02" />
+            <Layers size={28} color="#00FFA3" />
             <Text className="text-foreground font-black text-3xl">
               Сила навыков
             </Text>
@@ -120,7 +120,7 @@ export default function StrengthScreen() {
           </View>
           {weak.isLoading ? (
             <View className="items-center py-4">
-              <ActivityIndicator color="#58cc02" />
+              <ActivityIndicator color="#00FFA3" />
             </View>
           ) : (weak.data?.skills?.length ?? 0) === 0 ? (
             <Text className="text-muted-foreground font-medium text-sm">
@@ -151,7 +151,7 @@ export default function StrengthScreen() {
 
           {all.isLoading ? (
             <View className="items-center py-4">
-              <ActivityIndicator color="#58cc02" />
+              <ActivityIndicator color="#00FFA3" />
             </View>
           ) : sorted.length === 0 ? (
             <Text className="text-muted-foreground font-medium text-sm">

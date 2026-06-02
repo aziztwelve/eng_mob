@@ -88,7 +88,7 @@ export default function LeaguesScreen() {
 
         {isLoading ? (
           <View className="bg-card rounded-3xl border-4 border-border p-12 items-center justify-center">
-            <ActivityIndicator color="#58cc02" />
+            <ActivityIndicator color="#00FFA3" />
           </View>
         ) : isError ? (
           <ErrorState />

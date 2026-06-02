@@ -42,7 +42,7 @@ export function QuotaWidget({ compact = false }: { compact?: boolean }) {
           {isPremium ? (
             <Crown size={12} color="#f59e0b" />
           ) : (
-            <Sparkles size={12} color="#58cc02" />
+            <Sparkles size={12} color="#00FFA3" />
           )}
           <Text
             className={`font-bold text-xs ${
@@ -76,7 +76,7 @@ export function QuotaWidget({ compact = false }: { compact?: boolean }) {
     <View className="bg-card rounded-3xl border-4 border-border p-5 gap-3">
       <View className="flex-row items-center justify-between">
         <View className="flex-row items-center gap-2">
-          <Sparkles size={18} color="#58cc02" />
+          <Sparkles size={18} color="#00FFA3" />
           <Text className="text-foreground font-black text-lg">
             AI-лимиты сегодня
           </Text>

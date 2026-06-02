@@ -147,7 +147,7 @@ export default function AddLanguageScreen() {
         {stage === 'language' ? (
           <>
             <View className="flex-row items-center gap-2 mb-3">
-              <Globe size={18} color="#58cc02" />
+              <Globe size={18} color="#00FFA3" />
               <Text className="text-foreground font-black text-lg">
                 {t('add_language.pick_language_title')}
               </Text>

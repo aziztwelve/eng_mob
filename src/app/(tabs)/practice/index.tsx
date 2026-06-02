@@ -36,7 +36,7 @@ export default function PracticeLandingScreen() {
       <ScrollView contentContainerStyle={{ padding: 16, gap: 16 }}>
         <View className="gap-2">
           <View className="flex-row items-center gap-2">
-            <Sparkles size={28} color="#58cc02" />
+            <Sparkles size={28} color="#00FFA3" />
             <Text className="text-foreground font-black text-3xl">
               Практика
             </Text>
@@ -49,7 +49,7 @@ export default function PracticeLandingScreen() {
 
         {stats.isLoading ? (
           <View className="bg-card rounded-3xl border-4 border-border p-12 items-center justify-center">
-            <ActivityIndicator color="#58cc02" />
+            <ActivityIndicator color="#00FFA3" />
           </View>
         ) : total === 0 ? (
           <EmptyState />
@@ -81,7 +81,7 @@ export default function PracticeLandingScreen() {
             <Link href="/practice/session" asChild>
               <Pressable className="bg-primary/10 rounded-3xl border-4 border-primary p-5 gap-3 active:opacity-80">
                 <View className="flex-row items-center gap-2">
-                  <Play size={22} color="#58cc02" fill="#58cc02" />
+                  <Play size={22} color="#00FFA3" fill="#00FFA3" />
                   <Text className="text-foreground font-black text-2xl">
                     Начать практику
                   </Text>

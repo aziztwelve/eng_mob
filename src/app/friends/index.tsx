@@ -84,7 +84,7 @@ export default function FriendsScreen() {
 
         <View className="gap-2">
           <View className="flex-row items-center gap-2">
-            <Users size={28} color="#58cc02" />
+            <Users size={28} color="#00FFA3" />
             <Text className="text-foreground font-black text-3xl">Друзья</Text>
           </View>
           <Text className="text-muted-foreground font-medium">
@@ -97,7 +97,7 @@ export default function FriendsScreen() {
           <Link href="/friends/search" asChild>
             <Pressable className="bg-card rounded-2xl border-4 border-border p-4 flex-row items-center gap-3 active:opacity-80">
               <View className="bg-primary/15 rounded-2xl p-2">
-                <Search size={22} color="#58cc02" />
+                <Search size={22} color="#00FFA3" />
               </View>
               <View className="flex-1">
                 <Text className="text-foreground font-black text-base">
@@ -114,7 +114,7 @@ export default function FriendsScreen() {
           <Link href="/friends/pending" asChild>
             <Pressable className="bg-card rounded-2xl border-4 border-border p-4 flex-row items-center gap-3 active:opacity-80">
               <View className="bg-secondary/15 rounded-2xl p-2">
-                <Bell size={22} color="#1cb0f6" />
+                <Bell size={22} color="#36E3FF" />
               </View>
               <View className="flex-1">
                 <Text className="text-foreground font-black text-base">
@@ -161,7 +161,7 @@ export default function FriendsScreen() {
 
           {friends.isLoading ? (
             <View className="bg-card rounded-3xl border-4 border-border p-12 items-center">
-              <ActivityIndicator color="#58cc02" />
+              <ActivityIndicator color="#00FFA3" />
             </View>
           ) : list.length === 0 ? (
             <View className="bg-card rounded-3xl border-4 border-border p-8 items-center gap-2">

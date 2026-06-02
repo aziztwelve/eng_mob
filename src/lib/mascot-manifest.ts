@@ -48,7 +48,7 @@ export function hasMascotPng(pose: MascotPose): boolean {
 // ---------------------------------------------------------------------------
 
 const SVG_IDLE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
-  <ellipse cx="100" cy="155" rx="55" ry="32" fill="#58cc02"/>
+  <ellipse cx="100" cy="155" rx="55" ry="32" fill="#00FFA3"/>
   <circle cx="100" cy="95" r="55" fill="#7ed321"/>
   <polygon points="55,55 65,30 80,55" fill="#7ed321"/>
   <polygon points="145,55 135,30 120,55" fill="#7ed321"/>
@@ -74,9 +74,9 @@ const SVG_CHEERING = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 2
   </g>
   <ellipse cx="55" cy="105" rx="12" ry="18" fill="#7ed321" transform="rotate(-30 55 105)"/>
   <ellipse cx="145" cy="105" rx="12" ry="18" fill="#7ed321" transform="rotate(30 145 105)"/>
-  <circle cx="42" cy="80" r="9" fill="#58cc02"/>
-  <circle cx="158" cy="80" r="9" fill="#58cc02"/>
-  <ellipse cx="100" cy="155" rx="55" ry="32" fill="#58cc02"/>
+  <circle cx="42" cy="80" r="9" fill="#00FFA3"/>
+  <circle cx="158" cy="80" r="9" fill="#00FFA3"/>
+  <ellipse cx="100" cy="155" rx="55" ry="32" fill="#00FFA3"/>
   <circle cx="100" cy="95" r="55" fill="#7ed321"/>
   <polygon points="55,55 65,30 80,55" fill="#7ed321"/>
   <polygon points="145,55 135,30 120,55" fill="#7ed321"/>
@@ -90,11 +90,11 @@ const SVG_CHEERING = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 2
 </svg>`;
 
 const SVG_THUMBS_UP = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
-  <ellipse cx="100" cy="155" rx="55" ry="32" fill="#58cc02"/>
+  <ellipse cx="100" cy="155" rx="55" ry="32" fill="#00FFA3"/>
   <ellipse cx="148" cy="120" rx="11" ry="20" fill="#7ed321" transform="rotate(20 148 120)"/>
   <circle cx="162" cy="100" r="14" fill="#7ed321"/>
   <rect x="158" y="78" width="8" height="18" rx="4" fill="#7ed321"/>
-  <ellipse cx="55" cy="140" rx="10" ry="16" fill="#58cc02"/>
+  <ellipse cx="55" cy="140" rx="10" ry="16" fill="#00FFA3"/>
   <circle cx="100" cy="95" r="55" fill="#7ed321"/>
   <polygon points="55,55 65,30 80,55" fill="#7ed321"/>
   <polygon points="145,55 135,30 120,55" fill="#7ed321"/>
@@ -114,7 +114,7 @@ const SVG_WINK = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" 
   <g fill="#ff4d8d" transform="translate(155 50)">
     <path d="M 0 5 C 0 -2 -8 -2 -8 5 C -8 11 0 17 0 17 C 0 17 8 11 8 5 C 8 -2 0 -2 0 5 Z"/>
   </g>
-  <ellipse cx="100" cy="155" rx="55" ry="32" fill="#58cc02"/>
+  <ellipse cx="100" cy="155" rx="55" ry="32" fill="#00FFA3"/>
   <circle cx="100" cy="95" r="55" fill="#7ed321"/>
   <polygon points="55,55 65,30 80,55" fill="#7ed321"/>
   <polygon points="145,55 135,30 120,55" fill="#7ed321"/>

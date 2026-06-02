@@ -6,19 +6,19 @@ import { GamificationTopbar } from '@/components/gamification';
 
 export default function TabsLayout() {
   return (
-    <SafeAreaView edges={['top']} style={{ flex: 1 }}>
+    <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: '#06070D' }}>
       <GamificationTopbar />
       <View style={{ flex: 1 }}>
         <Tabs
           screenOptions={{
             headerShown: false,
             tabBarStyle: {
-              backgroundColor: '#252736',
+              backgroundColor: '#141A24',
               borderTopColor: 'rgba(255, 255, 255, 0.1)',
               borderTopWidth: 2,
             },
-            tabBarActiveTintColor: '#58cc02',
-            tabBarInactiveTintColor: '#666',
+            tabBarActiveTintColor: '#00FFA3',
+            tabBarInactiveTintColor: '#6B7B93',
           }}
         >
           <Tabs.Screen

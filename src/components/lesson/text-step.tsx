@@ -38,13 +38,13 @@ export function TextStep({ content, onComplete }: TextStepProps) {
           h1: { 
             fontSize: 28, 
             fontWeight: 'bold',
-            color: '#58cc02',
+            color: '#00FFA3',
             marginBottom: 16,
           },
           h2: { 
             fontSize: 24, 
             fontWeight: 'bold',
-            color: '#58cc02',
+            color: '#00FFA3',
             marginBottom: 12,
           },
           h3: { 
@@ -55,11 +55,11 @@ export function TextStep({ content, onComplete }: TextStepProps) {
           },
           strong: {
             fontWeight: 'bold',
-            color: '#58cc02',
+            color: '#00FFA3',
           },
           em: {
             fontStyle: 'italic',
-            color: '#b3b3b3',
+            color: '#9FB0C8',
           },
           ul: {
             marginBottom: 12,

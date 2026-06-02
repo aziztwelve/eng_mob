@@ -117,7 +117,7 @@ export default function OnboardingDoneScreen() {
       <View className="items-center py-6">
         <Animated.View style={animatedIcon}>
           <View className="w-28 h-28 rounded-full bg-primary/20 items-center justify-center">
-            <CheckCircle2 size={84} color="#58cc02" strokeWidth={2.5} />
+            <CheckCircle2 size={84} color="#00FFA3" strokeWidth={2.5} />
           </View>
         </Animated.View>
       </View>

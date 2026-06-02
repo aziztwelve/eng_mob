@@ -85,7 +85,7 @@ export default function PracticeSessionScreen() {
     return (
       <Container>
         <View className="bg-card rounded-3xl border-4 border-border p-12 items-center justify-center">
-          <ActivityIndicator color="#58cc02" />
+          <ActivityIndicator color="#00FFA3" />
         </View>
       </Container>
     );
@@ -138,7 +138,7 @@ export default function PracticeSessionScreen() {
     return (
       <Container>
         <View className="bg-card rounded-3xl border-4 border-border p-8 items-center gap-3">
-          <Sparkles size={48} color="#58cc02" />
+          <Sparkles size={48} color="#00FFA3" />
           <Text className="text-foreground font-black text-3xl text-center">
             Сессия завершена!
           </Text>
@@ -336,7 +336,7 @@ function CurrentStepCard({
   if (step.isLoading) {
     return (
       <View className="bg-card rounded-3xl border-4 border-border p-12 items-center justify-center">
-        <ActivityIndicator color="#58cc02" />
+        <ActivityIndicator color="#00FFA3" />
       </View>
     );
   }

@@ -148,7 +148,7 @@ export function FlashcardView({
               </Text>
               {audioUrl && (
                 <Pressable onPress={playTTS} className="p-1 active:opacity-60">
-                  <Volume2 size={22} color="#58cc02" />
+                  <Volume2 size={22} color="#00FFA3" />
                 </Pressable>
               )}
             </View>

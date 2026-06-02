@@ -158,7 +158,7 @@ export default function RoleplayScreen() {
         {/* Scenarios */}
         {list.isLoading ? (
           <View className="bg-card rounded-3xl border-4 border-border p-12 items-center">
-            <ActivityIndicator color="#58cc02" />
+            <ActivityIndicator color="#00FFA3" />
           </View>
         ) : scenarios.length === 0 ? (
           <View className="bg-card rounded-3xl border-4 border-border p-8 items-center gap-2">
