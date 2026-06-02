@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, ScrollView, Pressable, ActivityIndicator } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, Link } from 'expo-router';
 import {
   AlertTriangle,
@@ -12,6 +13,7 @@ import {
 } from 'lucide-react-native';
 
 import { useSrsStats, useMistakes, useWeakSkills } from '@/hooks/use-srs';
+import { NEON_GLOW, NEON_GLOW_STRONG, NEON_TEXT, CTA_GRADIENT } from '@/constants/neon';
 
 /**
  * /practice — лендинг для практики (mirror /practice в web).
@@ -37,7 +39,7 @@ export default function PracticeLandingScreen() {
         <View className="gap-2">
           <View className="flex-row items-center gap-2">
             <Sparkles size={28} color="#00FFA3" />
-            <Text className="text-foreground font-black text-3xl">
+            <Text className="text-primary font-black text-3xl" style={NEON_TEXT}>
               Практика
             </Text>
           </View>
@@ -48,7 +50,7 @@ export default function PracticeLandingScreen() {
         </View>
 
         {stats.isLoading ? (
-          <View className="bg-card rounded-3xl border-4 border-border p-12 items-center justify-center">
+          <View className="bg-card/70 rounded-3xl border border-border p-12 items-center justify-center" style={NEON_GLOW}>
             <ActivityIndicator color="#00FFA3" />
           </View>
         ) : total === 0 ? (
@@ -56,7 +58,7 @@ export default function PracticeLandingScreen() {
         ) : (
           <>
             {/* Stats card */}
-            <View className="bg-card rounded-3xl border-4 border-border p-4 gap-4">
+            <View className="bg-card/70 rounded-3xl border border-border p-4 gap-4" style={NEON_GLOW}>
               <View className="flex-row flex-wrap">
                 <Stat label="К повторению" value={dueNow} accent="primary" />
                 <Stat
@@ -79,7 +81,10 @@ export default function PracticeLandingScreen() {
 
             {/* Big CTA */}
             <Link href="/practice/session" asChild>
-              <Pressable className="bg-primary/10 rounded-3xl border-4 border-primary p-5 gap-3 active:opacity-80">
+              <Pressable
+                className="rounded-3xl border border-primary/60 p-5 gap-3 active:opacity-90"
+                style={[{ backgroundColor: 'rgba(0,255,163,0.06)' }, NEON_GLOW]}
+              >
                 <View className="flex-row items-center gap-2">
                   <Play size={22} color="#00FFA3" fill="#00FFA3" />
                   <Text className="text-foreground font-black text-2xl">
@@ -91,11 +96,16 @@ export default function PracticeLandingScreen() {
                     ? `${dueNow} карточек ждут повторения. Микс «просроченные / ошибки / слабые» (50 / 30 / 20).`
                     : 'Просроченных нет — пробежимся по слабым местам и ошибкам.'}
                 </Text>
-                <View className="bg-primary self-start rounded-2xl px-5 py-3 mt-1">
-                  <Text className="text-primary-foreground font-black text-base">
+                <LinearGradient
+                  colors={CTA_GRADIENT}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={[{ alignSelf: 'flex-start', borderRadius: 16, marginTop: 4 }, NEON_GLOW_STRONG]}
+                >
+                  <Text className="text-primary-foreground font-black text-base px-5 py-3">
                     Поехали →
                   </Text>
-                </View>
+                </LinearGradient>
               </Pressable>
             </Link>
           </>
@@ -104,7 +114,7 @@ export default function PracticeLandingScreen() {
         {/* Quick links */}
         <View className="gap-3">
           <Link href="/practice/mistakes" asChild>
-            <Pressable className="bg-card rounded-3xl border-4 border-border p-4 active:opacity-80">
+            <Pressable className="bg-card/70 rounded-3xl border border-border p-4 active:opacity-80" style={NEON_GLOW}>
               <View className="flex-row items-center justify-between gap-3">
                 <View className="flex-1 gap-1">
                   <View className="flex-row items-center gap-2">
@@ -132,7 +142,7 @@ export default function PracticeLandingScreen() {
           </Link>
 
           <Link href="/profile/strength" asChild>
-            <Pressable className="bg-card rounded-3xl border-4 border-border p-4 active:opacity-80">
+            <Pressable className="bg-card/70 rounded-3xl border border-border p-4 active:opacity-80" style={NEON_GLOW}>
               <View className="flex-row items-center justify-between gap-3">
                 <View className="flex-1 gap-1">
                   <View className="flex-row items-center gap-2">
@@ -193,7 +203,7 @@ function Stat({
 
 function EmptyState() {
   return (
-    <View className="bg-card rounded-3xl border-4 border-border p-8 items-center gap-3">
+    <View className="bg-card/70 rounded-3xl border border-border p-8 items-center gap-3" style={NEON_GLOW}>
       <Clock size={48} color="#9ca3af" />
       <Text className="text-foreground font-black text-2xl text-center">
         Карточек пока нет

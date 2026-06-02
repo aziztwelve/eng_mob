@@ -7,9 +7,11 @@ import {
   View,
 } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Crown, Medal, Users, UserPlus, Inbox, Search } from 'lucide-react-native';
 
 import { Avatar } from '@/components/ui/avatar';
+import { NEON_GLOW, NEON_TEXT, HERO_GRADIENT } from '@/constants/neon';
 import { useMyLeaderboard, useMyLeague } from '@/hooks/use-leagues';
 import { useFriends, usePendingFriends, useFriendsLeaderboard } from '@/hooks/use-friends';
 import { tsToDate } from '@/lib/api-client';
@@ -69,6 +71,7 @@ function SocialTopTabs({
             className={`flex-1 py-2 rounded-2xl items-center ${
               isActive ? 'bg-primary' : 'bg-muted'
             }`}
+            style={isActive ? NEON_GLOW : undefined}
           >
             <Text
               className={`font-black text-xs ${
@@ -112,9 +115,14 @@ function LeaguesView() {
   return (
     <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
       {/* Hero */}
-      <View className="bg-card rounded-3xl p-5 border-4 border-border items-center mb-4">
-        <Crown size={48} color="#fbbf24" />
-        <Text className="text-foreground font-black text-2xl mt-2">
+      <LinearGradient
+        colors={HERO_GRADIENT}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={[{ borderRadius: 24, padding: 20, alignItems: 'center', marginBottom: 16, borderWidth: 1, borderColor: 'rgba(255,200,61,0.3)' }, NEON_GLOW]}
+      >
+        <Crown size={48} color="#FFC83D" />
+        <Text className="text-foreground font-black text-2xl mt-2" style={NEON_TEXT}>
           {league?.name ?? 'Лига'}
         </Text>
         {cycleEnd && (
@@ -128,14 +136,14 @@ function LeaguesView() {
             <Text className="text-muted-foreground text-xs uppercase">Ранк</Text>
           </View>
           <View className="items-center">
-            <Text className="text-amber-500 font-black text-2xl">{myXp}</Text>
+            <Text className="text-xp font-black text-2xl">{myXp}</Text>
             <Text className="text-muted-foreground text-xs uppercase">XP</Text>
           </View>
         </View>
-      </View>
+      </LinearGradient>
 
       {/* Top 5 of cohort */}
-      <View className="bg-card rounded-3xl p-4 border-4 border-border mb-4">
+      <View className="bg-card/70 rounded-3xl p-4 border border-border mb-4" style={NEON_GLOW}>
         <Text className="text-foreground font-black text-base mb-3">
           Топ когорты
         </Text>
@@ -212,7 +220,7 @@ function FriendsView() {
         />
       </View>
 
-      <View className="bg-card rounded-3xl p-4 border-4 border-border">
+      <View className="bg-card/70 rounded-3xl p-4 border border-border" style={NEON_GLOW}>
         <View className="flex-row items-center justify-between mb-3">
           <Text className="text-foreground font-black text-base">
             Мои друзья
@@ -287,7 +295,8 @@ function ActionCard({
   return (
     <Pressable
       onPress={onPress}
-      className="flex-1 bg-card rounded-2xl p-4 border-2 border-border items-center active:scale-95"
+      className="flex-1 bg-card/70 rounded-2xl p-4 border border-border items-center active:scale-95"
+      style={NEON_GLOW}
     >
       <View className="relative">
         {icon ?? <Text className="text-3xl">{emoji}</Text>}
@@ -322,15 +331,20 @@ function LeaderboardView() {
 
   return (
     <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
-      <View className="bg-card rounded-3xl p-5 border-4 border-border items-center mb-4">
-        <Medal size={40} color="#fbbf24" />
-        <Text className="text-foreground font-black text-xl mt-2">
+      <LinearGradient
+        colors={HERO_GRADIENT}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={[{ borderRadius: 24, padding: 20, alignItems: 'center', marginBottom: 16, borderWidth: 1, borderColor: 'rgba(255,200,61,0.3)' }, NEON_GLOW]}
+      >
+        <Medal size={40} color="#FFC83D" />
+        <Text className="text-foreground font-black text-xl mt-2" style={NEON_TEXT}>
           Лидерборд друзей
         </Text>
         <Text className="text-muted-foreground text-xs">По общему XP</Text>
-      </View>
+      </LinearGradient>
 
-      <View className="bg-card rounded-3xl p-4 border-4 border-border mb-4">
+      <View className="bg-card/70 rounded-3xl p-4 border border-border mb-4" style={NEON_GLOW}>
         {entries.length === 0 ? (
           <View className="items-center py-6">
             <Text className="text-muted-foreground">Добавь друзей, чтобы соревноваться.</Text>
