@@ -6,18 +6,18 @@ import { Home } from 'lucide-react-native';
 import { hasLottieAsset } from '@/lib/lottie-manifest';
 
 function ResultsAnimation() {
-  if (hasLottieAsset('flashcard-results')) {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const Lottie = require('lottie-react-native');
-    return (
-      <Lottie
-        source={require('@/../assets/lottie/flashcard-results.json') as never}
-        autoPlay
-        loop={false}
-        style={{ width: 160, height: 160 }}
-      />
-    );
-  }
+  // TODO: Add flashcard-results.json to assets/lottie/
+  // if (hasLottieAsset('flashcard-results')) {
+  //   const Lottie = require('lottie-react-native');
+  //   return (
+  //     <Lottie
+  //       source={require('@/../assets/lottie/flashcard-results.json') as never}
+  //       autoPlay
+  //       loop={false}
+  //       style={{ width: 160, height: 160 }}
+  //     />
+  //   );
+  // }
   return (
     <Text className="text-7xl" style={{ textAlign: 'center' }}>
       🏆
