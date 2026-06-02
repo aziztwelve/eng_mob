@@ -13,6 +13,7 @@ import {
 } from 'lucide-react-native';
 
 import { QuotaWidget } from '@/components/ai/quota-widget';
+import { NEON_GLOW, NEON_TEXT } from '@/constants/neon';
 
 /**
  * /ai — hub-страница AI-фич. 5 карточек + quota widget сверху.
@@ -36,7 +37,7 @@ export default function AIHubScreen() {
         <View className="gap-2">
           <View className="flex-row items-center gap-2">
             <Bot size={28} color="#00FFA3" />
-            <Text className="text-foreground font-black text-3xl">
+            <Text className="text-primary font-black text-3xl" style={NEON_TEXT}>
               AI помощник
             </Text>
           </View>
@@ -112,7 +113,7 @@ function FeatureCard({
 }) {
   return (
     <Link href={href} asChild>
-      <Pressable className="bg-card rounded-3xl border-4 border-border p-4 flex-row items-center gap-3 active:opacity-80">
+      <Pressable className="bg-card/70 rounded-3xl border border-border p-4 flex-row items-center gap-3 active:opacity-80" style={NEON_GLOW}>
         <View className={`${iconBg} rounded-2xl p-2`}>{icon}</View>
         <View className="flex-1">
           <Text className="text-foreground font-black text-base">{title}</Text>

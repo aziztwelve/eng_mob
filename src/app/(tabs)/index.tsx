@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, ScrollView, Pressable, ActivityIndicator } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useTracks } from '@/hooks/use-tracks';
 import { useDailyLesson } from '@/hooks/use-daily-lesson';
@@ -7,7 +8,31 @@ import { useCourses } from '@/hooks/use-courses';
 import { TrackCard } from '@/components/tracks/track-card';
 import { DailyLessonCard } from '@/components/tracks/daily-lesson-card';
 import { MyLanguagesSection } from '@/components/home/MyLanguagesSection';
+import { Mascot } from '@/components/onboarding/Mascot';
+import { NEON_GLOW, NEON_TEXT, HERO_GRADIENT } from '@/constants/neon';
 import type { Course } from '@/types/api';
+
+function SectionTitle({
+  label,
+  onSeeAll,
+}: {
+  label: string;
+  onSeeAll?: () => void;
+}) {
+  return (
+    <View className="flex-row items-center justify-between mb-3">
+      <View className="flex-row items-center">
+        <View className="w-1.5 h-6 rounded-full bg-primary mr-2.5" style={NEON_GLOW} />
+        <Text className="text-foreground font-black text-xl">{label}</Text>
+      </View>
+      {onSeeAll && (
+        <Pressable onPress={onSeeAll} className="active:opacity-70">
+          <Text className="text-primary font-bold">See all →</Text>
+        </Pressable>
+      )}
+    </View>
+  );
+}
 
 /**
  * Главный экран после логина.
@@ -24,22 +49,38 @@ export default function HomeScreen() {
 
   return (
     <ScrollView className="flex-1 bg-background" contentContainerStyle={{ paddingBottom: 32 }}>
-      {/* Header */}
-      <View className="bg-card border-b-2 border-border px-4 pt-12 pb-5">
-        <Text className="text-3xl font-black text-primary">LingoLearn</Text>
-        <Text className="text-muted-foreground text-sm mt-1">
-          Daily lessons, tracks and structured courses — all in one place.
-        </Text>
-      </View>
+      {/* Neon hero header */}
+      <LinearGradient
+        colors={HERO_GRADIENT}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={{
+          borderBottomLeftRadius: 32,
+          borderBottomRightRadius: 32,
+          borderBottomWidth: 2,
+          borderColor: 'rgba(0, 255, 163, 0.25)',
+          ...NEON_GLOW,
+        }}
+      >
+        <View className="flex-row items-center justify-between px-5 pt-12 pb-6">
+          <View className="flex-1 pr-3">
+            <Text className="text-3xl font-black text-primary" style={NEON_TEXT}>
+              LingoLearn
+            </Text>
+            <Text className="text-muted-foreground text-sm mt-1">
+              Daily lessons, tracks and structured courses — all in one place.
+            </Text>
+          </View>
+          <Mascot pose="cheering" size={84} />
+        </View>
+      </LinearGradient>
 
       {/* === My Languages === */}
       <MyLanguagesSection />
 
       {/* === Daily Lesson === */}
       <View className="px-4 pt-5">
-        <View className="flex-row items-center justify-between mb-3">
-          <Text className="text-foreground font-black text-xl">🗓️ Daily Lesson</Text>
-        </View>
+        <SectionTitle label="🗓️ Daily Lesson" />
         <DailyLessonCard
           track={daily.track ?? undefined}
           lesson={daily.lesson ?? undefined}
@@ -49,25 +90,20 @@ export default function HomeScreen() {
 
       {/* === Tracks === */}
       <View className="px-4 pt-6">
-        <View className="flex-row items-center justify-between mb-3">
-          <Text className="text-foreground font-black text-xl">🧭 Tracks</Text>
-          <Pressable onPress={() => router.push('/(tabs)/tracks')}>
-            <Text className="text-primary font-bold">See all →</Text>
-          </Pressable>
-        </View>
+        <SectionTitle label="🧭 Tracks" onSeeAll={() => router.push('/(tabs)/tracks')} />
 
         {tracksQuery.isLoading ? (
-          <View className="bg-card rounded-3xl border-4 border-border p-6 items-center">
+          <View className="bg-card/70 rounded-3xl border border-border p-6 items-center" style={NEON_GLOW}>
             <ActivityIndicator size="small" color="#00FFA3" />
           </View>
         ) : tracksQuery.error ? (
-          <View className="bg-card rounded-3xl border-4 border-border p-6">
+          <View className="bg-card/70 rounded-3xl border border-border p-6" style={NEON_GLOW}>
             <Text className="text-muted-foreground text-center">
               Не удалось загрузить треки.
             </Text>
           </View>
         ) : (tracksQuery.data?.tracks?.length ?? 0) === 0 ? (
-          <View className="bg-card rounded-3xl border-4 border-border p-6">
+          <View className="bg-card/70 rounded-3xl border border-border p-6" style={NEON_GLOW}>
             <Text className="text-muted-foreground text-center">
               Треки ещё не настроены — добавь публикованные треки.
             </Text>
@@ -81,25 +117,20 @@ export default function HomeScreen() {
 
       {/* === Courses === */}
       <View className="px-4 pt-6">
-        <View className="flex-row items-center justify-between mb-3">
-          <Text className="text-foreground font-black text-xl">📚 Courses</Text>
-          <Pressable onPress={() => router.push('/(tabs)/courses')}>
-            <Text className="text-primary font-bold">See all →</Text>
-          </Pressable>
-        </View>
+        <SectionTitle label="📚 Courses" onSeeAll={() => router.push('/(tabs)/courses')} />
 
         {coursesQuery.isLoading ? (
-          <View className="bg-card rounded-3xl border-4 border-border p-6 items-center">
+          <View className="bg-card/70 rounded-3xl border border-border p-6 items-center" style={NEON_GLOW}>
             <ActivityIndicator size="small" color="#00FFA3" />
           </View>
         ) : coursesQuery.error ? (
-          <View className="bg-card rounded-3xl border-4 border-border p-6">
+          <View className="bg-card/70 rounded-3xl border border-border p-6" style={NEON_GLOW}>
             <Text className="text-muted-foreground text-center">
               Не удалось загрузить курсы.
             </Text>
           </View>
         ) : !coursesQuery.data || coursesQuery.data.length === 0 ? (
-          <View className="bg-card rounded-3xl border-4 border-border p-6">
+          <View className="bg-card/70 rounded-3xl border border-border p-6" style={NEON_GLOW}>
             <Text className="text-muted-foreground text-center">
               Опубликованных курсов пока нет.
             </Text>
@@ -109,7 +140,8 @@ export default function HomeScreen() {
             <Pressable
               key={c.id}
               onPress={() => router.push(`/(tabs)/courses/${c.id}`)}
-              className="bg-card rounded-3xl border-4 border-border p-4 mb-4 active:scale-95"
+              className="bg-card/70 rounded-3xl border border-border p-4 mb-4 active:scale-95"
+              style={NEON_GLOW}
             >
               <View className="flex-row items-start">
                 <View className="bg-muted rounded-2xl w-16 h-16 items-center justify-center mr-3">
