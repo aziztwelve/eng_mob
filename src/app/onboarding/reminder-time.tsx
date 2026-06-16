@@ -6,7 +6,7 @@ import { OnboardingShell } from '@/components/onboarding/OnboardingShell';
 import { useOnboardingStep } from '@/hooks/use-onboarding-step';
 import type { ReminderSlot } from '@/types/api';
 
-const TOTAL = 14;
+const TOTAL = 12;
 
 const ORDER: ReminderSlot[] = ['morning', 'day', 'evening', 'flex'];
 const EMOJI: Record<ReminderSlot, string> = {
@@ -18,14 +18,7 @@ export default function ReminderTimeScreen() {
   const { value, setValue, submitting, canContinue, handleContinue } =
     useOnboardingStep<ReminderSlot>({
       step: 'reminder_slot',
-      next: (v) => ({
-        pathname: '/onboarding/reaction',
-        params: {
-          step: 'reminder_slot',
-          value: v,
-          next: '/onboarding/notifications',
-        },
-      }),
+      next: '/onboarding/notifications',
       buildPatch: (v) => ({ reminder_slot: v }),
       loadValue: (s) => s.reminder_slot,
     });
@@ -44,7 +37,7 @@ export default function ReminderTimeScreen() {
   return (
     <OnboardingShell
       trackKey="reminder-time"
-      step={11}
+      step={6}
       total={TOTAL}
       title={t('onboarding.reminder_time.title')}
       subtitle={t('onboarding.reminder_time.subtitle')}

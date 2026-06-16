@@ -45,7 +45,7 @@ export function CollapsibleOptions<V extends string | number>({
   options,
   value,
   onChange,
-  showAllWhenSelected = false,
+  showAllWhenSelected = true,
 }: CollapsibleOptionsProps<V>) {
   return (
     <View style={{ gap: 12 }} accessibilityRole="radiogroup">

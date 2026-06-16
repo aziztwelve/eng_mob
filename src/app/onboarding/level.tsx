@@ -6,7 +6,7 @@ import { OnboardingShell } from '@/components/onboarding/OnboardingShell';
 import { useOnboardingStep } from '@/hooks/use-onboarding-step';
 import type { ProficiencyLevelProto } from '@/types/api';
 
-const TOTAL_STEPS = 14;
+const TOTAL_STEPS = 12;
 
 type LevelChoice = ProficiencyLevelProto | 'placement_test';
 
@@ -47,7 +47,7 @@ export default function LevelScreen() {
   return (
     <OnboardingShell
       trackKey="level"
-      step={4}
+      step={3}
       total={TOTAL_STEPS}
       title={t('onboarding.level.title')}
       subtitle={t('onboarding.level.subtitle')}

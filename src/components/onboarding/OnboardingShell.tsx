@@ -14,6 +14,7 @@ import { ArrowLeft } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 
 import { analytics } from '@/lib/analytics';
+import { NeonScreen, neon, neonStyles } from '@/components/neon-screen';
 
 /**
  * Общая обёртка для onboarding-экранов.
@@ -70,13 +71,14 @@ export function OnboardingShell({
   }, [trackKey, step, total]);
 
   return (
-    <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1 }}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={{ flex: 1 }}
-      >
-        {/* Header: back + progress */}
-        <View className="flex-row items-center gap-3 px-4 pt-2 pb-3">
+    <NeonScreen>
+      <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1, backgroundColor: 'transparent' }}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={{ flex: 1 }}
+        >
+          {/* Header: back + progress */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingTop: 8, paddingBottom: 12 }}>
           {showBack ? (
             <Pressable
               onPress={() => router.back()}
@@ -91,18 +93,17 @@ export function OnboardingShell({
             <View style={{ width: 22 }} />
           )}
           <View
-            className="flex-1 h-3 bg-muted rounded-full overflow-hidden border-2 border-border"
+            style={{ flex: 1, height: 12, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 999, overflow: 'hidden', borderWidth: 1, borderColor: neon.border }}
             accessibilityRole="progressbar"
             accessibilityLabel={t('onboarding.common.step_progress', { step, total })}
             accessibilityValue={{ min: 0, max: total, now: step }}
           >
             <View
-              className="h-full bg-primary"
-              style={{ width: `${pct}%` }}
+              style={{ height: '100%', width: `${pct}%`, backgroundColor: neon.primary, shadowColor: neon.primary, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.6, shadowRadius: 12 }}
             />
           </View>
           <Text
-            className="text-muted-foreground font-bold text-xs tabular-nums w-10 text-right"
+            style={{ color: neon.muted, fontWeight: '800', fontSize: 12, width: 40, textAlign: 'right' }}
             accessibilityElementsHidden
             importantForAccessibility="no"
           >
@@ -119,14 +120,11 @@ export function OnboardingShell({
           }}
           keyboardShouldPersistTaps="handled"
         >
-          <Text
-            className="text-foreground font-black text-3xl"
-            accessibilityRole="header"
-          >
+          <Text style={neonStyles.title} accessibilityRole="header">
             {title}
           </Text>
           {subtitle ? (
-            <Text className="text-muted-foreground font-medium text-base">
+            <Text style={{ color: neon.muted, fontWeight: '600', fontSize: 16, lineHeight: 22 }}>
               {subtitle}
             </Text>
           ) : null}
@@ -134,7 +132,7 @@ export function OnboardingShell({
         </ScrollView>
 
         {/* Footer */}
-        <View className="px-4 pb-3 pt-2 gap-2 bg-background border-t border-border/40">
+        <View style={{ paddingHorizontal: 16, paddingBottom: 12, paddingTop: 8, gap: 8, backgroundColor: 'rgba(6,7,13,0.82)', borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)' }}>
           {footerExtra}
           <Pressable
             onPress={() => void onContinue?.()}
@@ -145,22 +143,13 @@ export function OnboardingShell({
               disabled: continueDisabled || continueLoading || !onContinue,
               busy: continueLoading,
             }}
-            className={`rounded-2xl py-4 items-center ${
-              !continueDisabled && !continueLoading && onContinue
-                ? 'bg-primary active:opacity-80'
-                : 'bg-muted opacity-60'
-            }`}
+            style={[neonStyles.cta, { backgroundColor: neon.ctaBg }, (continueDisabled || continueLoading || !onContinue) && { opacity: 0.6, shadowOpacity: 0, backgroundColor: 'rgba(255,255,255,0.08)' }]}
           >
-            {continueLoading ? (
-              <ActivityIndicator color="#ffffff" />
-            ) : (
-              <Text className="text-primary-foreground font-black text-base">
-                {resolvedContinueLabel}
-              </Text>
-            )}
+            {continueLoading ? <ActivityIndicator color={neon.text} /> : <Text style={{ color: neon.text, fontWeight: '900', fontSize: 16, letterSpacing: 0.5 }}>{resolvedContinueLabel}</Text>}
           </Pressable>
         </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </NeonScreen>
   );
 }

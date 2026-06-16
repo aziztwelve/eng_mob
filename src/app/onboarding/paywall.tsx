@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { Mascot } from '@/components/onboarding/Mascot';
 import { PaywallCard } from '@/components/onboarding/PaywallCard';
 import { ExitIntentSheet } from '@/components/onboarding/ExitIntentSheet';
+import { NeonScreen, neon, neonStyles } from '@/components/neon-screen';
 import { usePatchOnboardingV3 } from '@/hooks/use-onboarding';
 import { analytics } from '@/lib/analytics';
 import type { PaywallChoice } from '@/types/api';
@@ -83,7 +84,8 @@ export default function PaywallScreen() {
   };
 
   return (
-    <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1 }} className="bg-background">
+    <NeonScreen>
+    <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1, backgroundColor: 'transparent' }}>
       {/* Top bar with X */}
       <View className="flex-row items-center px-4 pt-2 pb-2">
         <Pressable
@@ -109,10 +111,10 @@ export default function PaywallScreen() {
           </Animated.View>
         </View>
 
-        <Text className="text-foreground font-black text-3xl text-center">
+        <Text style={[neonStyles.title, { textAlign: 'center' }]}>
           {t('onboarding.paywall.title')}
         </Text>
-        <Text className="text-muted-foreground font-medium text-base text-center">
+        <Text style={{ color: neon.muted, fontWeight: '600', fontSize: 16, textAlign: 'center', lineHeight: 22 }}>
           {t('onboarding.paywall.subtitle')}
         </Text>
 
@@ -124,10 +126,10 @@ export default function PaywallScreen() {
               entering={FadeInUp.duration(220).delay(120 + i * 70)}
               className="flex-row items-center gap-3"
             >
-              <View className="w-6 h-6 rounded-full bg-primary/15 items-center justify-center">
-                <Check size={14} color="#22c55e" strokeWidth={3} />
+              <View style={{ width: 24, height: 24, borderRadius: 999, backgroundColor: 'rgba(0,255,163,0.15)', alignItems: 'center', justifyContent: 'center' }}>
+                <Check size={14} color={neon.primary} strokeWidth={3} />
               </View>
-              <Text className="flex-1 text-foreground font-bold text-sm">
+              <Text style={{ flex: 1, color: neon.text, fontWeight: '800', fontSize: 14 }}>
                 {f}
               </Text>
             </Animated.View>
@@ -156,19 +158,17 @@ export default function PaywallScreen() {
       </Animated.ScrollView>
 
       {/* Sticky CTA */}
-      <View className="px-4 pb-3 pt-2 gap-1 bg-background border-t border-border/40">
+      <View style={{ paddingHorizontal: 16, paddingBottom: 12, paddingTop: 8, gap: 4, backgroundColor: 'rgba(6,7,13,0.82)', borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)' }}>
         <Pressable
           onPress={onPurchase}
           disabled={submitting}
-          className={`rounded-2xl py-4 items-center ${
-            submitting ? 'bg-muted opacity-60' : 'bg-primary active:opacity-80'
-          }`}
+          style={[neonStyles.cta, { backgroundColor: neon.primary }, submitting && { opacity: 0.6, shadowOpacity: 0, backgroundColor: 'rgba(255,255,255,0.08)' }]}
         >
-          <Text className="text-primary-foreground font-black text-base">
+          <Text style={{ color: submitting ? neon.text : neon.ink, fontWeight: '900', fontSize: 16 }}>
             {t('onboarding.paywall.cta')}
           </Text>
         </Pressable>
-        <Text className="text-muted-foreground font-medium text-xs text-center">
+        <Text style={{ color: neon.muted, fontWeight: '600', fontSize: 12, textAlign: 'center' }}>
           {t('onboarding.paywall.cta_note')}
         </Text>
       </View>
@@ -179,5 +179,6 @@ export default function PaywallScreen() {
         onDismiss={onExitDismiss}
       />
     </SafeAreaView>
+    </NeonScreen>
   );
 }

@@ -4,18 +4,15 @@ import {
   Alert,
   Pressable,
   ScrollView,
+  StatusBar,
+  StyleSheet,
   Text,
   View,
 } from 'react-native';
 import { Stack, router } from 'expo-router';
-import {
-  ArrowLeft,
-  Bot,
-  MessageSquarePlus,
-  Sparkles,
-  Trash2,
-} from 'lucide-react-native';
+import { MessageSquarePlus, Trash2 } from 'lucide-react-native';
 import Toast from 'react-native-toast-message';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { QuotaWidget, hasQuotaLeft } from '@/components/ai/quota-widget';
 import {
@@ -25,16 +22,20 @@ import {
   useStartConversation,
 } from '@/hooks/use-ai';
 import type { AIConversation } from '@/types/api';
-
 import { AI_TARGET_LANGS, DEFAULT_TARGET_LANG } from '@/lib/ai-languages';
 import { LangPills } from '@/components/ai/lang-pills';
+import {
+  glass,
+  SunsetHeader,
+  SunsetSubhead,
+  CtaButton,
+  CTA,
+} from '@/components/sunset';
+import { LinearGradient } from 'expo-linear-gradient';
 
-/**
- * /ai/chat — список конверсаций + кнопка «Новый чат» (free_chat scenario).
- * Roleplay-конкретные сценарии — на /ai/roleplay.
- */
 export default function ChatListScreen() {
   const [targetLang, setTargetLang] = useState(DEFAULT_TARGET_LANG);
+  const insets = useSafeAreaInsets();
 
   const list = useAIConversations({ limit: 50 });
   const quota = useAIQuota();
@@ -84,111 +85,70 @@ export default function ChatListScreen() {
   };
 
   return (
-    <View className="flex-1 bg-background">
-      <Stack.Screen options={{ title: 'Свободный чат' }} />
-      <ScrollView contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 80 }}>
-        <Pressable
-          onPress={() => router.back()}
-          className="flex-row items-center gap-1 self-start active:opacity-60"
-        >
-          <ArrowLeft size={16} color="#9ca3af" />
-          <Text className="text-muted-foreground font-bold">К AI hub</Text>
-        </Pressable>
-
-        <View className="gap-2">
-          <View className="flex-row items-center gap-2">
-            <Sparkles size={28} color="#00FFA3" />
-            <Text className="text-foreground font-black text-3xl">
-              Свободный чат
-            </Text>
-          </View>
-          <Text className="text-muted-foreground font-medium">
-            Поговорите с AI на изучаемом языке. Каждое сообщение оценивается
-            на грамматические ошибки.
-          </Text>
-        </View>
+    <View style={{ flex: 1 }}>
+      <Stack.Screen options={{ headerShown: false }} />
+      <StatusBar barStyle="light-content" />
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 100 + insets.bottom }}
+      >
+        <SunsetHeader title="Свободный чат" />
 
         <QuotaWidget compact />
 
         {/* Новый чат */}
-        <View className="bg-primary/5 rounded-3xl border-4 border-primary/30 p-4 gap-3">
-          <View className="flex-row items-center gap-2">
-            <MessageSquarePlus size={20} color="#00FFA3" />
-            <Text className="text-foreground font-black text-lg">
-              Новый чат
-            </Text>
+        <View style={[s.card, glass, { marginTop: 18 }]}>
+          <View style={s.cardHeader}>
+            <MessageSquarePlus size={18} color="#FFD84A" />
+            <Text style={s.cardTitle}>Новый чат</Text>
           </View>
-
-          <View className="gap-2">
-            <Text className="text-muted-foreground font-bold text-xs uppercase tracking-wider">
-              Язык
-            </Text>
-            <LangPills
-              options={AI_TARGET_LANGS}
-              value={targetLang}
-              onChange={setTargetLang}
-              variant="full"
+          <Text style={s.label}>Язык</Text>
+          <LangPills
+            options={AI_TARGET_LANGS}
+            value={targetLang}
+            onChange={setTargetLang}
+            variant="full"
+          />
+          <View style={{ marginTop: 14 }}>
+            <CtaButton
+              label={startMut.isPending ? 'Создаём…' : 'Начать'}
+              onPress={handleNew}
+              block
             />
           </View>
-
-          <Pressable
-            onPress={handleNew}
-            disabled={!canChat || startMut.isPending}
-            className={`rounded-2xl px-4 py-3 flex-row items-center justify-center gap-2 ${
-              canChat && !startMut.isPending
-                ? 'bg-primary active:opacity-80'
-                : 'bg-muted opacity-60'
-            }`}
-          >
-            {startMut.isPending ? (
-              <ActivityIndicator size="small" color="#1a1a1a" />
-            ) : (
-              <MessageSquarePlus size={18} color="#1a1a1a" />
-            )}
-            <Text className="text-primary-foreground font-black">
-              Начать
-            </Text>
-          </Pressable>
-
           {!canChat && (
-            <Text className="text-destructive font-medium text-sm">
+            <Text style={s.limitText}>
               Лимит чатов на сегодня исчерпан. Сбрасывается завтра.
             </Text>
           )}
         </View>
 
         {/* История */}
-        <View className="gap-2">
-          <Text className="text-foreground font-black text-lg">История</Text>
+        <SunsetSubhead title="История" />
 
-          {list.isLoading ? (
-            <View className="bg-card rounded-3xl border-4 border-border p-12 items-center">
-              <ActivityIndicator color="#00FFA3" />
-            </View>
-          ) : conversations.length === 0 ? (
-            <View className="bg-card rounded-3xl border-4 border-border p-8 items-center gap-2">
-              <Bot size={42} color="#9ca3af" />
-              <Text className="text-foreground font-black text-xl">
-                Пока пусто
-              </Text>
-              <Text className="text-muted-foreground font-medium text-center">
-                Начните первый диалог кнопкой выше.
-              </Text>
-            </View>
-          ) : (
-            <View className="gap-2">
-              {conversations.map((c) => (
-                <ConversationRow
-                  key={c.id}
-                  conv={c}
-                  onPress={() => router.push(`/ai/chat/${c.id}`)}
-                  onDelete={() => handleDelete(c.id)}
-                  deleting={deleteMut.isPending}
-                />
-              ))}
-            </View>
-          )}
-        </View>
+        {list.isLoading ? (
+          <View style={[s.emptyCard, glass]}>
+            <ActivityIndicator color="#FFD84A" />
+          </View>
+        ) : conversations.length === 0 ? (
+          <View style={[s.emptyCard, glass]}>
+            <Text style={{ fontSize: 36, marginBottom: 8 }}>💬</Text>
+            <Text style={s.emptyTitle}>Пока пусто</Text>
+            <Text style={s.emptyText}>Начните первый диалог кнопкой выше.</Text>
+          </View>
+        ) : (
+          <View style={{ gap: 10 }}>
+            {conversations.map((c) => (
+              <ConversationRow
+                key={c.id}
+                conv={c}
+                onPress={() => router.push(`/ai/chat/${c.id}`)}
+                onDelete={() => handleDelete(c.id)}
+                deleting={deleteMut.isPending}
+              />
+            ))}
+          </View>
+        )}
       </ScrollView>
     </View>
   );
@@ -208,59 +168,36 @@ function ConversationRow({
   const isRoleplay = conv.scenario.startsWith('roleplay_');
   const isTutor = conv.scenario === 'tutor_qa';
   const tag = isTutor ? 'Tutor' : isRoleplay ? 'Roleplay' : 'Free chat';
-  const tagBg = isTutor
-    ? 'bg-amber-500/15'
-    : isRoleplay
-      ? 'bg-rose-500/15'
-      : 'bg-primary/15';
-  const tagColor = isTutor
-    ? 'text-amber-500'
-    : isRoleplay
-      ? 'text-rose-500'
-      : 'text-primary';
+  const tagColor = isTutor ? '#f59e0b' : isRoleplay ? '#f43f5e' : '#FFD84A';
 
   return (
-    <View className="bg-card border-2 border-border rounded-2xl p-3 flex-row items-center gap-2">
-      <Pressable
-        onPress={onPress}
-        className="flex-1 min-w-0 active:opacity-70"
-      >
-        <View className="flex-row items-center gap-2 flex-wrap">
-          <Text
-            className="text-foreground font-black text-base flex-shrink"
-            numberOfLines={1}
-          >
+    <View style={[s.row, glass]}>
+      <Pressable onPress={onPress} style={{ flex: 1 }}>
+        <View style={s.rowTop}>
+          <Text style={s.rowTitle} numberOfLines={1}>
             {conv.title || `Чат от ${formatDate(conv.started_at)}`}
           </Text>
-          <View className={`rounded-lg px-2 py-0.5 ${tagBg}`}>
-            <Text
-              className={`font-bold text-[10px] uppercase tracking-wider ${tagColor}`}
-            >
-              {tag}
-            </Text>
+          <View style={[s.tag, { backgroundColor: 'rgba(255,255,255,0.1)' }]}>
+            <Text style={[s.tagText, { color: tagColor }]}>{tag}</Text>
           </View>
-          {conv.target_language && (
-            <View className="bg-muted rounded-lg px-2 py-0.5">
-              <Text className="text-foreground font-bold text-[10px] uppercase tracking-wider">
-                {conv.target_language}
-              </Text>
+          {conv.target_language ? (
+            <View style={[s.tag, { backgroundColor: 'rgba(255,255,255,0.1)' }]}>
+              <Text style={s.tagText}>{conv.target_language.toUpperCase()}</Text>
             </View>
-          )}
+          ) : null}
         </View>
-        <Text className="text-muted-foreground font-medium text-xs mt-1">
+        <Text style={s.rowMeta}>
           {conv.message_count} сообщений
-          {conv.last_message_at
-            ? ` · ${formatDate(conv.last_message_at)}`
-            : ''}
+          {conv.last_message_at ? ` · ${formatDate(conv.last_message_at)}` : ''}
         </Text>
       </Pressable>
       <Pressable
         onPress={onDelete}
         disabled={deleting}
-        className="rounded-xl p-2 active:bg-destructive/10"
+        style={s.deleteBtn}
         accessibilityLabel="Удалить"
       >
-        <Trash2 size={16} color="#FF4B7E" />
+        <Trash2 size={15} color="rgba(255,255,255,0.5)" />
       </Pressable>
     </View>
   );
@@ -279,3 +216,23 @@ function formatDate(s?: string): string {
     return s;
   }
 }
+
+const s = StyleSheet.create({
+  card: { borderRadius: 22, padding: 16, gap: 10 },
+  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 2 },
+  cardTitle: { color: '#fff', fontSize: 16, fontWeight: '800' },
+  label: { color: 'rgba(255,255,255,0.6)', fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.8 },
+  limitText: { color: '#f87171', fontSize: 13, fontWeight: '600', marginTop: 4 },
+
+  emptyCard: { borderRadius: 22, padding: 40, alignItems: 'center', marginTop: 4 },
+  emptyTitle: { color: '#fff', fontSize: 18, fontWeight: '800', marginBottom: 4 },
+  emptyText: { color: 'rgba(255,255,255,0.6)', fontSize: 14, fontWeight: '500', textAlign: 'center' },
+
+  row: { flexDirection: 'row', alignItems: 'center', borderRadius: 18, padding: 14, gap: 10 },
+  rowTop: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap', flex: 1 },
+  rowTitle: { color: '#fff', fontSize: 14, fontWeight: '700', flexShrink: 1 },
+  rowMeta: { color: 'rgba(255,255,255,0.55)', fontSize: 12, fontWeight: '500', marginTop: 4 },
+  tag: { borderRadius: 8, paddingHorizontal: 7, paddingVertical: 2 },
+  tagText: { color: 'rgba(255,255,255,0.8)', fontSize: 10, fontWeight: '800', textTransform: 'uppercase' },
+  deleteBtn: { padding: 8, borderRadius: 12 },
+});

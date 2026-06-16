@@ -1,95 +1,65 @@
 import React, { useState } from 'react';
-import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  Text,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Text, View, StatusBar } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Crown, Medal, Users, UserPlus, Inbox, Search } from 'lucide-react-native';
-
+import Svg, { Line } from 'react-native-svg';
 import { Avatar } from '@/components/ui/avatar';
-import { NEON_GLOW, NEON_TEXT, HERO_GRADIENT } from '@/constants/neon';
 import { useMyLeaderboard, useMyLeague } from '@/hooks/use-leagues';
-import { useFriends, usePendingFriends, useFriendsLeaderboard } from '@/hooks/use-friends';
+import { useFriends, useFriendsLeaderboard } from '@/hooks/use-friends';
 import { tsToDate } from '@/lib/api-client';
+import { neon, neonStyles } from '@/components/neon-screen';
+import { glass, SunsetHeader, SunsetTabs, CTA } from '@/components/sunset';
 
-type SocialTab = 'leagues' | 'friends' | 'leaderboard';
-
-/**
- * /social - Социальный хаб (Phase 4 mobile redesign).
- *
- * Top-tabs:
- *   1. Лиги         - сводка моей лиги + топ-5 когорты + Full link
- *   2. Друзья       - список друзей + pending count + Search/Pending/Full
- *   3. Лидерборд    - друзья по XP (top 10) + Full link
- *
- * Все detailed-flows остаются в /leagues/* и /friends/*.
- */
-export default function SocialScreen() {
-  const [tab, setTab] = useState<SocialTab>('leagues');
-
+function PromoLine() {
   return (
-    <>
-      <Stack.Screen options={{ title: 'Social' }} />
-      <View className="flex-1 bg-background">
-        <SocialTopTabs active={tab} onChange={setTab} />
-        {tab === 'leagues' && <LeaguesView />}
-        {tab === 'friends' && <FriendsView />}
-        {tab === 'leaderboard' && <LeaderboardView />}
+    <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 4, paddingHorizontal: 8, position: 'relative', height: 20 }}>
+      <Svg height="2" style={{ flex: 1 }}>
+        <Line x1="0" y1="1" x2="100%" y2="1" stroke={neon.primary} strokeWidth="2" strokeDasharray="10,8" />
+      </Svg>
+      <View style={{
+        backgroundColor: neon.primary, borderRadius: 6,
+        paddingHorizontal: 7, paddingVertical: 2, marginLeft: 6,
+        shadowColor: neon.primary, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.6, shadowRadius: 12,
+      }}>
+        <Text style={{ color: neon.ink, fontSize: 10, fontWeight: '900' }}>ЗОНА ПОВЫШЕНИЯ</Text>
       </View>
-    </>
-  );
-}
-
-// ============================================================
-// Top-tabs
-// ============================================================
-
-function SocialTopTabs({
-  active,
-  onChange,
-}: {
-  active: SocialTab;
-  onChange: (t: SocialTab) => void;
-}) {
-  const items: { key: SocialTab; label: string; emoji: string }[] = [
-    { key: 'leagues', label: 'Лиги', emoji: '👑' },
-    { key: 'friends', label: 'Друзья', emoji: '👥' },
-    { key: 'leaderboard', label: 'Лидерборд', emoji: '📊' },
-  ];
-  return (
-    <View className="flex-row bg-card border-b-2 border-border px-2 pt-2 pb-2 gap-2">
-      {items.map((it) => {
-        const isActive = active === it.key;
-        return (
-          <Pressable
-            key={it.key}
-            onPress={() => onChange(it.key)}
-            className={`flex-1 py-2 rounded-2xl items-center ${
-              isActive ? 'bg-primary' : 'bg-muted'
-            }`}
-            style={isActive ? NEON_GLOW : undefined}
-          >
-            <Text
-              className={`font-black text-xs ${
-                isActive ? 'text-primary-foreground' : 'text-foreground'
-              }`}
-            >
-              {it.emoji} {it.label}
-            </Text>
-          </Pressable>
-        );
-      })}
     </View>
   );
 }
 
-// ============================================================
-// Leagues view
-// ============================================================
+const S = {
+  surface: neonStyles.surface,
+} as const;
+
+type Tab = 'leagues' | 'friends' | 'leaderboard';
+
+export default function SocialScreen() {
+  const [tab, setTab] = useState<Tab>('leagues');
+
+  return (
+    <View style={{ flex: 1 }}>
+      <Stack.Screen options={{ headerShown: false }} />
+      <StatusBar barStyle="light-content" />
+      <View style={{ paddingHorizontal: 20, paddingTop: 8 }}>
+        <SunsetHeader title="Лиги" />
+        <SunsetTabs
+          tabs={[
+            { key: 'leagues', label: '👑 Лиги' },
+            { key: 'friends', label: '👥 Друзья' },
+            { key: 'leaderboard', label: '📊 Топ' },
+          ]}
+          active={tab}
+          onChange={(k) => setTab(k as Tab)}
+        />
+      </View>
+      <View style={{ height: 10 }} />
+
+      {tab === 'leagues' && <LeaguesView />}
+      {tab === 'friends' && <FriendsView />}
+      {tab === 'leaderboard' && <LeaderboardView />}
+    </View>
+  );
+}
 
 function LeaguesView() {
   const router = useRouter();
@@ -97,316 +67,192 @@ function LeaguesView() {
   const board = useMyLeaderboard();
 
   const league = board.data?.league ?? myLeague.data?.user_league.league;
-  const entries = (board.data?.entries ?? []).slice(0, 5);
+  const entries = board.data?.entries ?? [];
+  const myRank = board.data?.my_rank ?? myLeague.data?.user_league.rank_in_cohort ?? 0;
+  const myXp = board.data?.my_weekly_xp ?? myLeague.data?.user_league.weekly_xp ?? 0;
   const cycleEnd = board.data?.cycle_end_at ?? myLeague.data?.cycle_end_at;
-  const myRank =
-    board.data?.my_rank ?? myLeague.data?.user_league.rank_in_cohort ?? 0;
-  const myXp =
-    board.data?.my_weekly_xp ?? myLeague.data?.user_league.weekly_xp ?? 0;
+  const daysLeft = cycleEnd ? Math.max(0, Math.ceil((tsToDate(cycleEnd)!.getTime() - Date.now()) / 86400000)) : null;
 
   if (myLeague.isLoading || board.isLoading) {
-    return (
-      <View className="flex-1 items-center justify-center">
-        <ActivityIndicator size="large" color="#00FFA3" />
-      </View>
-    );
+    return <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}><ActivityIndicator color="#FFD84A" /></View>;
   }
 
+  const PROMO_RANK = 10; // top 10 promote
+
   return (
-    <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
-      {/* Hero */}
-      <LinearGradient
-        colors={HERO_GRADIENT}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={[{ borderRadius: 24, padding: 20, alignItems: 'center', marginBottom: 16, borderWidth: 1, borderColor: 'rgba(255,200,61,0.3)' }, NEON_GLOW]}
-      >
-        <Crown size={48} color="#FFC83D" />
-        <Text className="text-foreground font-black text-2xl mt-2" style={NEON_TEXT}>
-          {league?.name ?? 'Лига'}
+    <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 110 }}>
+      {/* League hero */}
+      <View style={[glass, {
+        borderRadius: 24, padding: 22, alignItems: 'center', marginBottom: 16,
+      }]}>
+        <Text style={{ fontSize: 54 }}>🥇</Text>
+        <Text style={{ color: '#fff', fontWeight: '900', fontSize: 22, marginTop: 4 }}>
+          {league?.name ?? 'Золотая лига'}
         </Text>
-        {cycleEnd && (
-          <Text className="text-muted-foreground text-sm mt-1">
-            До конца: {formatRemaining(cycleEnd)}
+        {daysLeft !== null && (
+          <Text style={{ color: 'rgba(255,255,255,0.75)', fontSize: 13, fontWeight: '600', marginTop: 2 }}>
+            Осталось {daysLeft} {daysLeft === 1 ? 'день' : 'дней'} · топ-10 проходят дальше
           </Text>
         )}
-        <View className="flex-row gap-6 mt-4">
-          <View className="items-center">
-            <Text className="text-primary font-black text-2xl">#{myRank || '—'}</Text>
-            <Text className="text-muted-foreground text-xs uppercase">Ранк</Text>
+        <View style={{ flexDirection: 'row', gap: 34, marginTop: 14 }}>
+          <View style={{ alignItems: 'center' }}>
+            <Text style={{ color: '#FFD84A', fontWeight: '900', fontSize: 22 }}>#{myRank || '—'}</Text>
+            <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 11, fontWeight: '700', textTransform: 'uppercase' }}>Ранг</Text>
           </View>
-          <View className="items-center">
-            <Text className="text-xp font-black text-2xl">{myXp}</Text>
-            <Text className="text-muted-foreground text-xs uppercase">XP</Text>
+          <View style={{ alignItems: 'center' }}>
+            <Text style={{ color: neon.xp, fontWeight: '900', fontSize: 22 }}>{myXp}</Text>
+            <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 11, fontWeight: '700', textTransform: 'uppercase' }}>XP</Text>
           </View>
         </View>
-      </LinearGradient>
+      </View>
 
-      {/* Top 5 of cohort */}
-      <View className="bg-card/70 rounded-3xl p-4 border border-border mb-4" style={NEON_GLOW}>
-        <Text className="text-foreground font-black text-base mb-3">
-          Топ когорты
-        </Text>
-        {entries.length === 0 ? (
-          <Text className="text-muted-foreground">Пока пусто.</Text>
-        ) : (
-          entries.map((e, idx) => (
-            <View
-              key={e.user_id}
-              className={`flex-row items-center py-2 ${
-                idx < entries.length - 1 ? 'border-b border-border' : ''
-              } ${e.is_me ? 'bg-primary/10 -mx-2 px-2 rounded-xl' : ''}`}
-            >
-              <Text className="text-foreground font-black w-8">
-                {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`}
-              </Text>
-              <Avatar uri={e.avatar_url} name={e.full_name} size={32} />
-              <Text className="flex-1 ml-3 text-foreground font-bold" numberOfLines={1}>
-                {e.full_name || `User ${(e.user_id ?? '').slice(0, 6)}`}
-                {e.is_me ? ' (Я)' : ''}
-              </Text>
-              <Text className="text-amber-500 font-black">
-                {(e.weekly_xp ?? 0).toLocaleString('ru')} XP
-              </Text>
-            </View>
-          ))
-        )}
+      {/* Leaderboard table */}
+      <View style={[glass, { borderRadius: 20, padding: 8, marginBottom: 14 }]}>
+        {entries.slice(0, 11).map((e, idx) => {
+          const rank = idx + 1;
+          const isMe = e.is_me;
+          const isPromoLine = rank === PROMO_RANK + 1 && entries.length > PROMO_RANK;
+
+          return (
+            <React.Fragment key={e.user_id ?? idx}>
+              {isPromoLine && <PromoLine />}
+              <View style={[{
+                flexDirection: 'row', alignItems: 'center',
+                paddingHorizontal: 8, paddingVertical: 10, borderRadius: 12,
+                gap: 10,
+              }, isMe && { backgroundColor: neon.greenHero, borderWidth: 1, borderColor: neon.greenHeroBorder }]}>
+                <Text style={{ color: '#fff', fontWeight: '900', width: 28, fontSize: 14 }}>
+                  {rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`}
+                </Text>
+                <Avatar uri={e.avatar_url} name={e.full_name} size={32} />
+                <Text style={{ flex: 1, color: '#fff', fontWeight: isMe ? '900' : '700', fontSize: 14 }} numberOfLines={1}>
+                  {e.full_name || `User ${(e.user_id ?? '').slice(0, 6)}`}
+                  {isMe ? ' (Ты)' : ''}
+                </Text>
+                <Text style={{ color: '#FFD54F', fontWeight: '900', fontSize: 14 }}>
+                  {(e.weekly_xp ?? 0)} XP
+                </Text>
+              </View>
+            </React.Fragment>
+          );
+        })}
+
+        {entries.length > 0 && entries.length <= PROMO_RANK && <PromoLine />}
       </View>
 
       <Pressable
         onPress={() => router.push('/leagues')}
-        className="bg-primary rounded-2xl py-4 items-center"
+        style={{ borderRadius: 16, overflow: 'hidden', shadowColor: '#A8243F', shadowOpacity: 0.45, shadowRadius: 18, shadowOffset: { width: 0, height: 8 } }}
       >
-        <Text className="text-primary-foreground font-black uppercase">
-          Открыть лигу полностью →
-        </Text>
-      </Pressable>
-      <Pressable
-        onPress={() => router.push('/leagues/history')}
-        className="bg-muted rounded-2xl py-3 items-center mt-2"
-      >
-        <Text className="text-foreground font-bold">История выступлений</Text>
+        <LinearGradient
+          colors={CTA}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={{ width: '100%', paddingVertical: 15, alignItems: 'center' }}
+        >
+          <Text style={{ color: '#fff', fontWeight: '900', fontSize: 15, letterSpacing: 0.3 }}>
+            Открыть лигу полностью →
+          </Text>
+        </LinearGradient>
       </Pressable>
     </ScrollView>
   );
 }
-
-// ============================================================
-// Friends view
-// ============================================================
 
 function FriendsView() {
   const router = useRouter();
-  const friends = useFriends({ limit: 10 });
-  const incoming = usePendingFriends({ direction: 'incoming', limit: 1 });
-  const incomingCount = incoming.data?.total ?? 0;
+  const friends = useFriends();
+  const list = friends.data?.friends ?? [];
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
-      {/* Action cards */}
-      <View className="flex-row gap-3 mb-4">
-        <ActionCard
-          emoji="🔍"
-          label="Найти"
-          icon={<Search size={20} color="#00FFA3" />}
+    <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 110 }}>
+      <View style={{ flexDirection: 'row', gap: 10, marginBottom: 16 }}>
+        <Pressable
           onPress={() => router.push('/friends/search')}
-        />
-        <ActionCard
-          emoji="📥"
-          label="Заявки"
-          badge={incomingCount}
-          icon={<Inbox size={20} color="#00FFA3" />}
+          style={[glass, { flex: 1, borderRadius: 16, padding: 14, alignItems: 'center' }]}
+        >
+          <Text style={{ fontSize: 24 }}>🔍</Text>
+          <Text style={{ color: '#fff', fontWeight: '800', fontSize: 13, marginTop: 4 }}>Найти</Text>
+        </Pressable>
+        <Pressable
           onPress={() => router.push('/friends/pending')}
-        />
+          style={[glass, { flex: 1, borderRadius: 16, padding: 14, alignItems: 'center' }]}
+        >
+          <Text style={{ fontSize: 24 }}>📩</Text>
+          <Text style={{ color: '#fff', fontWeight: '800', fontSize: 13, marginTop: 4 }}>Заявки</Text>
+        </Pressable>
       </View>
 
-      <View className="bg-card/70 rounded-3xl p-4 border border-border" style={NEON_GLOW}>
-        <View className="flex-row items-center justify-between mb-3">
-          <Text className="text-foreground font-black text-base">
-            Мои друзья
+      {friends.isLoading ? (
+        <ActivityIndicator color="#FFD84A" />
+      ) : list.length === 0 ? (
+        <View style={[glass, { borderRadius: 20, padding: 32, alignItems: 'center' }]}>
+          <Text style={{ fontSize: 48 }}>🦉</Text>
+          <Text style={{ color: 'rgba(255,255,255,0.75)', fontWeight: '700', textAlign: 'center', marginTop: 12 }}>
+            Пока нет друзей.{'\n'}Найди первых!
           </Text>
-          <Pressable onPress={() => router.push('/friends')}>
-            <Text className="text-primary font-bold">Все →</Text>
-          </Pressable>
         </View>
-
-        {friends.isLoading ? (
-          <ActivityIndicator color="#00FFA3" />
-        ) : (friends.data?.friends?.length ?? 0) === 0 ? (
-          <View className="items-center py-8">
-            <Users size={48} color="#666" />
-            <Text className="text-muted-foreground mt-2 text-center">
-              Друзей пока нет.
-            </Text>
-            <Pressable
-              onPress={() => router.push('/friends/search')}
-              className="bg-primary rounded-2xl py-3 px-6 mt-3 flex-row items-center gap-2"
-            >
-              <UserPlus size={18} color="#fff" />
-              <Text className="text-primary-foreground font-black">Найти друзей</Text>
-            </Pressable>
-          </View>
-        ) : (
-          (friends.data?.friends ?? []).map((f, idx, arr) => (
-            <View
-              key={f.user_id}
-              className={`flex-row items-center py-2 ${
-                idx < arr.length - 1 ? 'border-b border-border' : ''
-              }`}
-            >
-              <Avatar
-                uri={f.avatar_url}
-                name={f.full_name || f.username}
-                size={36}
-              />
-              <View className="flex-1 ml-3">
-                <Text className="text-foreground font-bold" numberOfLines={1}>
-                  {f.full_name ||
-                    f.username ||
-                    `User ${(f.user_id ?? '').slice(0, 6)}`}
-                </Text>
-                {(f.weekly_xp ?? 0) > 0 && (
-                  <Text className="text-muted-foreground text-xs">
-                    {(f.weekly_xp ?? 0).toLocaleString('ru')} XP за неделю
-                  </Text>
-                )}
+      ) : (
+        <View style={[glass, { borderRadius: 20, padding: 8 }]}>
+          {list.map((f) => (
+            <View key={f.friendship_id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 10, borderRadius: 12 }}>
+              <Avatar uri={f.avatar_url} name={f.full_name} size={40} />
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: '#fff', fontWeight: '900', fontSize: 15 }}>{f.full_name}</Text>
+                <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12, fontWeight: '600' }}>@{f.username}</Text>
               </View>
             </View>
-          ))
-        )}
-      </View>
-    </ScrollView>
-  );
-}
-
-function ActionCard({
-  emoji,
-  label,
-  icon,
-  badge,
-  onPress,
-}: {
-  emoji: string;
-  label: string;
-  icon?: React.ReactNode;
-  badge?: number;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      className="flex-1 bg-card/70 rounded-2xl p-4 border border-border items-center active:scale-95"
-      style={NEON_GLOW}
-    >
-      <View className="relative">
-        {icon ?? <Text className="text-3xl">{emoji}</Text>}
-        {!!badge && badge > 0 && (
-          <View className="absolute -top-1 -right-2 bg-destructive rounded-full min-w-5 h-5 px-1 items-center justify-center">
-            <Text className="text-white font-black text-xs">{badge}</Text>
-          </View>
-        )}
-      </View>
-      <Text className="text-foreground font-black mt-2">{label}</Text>
-    </Pressable>
-  );
-}
-
-// ============================================================
-// Leaderboard view (friends-based)
-// ============================================================
-
-function LeaderboardView() {
-  const router = useRouter();
-  const board = useFriendsLeaderboard(10);
-
-  if (board.isLoading) {
-    return (
-      <View className="flex-1 items-center justify-center">
-        <ActivityIndicator size="large" color="#00FFA3" />
-      </View>
-    );
-  }
-
-  const entries = board.data?.entries ?? [];
-
-  return (
-    <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
-      <LinearGradient
-        colors={HERO_GRADIENT}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={[{ borderRadius: 24, padding: 20, alignItems: 'center', marginBottom: 16, borderWidth: 1, borderColor: 'rgba(255,200,61,0.3)' }, NEON_GLOW]}
-      >
-        <Medal size={40} color="#FFC83D" />
-        <Text className="text-foreground font-black text-xl mt-2" style={NEON_TEXT}>
-          Лидерборд друзей
-        </Text>
-        <Text className="text-muted-foreground text-xs">По общему XP</Text>
-      </LinearGradient>
-
-      <View className="bg-card/70 rounded-3xl p-4 border border-border mb-4" style={NEON_GLOW}>
-        {entries.length === 0 ? (
-          <View className="items-center py-6">
-            <Text className="text-muted-foreground">Добавь друзей, чтобы соревноваться.</Text>
-            <Pressable
-              onPress={() => router.push('/friends/search')}
-              className="bg-primary rounded-2xl py-3 px-6 mt-3"
-            >
-              <Text className="text-primary-foreground font-black">Найти друзей</Text>
-            </Pressable>
-          </View>
-        ) : (
-          entries.map((e, idx) => (
-            <View
-              key={e.user_id}
-              className={`flex-row items-center py-2 ${
-                idx < entries.length - 1 ? 'border-b border-border' : ''
-              } ${e.is_me ? 'bg-primary/10 -mx-2 px-2 rounded-xl' : ''}`}
-            >
-              <Text className="text-foreground font-black w-8">
-                {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`}
-              </Text>
-              <Avatar uri={e.avatar_url} name={e.full_name || e.username} size={32} />
-              <Text className="flex-1 ml-3 text-foreground font-bold" numberOfLines={1}>
-                {e.full_name ||
-                  e.username ||
-                  `User ${(e.user_id ?? '').slice(0, 6)}`}
-                {e.is_me ? ' (Я)' : ''}
-              </Text>
-              <Text className="text-amber-500 font-black">
-                {(e.weekly_xp ?? 0).toLocaleString('ru')} XP
-              </Text>
-            </View>
-          ))
-        )}
-      </View>
-
-      {entries.length > 0 && (
-        <Pressable
-          onPress={() => router.push('/friends/leaderboard')}
-          className="bg-primary rounded-2xl py-4 items-center"
-        >
-          <Text className="text-primary-foreground font-black uppercase">
-            Полный лидерборд →
-          </Text>
-        </Pressable>
+          ))}
+        </View>
       )}
     </ScrollView>
   );
 }
 
-// ============================================================
-// Helpers
-// ============================================================
+function LeaderboardView() {
+  const router = useRouter();
+  const lb = useFriendsLeaderboard(10);
+  const entries = lb.data?.entries ?? [];
 
-function formatRemaining(ts: unknown): string {
-  const end = tsToDate(ts as never);
-  if (!end) return '—';
-  const diffMs = end.getTime() - Date.now();
-  if (diffMs <= 0) return 'завершено';
-  const days = Math.floor(diffMs / (24 * 3600 * 1000));
-  const hours = Math.floor((diffMs % (24 * 3600 * 1000)) / (3600 * 1000));
-  if (days > 0) return `${days}д ${hours}ч`;
-  const mins = Math.floor((diffMs % (3600 * 1000)) / (60 * 1000));
-  return `${hours}ч ${mins}м`;
+  return (
+    <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 110 }}>
+      <Text style={{ color: 'rgba(255,255,255,0.75)', fontSize: 14, fontWeight: '600', marginBottom: 14 }}>
+        Друзья по XP за эту неделю
+      </Text>
+      {lb.isLoading ? (
+        <ActivityIndicator color="#FFD84A" />
+      ) : entries.length === 0 ? (
+        <View style={[glass, { borderRadius: 20, padding: 32, alignItems: 'center' }]}>
+          <Text style={{ color: 'rgba(255,255,255,0.75)', fontWeight: '700', textAlign: 'center' }}>
+            Добавь друзей, чтобы соревноваться
+          </Text>
+        </View>
+      ) : (
+        <View style={[glass, { borderRadius: 20, padding: 8 }]}>
+          {entries.map((e, idx) => (
+            <View key={e.user_id ?? idx} style={{
+              flexDirection: 'row', alignItems: 'center', gap: 10,
+              padding: 10, borderRadius: 12,
+              backgroundColor: e.is_me ? neon.greenHero : 'transparent',
+            }}>
+              <Text style={{ color: '#fff', fontWeight: '900', width: 28, fontSize: 14 }}>
+                {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`}
+              </Text>
+              <Avatar uri={e.avatar_url} name={e.full_name} size={36} />
+              <Text style={{ flex: 1, color: '#fff', fontWeight: e.is_me ? '900' : '700', fontSize: 14 }} numberOfLines={1}>
+                {e.full_name}{e.is_me ? ' (Ты)' : ''}
+              </Text>
+              <Text style={{ color: '#FFD54F', fontWeight: '900' }}>{e.weekly_xp ?? 0} XP</Text>
+            </View>
+          ))}
+        </View>
+      )}
+      <Pressable
+        onPress={() => router.push('/friends/leaderboard')}
+        style={[glass, { borderRadius: 16, padding: 14, alignItems: 'center', marginTop: 12 }]}
+      >
+        <Text style={{ color: '#FFD84A', fontWeight: '900' }}>Открыть полный лидерборд →</Text>
+      </Pressable>
+    </ScrollView>
+  );
 }

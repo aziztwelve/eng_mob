@@ -9,6 +9,7 @@ import type {
   ListFlashcardsRequest,
   PinForTodayRequest,
   SuggestFlashcardsRequest,
+  FlashcardReviewRequest,
 } from '@/types/api';
 
 // === Query keys ===
@@ -148,6 +149,39 @@ export function useUnpinFromToday() {
       queryClient.invalidateQueries({ queryKey: TODAY_QUEUE_KEY });
       queryClient.invalidateQueries({ queryKey: FLASHCARD_STATS_KEY });
       queryClient.invalidateQueries({ queryKey: [...FLASHCARDS_KEY, 'list'] });
+    },
+  });
+}
+
+/**
+ * Ревью карточки (помню/забыл) → SM-2 на бэке.
+ *
+ * Инвалидирует today-queue, stats и list, чтобы счётчики «на сегодня» и
+ * strength/next_review обновились после сессии. В самой сессии повторения
+ * результаты применяются оптимистично (UI не ждёт сети на каждую карту).
+ */
+export function useReviewFlashcard() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ flashcardId, data }: { flashcardId: string; data: FlashcardReviewRequest }) =>
+      FlashcardsApi.review(flashcardId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: TODAY_QUEUE_KEY });
+      queryClient.invalidateQueries({ queryKey: FLASHCARD_STATS_KEY });
+      queryClient.invalidateQueries({ queryKey: [...FLASHCARDS_KEY, 'list'] });
+    },
+  });
+}
+
+/** Загрузить стартовый набор карточек (для пустой библиотеки). */
+export function useSeedStarter() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (language?: string) => FlashcardsApi.seedStarter(language),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: FLASHCARDS_KEY });
+      queryClient.invalidateQueries({ queryKey: FLASHCARD_STATS_KEY });
+      queryClient.invalidateQueries({ queryKey: TODAY_QUEUE_KEY });
     },
   });
 }

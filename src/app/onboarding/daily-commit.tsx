@@ -6,7 +6,7 @@ import { OnboardingShell } from '@/components/onboarding/OnboardingShell';
 import { useOnboardingStep } from '@/hooks/use-onboarding-step';
 import type { DailyCommitMinutes } from '@/types/api';
 
-const TOTAL_STEPS = 14;
+const TOTAL_STEPS = 12;
 
 const MINUTES_TO_XP: Record<DailyCommitMinutes, number> = {
   5: 10,
@@ -25,7 +25,7 @@ export default function DailyCommitScreen() {
   const { value, setValue, submitting, canContinue, handleContinue } =
     useOnboardingStep<DailyCommitMinutes>({
       step: 'daily_commit',
-      next: '/onboarding/pain-points',
+      next: '/onboarding/projection',
       buildPatch: (v) => ({
         daily_commit_minutes: v,
         daily_goal_xp: MINUTES_TO_XP[v],
@@ -47,7 +47,7 @@ export default function DailyCommitScreen() {
   return (
     <OnboardingShell
       trackKey="daily-commit"
-      step={5}
+      step={4}
       total={TOTAL_STEPS}
       title={t('onboarding.daily_commit.title')}
       subtitle={t('onboarding.daily_commit.subtitle')}

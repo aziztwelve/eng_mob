@@ -28,8 +28,8 @@ export default function ProjectionScreen() {
   return (
     <OnboardingShell
       trackKey="projection"
-      step={10}
-      total={14}
+      step={5}
+      total={12}
       title={copy.title}
       subtitle={copy.subtitle}
       onContinue={() => router.push('/onboarding/reminder-time')}

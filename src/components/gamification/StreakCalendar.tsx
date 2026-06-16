@@ -46,8 +46,8 @@ export function StreakCalendar({ days = 30 }: StreakCalendarProps) {
         const dayNum = new Date(iso).getDate();
         const isToday = iso === today;
 
-        let bg = 'bg-muted';
-        let fg = 'text-muted-foreground';
+        let bg = 'bg-white/10';
+        let fg = 'text-white/70';
         if (day?.completed) {
           if (day.used_freeze) {
             bg = 'bg-cyan-500';
@@ -61,7 +61,7 @@ export function StreakCalendar({ days = 30 }: StreakCalendarProps) {
         return (
           <View
             key={iso}
-            className={`w-[12%] aspect-square rounded-lg border-2 items-center justify-center ${bg} ${isToday ? 'border-primary' : 'border-border/40'}`}
+            className={`w-[12%] aspect-square rounded-lg border-2 items-center justify-center ${bg} ${isToday ? 'border-amber-300' : 'border-white/15'}`}
           >
             {day?.used_freeze ? (
               <Snowflake size={12} color="#ffffff" />

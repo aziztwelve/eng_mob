@@ -9,7 +9,7 @@ import { OnboardingShell } from '@/components/onboarding/OnboardingShell';
 import { usePatchOnboarding } from '@/hooks/use-onboarding';
 import { usePushSubscription } from '@/hooks/use-push-subscription';
 
-const TOTAL = 14;
+const TOTAL = 12;
 
 /**
  * Phase 3 mobile + onboarding bridge.
@@ -59,7 +59,7 @@ export default function OnboardingNotificationsScreen() {
   return (
     <OnboardingShell
       trackKey="notifications"
-      step={12}
+      step={7}
       total={TOTAL}
       title={t('onboarding.notifications.title')}
       subtitle={t('onboarding.notifications.subtitle')}

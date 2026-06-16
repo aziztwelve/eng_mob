@@ -20,7 +20,7 @@ const mdMain = StyleSheet.create({
   heading3: { fontSize: 18, fontWeight: '900', marginVertical: 4 },
   strong: { fontWeight: '900' },
   em: { fontStyle: 'italic', fontWeight: '900' },
-  link: { color: '#00FFA3', textDecorationLine: 'underline' },
+  link: { color: '#FFD84A', textDecorationLine: 'underline' },
   code_inline: {
     color: '#ffffff',
     backgroundColor: 'rgba(255,255,255,0.1)',
@@ -41,13 +41,13 @@ const mdMain = StyleSheet.create({
 });
 
 const mdTranslation = StyleSheet.create({
-  body: { color: '#9FB0C8', fontSize: 14, fontWeight: '500', lineHeight: 20 },
+  body: { color: '#8B98B0', fontSize: 14, fontWeight: '500', lineHeight: 20 },
   paragraph: { marginTop: 0, marginBottom: 4 },
   strong: { color: '#ffffff', fontWeight: '700' },
   em: { fontStyle: 'italic' },
-  link: { color: '#00FFA3', textDecorationLine: 'underline' },
+  link: { color: '#FFD84A', textDecorationLine: 'underline' },
   code_inline: {
-    color: '#9FB0C8',
+    color: '#8B98B0',
     backgroundColor: 'rgba(255,255,255,0.06)',
     fontFamily: 'monospace',
     paddingHorizontal: 3,

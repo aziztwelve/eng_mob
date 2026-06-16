@@ -21,7 +21,7 @@ import {
 } from '@/hooks/use-onboarding';
 import { fx } from '@/lib/fx';
 
-const TOTAL = 5;
+const TOTAL = 12;
 
 /**
  * Финальный экран onboarding'а.
@@ -92,7 +92,10 @@ export default function OnboardingDoneScreen() {
   const handleContinue = async () => {
     try {
       await complete.mutateAsync();
-      router.replace('/(tabs)');
+      // Option B: регистрация обязательна — финальный шаг онбординга ведёт
+      // на signup (claim гостя). В основной app пускает только guard в
+      // (tabs)/_layout после успешной регистрации.
+      router.replace('/onboarding/signup');
     } catch (err) {
       Toast.show({
         type: 'error',
@@ -105,7 +108,7 @@ export default function OnboardingDoneScreen() {
   return (
     <OnboardingShell
       trackKey="done"
-      step={5}
+      step={12}
       total={TOTAL}
       showBack={false}
       title={t('onboarding.done.title')}

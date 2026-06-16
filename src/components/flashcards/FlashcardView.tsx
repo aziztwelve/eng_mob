@@ -17,6 +17,7 @@ export interface FlashcardViewProps {
   translation: string;
   definition?: string;
   example?: string;
+  transcription?: string;
   audioUrl?: string;
   ttsLanguage?: string;
   onRemember: () => void;
@@ -31,6 +32,7 @@ export function FlashcardView({
   translation,
   definition,
   example,
+  transcription,
   audioUrl,
   ttsLanguage,
   onRemember,
@@ -131,34 +133,42 @@ export function FlashcardView({
           {/* Front */}
           <Animated.View
             style={[frontAnimatedStyle]}
-            className="absolute inset-0 bg-card border-4 border-border rounded-3xl p-8 items-center justify-center"
+            className="absolute inset-0 bg-[#FFF6F4] border-4 border-[#F2C9A0] rounded-3xl p-8 items-center justify-center"
           >
-            <Text className="text-foreground font-black text-4xl text-center">{word}</Text>
-            <Text className="text-muted-foreground text-sm mt-4">Нажмите для перевода</Text>
+            <Text className="text-[#2B1422] font-black text-4xl text-center">{word}</Text>
+            {transcription ? (
+              <Text className="text-[#A8243F] text-lg mt-2 font-semibold">{transcription}</Text>
+            ) : null}
+            <Text className="text-[#9a7c86] text-sm mt-4">Нажмите для перевода</Text>
           </Animated.View>
 
           {/* Back */}
           <Animated.View
             style={[backAnimatedStyle]}
-            className="absolute inset-0 bg-primary/10 border-4 border-primary rounded-3xl p-8 justify-center"
+            className="absolute inset-0 bg-[#FFF6F4] border-4 border-[#FFB338] rounded-3xl p-8 justify-center"
           >
             <View className="flex-row items-center justify-center gap-2 mb-2">
-              <Text className="text-foreground font-black text-3xl text-center">
+              <Text className="text-[#2B1422] font-black text-3xl text-center">
                 {translation}
               </Text>
               {audioUrl && (
                 <Pressable onPress={playTTS} className="p-1 active:opacity-60">
-                  <Volume2 size={22} color="#00FFA3" />
+                  <Volume2 size={22} color="#A8243F" />
                 </Pressable>
               )}
             </View>
+            {transcription ? (
+              <Text className="text-[#A8243F] text-base text-center mb-2 font-semibold">
+                {transcription}
+              </Text>
+            ) : null}
             {definition && (
-              <Text className="text-muted-foreground text-base text-center mb-2">
+              <Text className="text-[#6b4b56] text-base text-center mb-2">
                 {definition}
               </Text>
             )}
             {example && (
-              <Text className="text-muted-foreground text-sm text-center italic">
+              <Text className="text-[#9a7c86] text-sm text-center italic">
                 &ldquo;{example}&rdquo;
               </Text>
             )}

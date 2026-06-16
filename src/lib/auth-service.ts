@@ -56,6 +56,50 @@ function uuidv4(): string {
   });
 }
 
+/**
+ * base64UrlDecode — декод base64url без atob/Buffer (надёжно на Hermes).
+ * Возвращает Latin1-строку; для ASCII-JSON JWT-claims этого достаточно.
+ */
+function base64UrlDecode(input: string): string {
+  let b64 = input.replace(/-/g, '+').replace(/_/g, '/');
+  while (b64.length % 4) b64 += '=';
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+  let str = '';
+  let i = 0;
+  while (i < b64.length) {
+    const c1 = b64.charAt(i++);
+    const c2 = b64.charAt(i++);
+    const c3 = b64.charAt(i++);
+    const c4 = b64.charAt(i++);
+    const e1 = chars.indexOf(c1);
+    const e2 = chars.indexOf(c2);
+    const e3 = chars.indexOf(c3);
+    const e4 = chars.indexOf(c4);
+    if (e1 < 0 || e2 < 0) break;
+    str += String.fromCharCode((e1 << 2) | (e2 >> 4));
+    if (c3 !== '=' && e3 >= 0) str += String.fromCharCode(((e2 & 15) << 4) | (e3 >> 2));
+    if (c4 !== '=' && e4 >= 0) str += String.fromCharCode(((e3 & 3) << 6) | e4);
+  }
+  return str;
+}
+
+/**
+ * decodeIsGuestClaim — boolean `is_guest` из payload JWT.
+ *   - true/false — токен декодировался (отсутствие claim'а = false, т.к.
+ *     бэкенд сериализует is_guest с omitempty только для гостей);
+ *   - null — токена нет или он битый (caller делает фолбэк на флаг).
+ */
+function decodeIsGuestClaim(token: string | null): boolean | null {
+  if (!token) return null;
+  const parts = token.split('.');
+  if (parts.length !== 3) return null;
+  try {
+    const payload = JSON.parse(base64UrlDecode(parts[1])) as { is_guest?: boolean };
+    return payload.is_guest === true;
+  } catch {
+    return null;
+  }
+}
 export class AuthService {
   // Token Management
   //
@@ -106,6 +150,11 @@ export class AuthService {
   // Save auth response
   static async saveAuthResponse(authResponse: AuthResponse): Promise<void> {
     await this.setTokens(authResponse.access_token, authResponse.refresh_token);
+    // Логин/регистрация = registered-сессия. Сбрасываем guest-флаг, иначе
+    // auth-gate в (tabs) примет залогиненного юзера за гостя (если на
+    // устройстве остался stale is_guest='true' от прежней guest-сессии)
+    // и зациклит на /onboarding/signup.
+    await this.setGuestFlag(false);
     if (authResponse.user) {
       await this.setUser(authResponse.user);
     }
@@ -145,6 +194,22 @@ export class AuthService {
   static async isGuest(): Promise<boolean> {
     const v = await AsyncStorage.getItem(IS_GUEST_KEY);
     return v === 'true';
+  }
+
+  /**
+   * isGuestSession — авторитетная проверка «гость ли это»: читает claim
+   * `is_guest` прямо из access-JWT (источник истины бэкенда). Для
+   * registered-юзеров claim отсутствует (omitempty) → false.
+   *
+   * Используется auth-gate'ом в (tabs). Не зависит от того, корректно ли
+   * все auth-пути поддерживают локальный IS_GUEST флаг. Фолбэк на флаг —
+   * только если токена нет или он не декодируется.
+   */
+  static async isGuestSession(): Promise<boolean> {
+    const token = await this.getAccessToken();
+    const claim = decodeIsGuestClaim(token);
+    if (claim !== null) return claim;
+    return this.isGuest();
   }
 
   static async setGuestFlag(isGuest: boolean): Promise<void> {

@@ -2,6 +2,7 @@ import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { Check } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
+import { neon } from '@/components/neon-screen';
 
 /**
  * <PaywallCard> — SKU-карточка (annual / monthly) на paywall-экране.
@@ -31,44 +32,59 @@ export function PaywallCard({
   return (
     <Pressable
       onPress={onPress}
-      className={`rounded-2xl border-2 p-4 active:opacity-90 ${
-        selected ? 'border-primary bg-primary/10' : 'border-border bg-card'
-      }`}
+      style={{
+        borderRadius: 20,
+        borderWidth: selected ? 2 : 1,
+        borderColor: selected ? neon.primary : neon.border,
+        backgroundColor: selected ? 'rgba(46,236,200,0.10)' : neon.surface,
+        padding: 16,
+        shadowColor: neon.primary,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: selected ? 0.24 : 0,
+        shadowRadius: 16,
+      }}
     >
       {badge ? (
-        <View className="absolute -top-3 left-4 px-2 py-0.5 rounded-full bg-primary">
-          <Text className="text-primary-foreground font-black text-xs uppercase">
+        <View style={{ position: 'absolute', top: -12, left: 16, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999, backgroundColor: neon.primary }}>
+          <Text style={{ color: neon.ink, fontWeight: '900', fontSize: 12, textTransform: 'uppercase' }}>
             {badge}
           </Text>
         </View>
       ) : null}
 
-      <View className="flex-row items-center gap-3">
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
         {/* Selection circle */}
         <View
-          className={`w-6 h-6 rounded-full border-2 items-center justify-center ${
-            selected ? 'border-primary bg-primary' : 'border-border bg-transparent'
-          }`}
+          style={{
+            width: 24,
+            height: 24,
+            borderRadius: 999,
+            borderWidth: 2,
+            borderColor: selected ? neon.primary : neon.border,
+            backgroundColor: selected ? neon.primary : 'transparent',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
         >
-          {selected ? <Check size={14} color="#ffffff" strokeWidth={3} /> : null}
+          {selected ? <Check size={14} color={neon.ink} strokeWidth={3} /> : null}
         </View>
 
         {/* Title + saving */}
-        <View className="flex-1">
-          <Text className="text-foreground font-black text-base">{title}</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={{ color: neon.text, fontWeight: '900', fontSize: 16 }}>{title}</Text>
           {saving ? (
-            <Text className="text-primary font-bold text-xs mt-0.5">
+            <Text style={{ color: neon.primary, fontWeight: '800', fontSize: 12, marginTop: 2 }}>
               {saving}
             </Text>
           ) : null}
         </View>
 
         {/* Price */}
-        <View className="items-end">
-          <Text className="text-foreground font-black text-base">
+        <View style={{ alignItems: 'flex-end' }}>
+          <Text style={{ color: neon.text, fontWeight: '900', fontSize: 16 }}>
             {monthlyPrice}
           </Text>
-          <Text className="text-muted-foreground font-medium text-xs">
+          <Text style={{ color: neon.muted, fontWeight: '600', fontSize: 12 }}>
             {t('onboarding.paywall.sku.per_month', { total: totalPrice })}
           </Text>
         </View>

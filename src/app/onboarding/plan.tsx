@@ -26,8 +26,8 @@ export default function PlanScreen() {
   return (
     <OnboardingShell
       trackKey="plan"
-      step={12}
-      total={14}
+      step={8}
+      total={12}
       title={copy.title}
       subtitle={copy.subtitle}
       onContinue={() => router.push('/onboarding/building')}

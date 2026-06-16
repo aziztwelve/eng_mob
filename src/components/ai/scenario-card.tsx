@@ -1,15 +1,10 @@
 import React from 'react';
-import { ActivityIndicator, Pressable, Text, View } from 'react-native';
-import { Play, Sparkles } from 'lucide-react-native';
-
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Sparkles } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { glass, CTA } from '@/components/sunset';
 import type { AIScenario } from '@/types/api';
 
-/**
- * ScenarioCard — карточка одного roleplay-сценария.
- *
- * onStart вызывается при клике «Начать» — родитель решает, как поднять
- * conversation (StartConversation + редирект на /ai/chat/[id]).
- */
 export function ScenarioCard({
   scenario,
   loading = false,
@@ -20,66 +15,65 @@ export function ScenarioCard({
   onStart: (scenarioId: string) => void;
 }) {
   return (
-    <View className="bg-card rounded-3xl border-4 border-border p-4 gap-3">
-      <View className="flex-row items-start gap-2">
-        <View className="flex-1 gap-1 min-w-0">
-          <View className="flex-row items-center gap-1.5">
-            <Sparkles size={16} color="#00FFA3" />
-            <Text
-              className="text-foreground font-black text-base flex-shrink"
-              numberOfLines={2}
-            >
-              {scenario.title}
-            </Text>
+    <View style={[s.card, glass]}>
+      <View style={s.header}>
+        <View style={{ flex: 1, gap: 3, minWidth: 0 }}>
+          <View style={s.titleRow}>
+            <Sparkles size={14} color="#FFD84A" />
+            <Text style={s.title} numberOfLines={2}>{scenario.title}</Text>
           </View>
-          <Text className="text-muted-foreground font-medium text-sm">
-            {scenario.description}
-          </Text>
+          <Text style={s.desc}>{scenario.description}</Text>
         </View>
-        <View className="bg-primary/15 rounded-xl px-2 py-1">
-          <Text className="text-primary font-bold text-xs uppercase tracking-wider">
-            {scenario.user_level || '—'}
-          </Text>
+        <View style={s.levelBadge}>
+          <Text style={s.levelText}>{scenario.user_level || '—'}</Text>
         </View>
       </View>
 
       {scenario.ai_role ? (
-        <Text className="text-xs">
-          <Text className="text-muted-foreground font-bold uppercase tracking-wider">
-            Роль AI:{' '}
-          </Text>
-          <Text className="text-foreground font-medium">
-            {scenario.ai_role}
-          </Text>
+        <Text style={s.role}>
+          <Text style={s.roleLabel}>Роль AI: </Text>
+          {scenario.ai_role}
         </Text>
       ) : null}
 
       {scenario.vocabulary_focus && scenario.vocabulary_focus.length > 0 && (
-        <View className="flex-row flex-wrap gap-1">
+        <View style={s.vocabRow}>
           {scenario.vocabulary_focus.slice(0, 6).map((w) => (
-            <View key={w} className="bg-muted rounded-lg px-2 py-0.5">
-              <Text className="text-foreground font-medium text-xs">
-                {w}
-              </Text>
+            <View key={w} style={[s.vocabPill, glass]}>
+              <Text style={s.vocabText}>{w}</Text>
             </View>
           ))}
         </View>
       )}
 
-      <Pressable
-        onPress={() => onStart(scenario.id)}
-        disabled={loading}
-        className={`rounded-2xl px-4 py-3 flex-row items-center justify-center gap-2 ${
-          loading ? 'bg-muted opacity-60' : 'bg-primary active:opacity-80'
-        }`}
-      >
-        {loading ? (
-          <ActivityIndicator size="small" color="#1a1a1a" />
-        ) : (
-          <Play size={16} color="#1a1a1a" />
-        )}
-        <Text className="text-primary-foreground font-black">Начать</Text>
+      <Pressable onPress={() => onStart(scenario.id)} disabled={loading} style={s.ctaWrap}>
+        <LinearGradient
+          colors={loading ? ['rgba(255,255,255,0.12)', 'rgba(255,255,255,0.12)'] : CTA}
+          style={s.cta}
+        >
+          {loading
+            ? <ActivityIndicator size="small" color="rgba(255,255,255,0.6)" />
+            : <Text style={s.ctaText}>Начать →</Text>}
+        </LinearGradient>
       </Pressable>
     </View>
   );
 }
+
+const s = StyleSheet.create({
+  card: { borderRadius: 22, padding: 16, gap: 10 },
+  header: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
+  titleRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 6 },
+  title: { color: '#fff', fontSize: 15, fontWeight: '800', flexShrink: 1 },
+  desc: { color: 'rgba(255,255,255,0.65)', fontSize: 13, fontWeight: '500', lineHeight: 18 },
+  levelBadge: { backgroundColor: 'rgba(255,216,74,0.15)', borderRadius: 10, paddingHorizontal: 8, paddingVertical: 4 },
+  levelText: { color: '#FFD84A', fontSize: 11, fontWeight: '800', textTransform: 'uppercase' },
+  role: { color: 'rgba(255,255,255,0.65)', fontSize: 12, fontWeight: '500' },
+  roleLabel: { color: 'rgba(255,255,255,0.45)', fontWeight: '700', textTransform: 'uppercase', fontSize: 10 },
+  vocabRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  vocabPill: { borderRadius: 9, paddingHorizontal: 9, paddingVertical: 3 },
+  vocabText: { color: 'rgba(255,255,255,0.75)', fontSize: 12, fontWeight: '600' },
+  ctaWrap: { borderRadius: 14, overflow: 'hidden', alignSelf: 'stretch', marginTop: 2 },
+  cta: { paddingVertical: 11, alignItems: 'center', justifyContent: 'center' },
+  ctaText: { color: '#fff', fontSize: 14, fontWeight: '800' },
+});

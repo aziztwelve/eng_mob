@@ -1,26 +1,18 @@
 import React from 'react';
 import { Pressable, Text, View } from 'react-native';
-import { Plus, Flame } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
-import { useTranslation } from 'react-i18next';
-
+import { LinearGradient } from 'expo-linear-gradient';
 import { useOnboardingState } from '@/hooks/use-onboarding';
 import { useUserStats } from '@/hooks/use-user-stats';
 import { getLanguage } from '@/lib/supported-languages';
 import { analytics } from '@/lib/analytics';
+import { neon, neonStyles } from '@/components/neon-screen';
 
-/**
- * <MyLanguagesSection> — секция «🌍 Мои языки» на Home tab.
- *
- * MVP: одна карточка для выбранного `target_language` (single, см. spec §3.10).
- * Multi-language — Phase 6+.
- *
- * "+ Добавить язык" — открывает /onboarding/add-language (mini-flow:
- * выбор языка + level → PATCH /me/onboarding). Multi-language как
- * отдельная таблица users.user_languages — Phase 6+.
- */
+const S = {
+  surface: neonStyles.surface,
+} as const;
+
 export function MyLanguagesSection() {
-  const { t } = useTranslation();
   const router = useRouter();
   const { data: state } = useOnboardingState();
   const stats = useUserStats();
@@ -31,62 +23,82 @@ export function MyLanguagesSection() {
   const streak = stats.data?.current_streak ?? 0;
 
   const onAdd = () => {
-    analytics.track('add_language_clicked', {
-      current_language: targetLang ?? undefined,
-    });
+    analytics.track('add_language_clicked', { current_language: targetLang ?? undefined });
     router.push('/onboarding/add-language');
   };
 
+  const levelCode = levelToCode(level);
+
   return (
-    <View className="px-4 pt-5">
-      <View className="flex-row items-center justify-between mb-3">
-        <Text className="text-foreground font-black text-xl">{t('home.my_languages.title')}</Text>
-        <Pressable
-          onPress={onAdd}
-          hitSlop={8}
-          accessibilityRole="button"
-          accessibilityLabel={t('home.my_languages.add_a11y_label')}
-          accessibilityHint={t('home.my_languages.add_a11y_hint')}
-          className="active:opacity-70 flex-row items-center gap-1"
-        >
-          <Plus size={16} color="#22c55e" />
-          <Text className="text-primary font-bold">{t('home.my_languages.add')}</Text>
+    <View style={{ paddingHorizontal: 18, marginTop: 18 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
+          <View style={{
+            width: 30, height: 30, borderRadius: 9,
+            backgroundColor: 'rgba(46,236,200,0.14)', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <Text>🌍</Text>
+          </View>
+          <Text style={{ fontSize: 19, fontWeight: '900', color: neon.text }}>
+            Мои языки
+          </Text>
+        </View>
+        <Pressable onPress={onAdd} hitSlop={8}>
+          <Text style={[neonStyles.primaryText, { fontWeight: '800', fontSize: 14 }]}>
+            + Добавить
+          </Text>
         </Pressable>
       </View>
 
-      <View className="flex-row gap-3">
+      <View style={{ flexDirection: 'row', gap: 12 }}>
         {/* Current language card */}
-        <View className="flex-1 bg-card border-2 border-border rounded-2xl p-4 gap-2">
-          <View className="flex-row items-center gap-2">
-            <Text className="text-3xl">{lang?.flag ?? '🌐'}</Text>
-            <Text className="text-foreground font-black text-base flex-1">
-              {lang?.nameNative ?? targetLang?.toUpperCase() ?? t('home.my_languages.not_selected')}
+        <View style={[S.surface, { flex: 1, borderRadius: 18, padding: 14 }]}>
+          <Text style={{ fontSize: 26 }}>{lang?.flag ?? '🌐'}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6 }}>
+            <Text style={{ color: neon.text, fontWeight: '900', fontSize: 16 }}>
+              {lang?.nameNative ?? targetLang?.toUpperCase() ?? 'Не выбран'}
             </Text>
-          </View>
-          <View className="flex-row items-center gap-2">
-            <Text className="text-muted-foreground font-bold text-sm">
-              {levelLabel(t, level)}
-            </Text>
-            {streak > 0 ? (
-              <View className="flex-row items-center gap-1">
-                <Text className="text-muted-foreground">·</Text>
-                <Flame size={14} color="#f97316" />
-                <Text className="text-foreground font-bold text-sm">{streak}</Text>
+            {levelCode && (
+              <View style={{
+                backgroundColor: 'rgba(40,220,233,0.14)',
+                borderRadius: 8, paddingHorizontal: 8, paddingVertical: 2,
+              }}>
+                <Text style={{ color: neon.cyan, fontSize: 12, fontWeight: '900' }}>{levelCode}</Text>
               </View>
-            ) : null}
+            )}
+          </View>
+          {/* Progress bar */}
+          <View style={{ height: 8, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 99, overflow: 'hidden', marginTop: 12 }}>
+            <LinearGradient
+              colors={[neon.primary, neon.cyan]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={{
+                height: '100%', width: streak > 0 ? '62%' : '10%', borderRadius: 99,
+                shadowColor: neon.primary, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.6, shadowRadius: 12,
+              }}
+            />
           </View>
         </View>
 
-        {/* Add another */}
+        {/* Add card — dashed border */}
         <Pressable
           onPress={onAdd}
-          accessibilityRole="button"
-          accessibilityLabel={t('home.my_languages.add_more_a11y')}
-          className="flex-1 bg-card border-2 border-dashed border-border rounded-2xl p-4 items-center justify-center gap-2 active:opacity-70"
+          style={{
+            flex: 1, borderWidth: 2, borderStyle: 'dashed',
+            borderColor: 'rgba(255,255,255,0.18)',
+            borderRadius: 18, alignItems: 'center', justifyContent: 'center', gap: 6, padding: 14,
+          }}
         >
-          <Plus size={20} color="#9ca3af" />
-          <Text className="text-muted-foreground font-bold text-xs text-center">
-            {t('home.my_languages.add_more_label')}
+          <View style={{
+            width: 38, height: 38, borderRadius: 12,
+            backgroundColor: 'rgba(46,236,200,0.14)',
+            alignItems: 'center', justifyContent: 'center',
+          }}>
+            <Text style={{ color: neon.primary, fontSize: 22 }}>+</Text>
+          </View>
+          <Text style={{ color: neon.muted, fontWeight: '800', fontSize: 13, textAlign: 'center' }}>
+            Добавить{'\n'}язык
           </Text>
         </Pressable>
       </View>
@@ -94,14 +106,10 @@ export function MyLanguagesSection() {
   );
 }
 
-function levelLabel(t: (key: string) => string, level: string | null | undefined): string {
-  switch (level) {
-    case 'beginner':    return t('home.my_languages.level.beginner');
-    case 'a1':          return t('home.my_languages.level.a1');
-    case 'a2':          return t('home.my_languages.level.a2');
-    case 'b1':          return t('home.my_languages.level.b1');
-    case 'b2':          return t('home.my_languages.level.b2');
-    case 'just_for_fun': return t('home.my_languages.level.just_for_fun');
-    default:            return t('home.my_languages.level.unknown');
-  }
+function levelToCode(level: string | null | undefined): string | null {
+  const map: Record<string, string> = {
+    a1: 'A1', a2: 'A2', b1: 'B1', b2: 'B2', c1: 'C1', c2: 'C2',
+    beginner: 'A1', intermediate: 'B1', advanced: 'C1',
+  };
+  return level ? (map[level] ?? null) : null;
 }

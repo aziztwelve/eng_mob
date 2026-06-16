@@ -3,20 +3,19 @@ import {
   ActivityIndicator,
   Pressable,
   ScrollView,
+  StatusBar,
+  StyleSheet,
   Text,
   View,
 } from 'react-native';
 import { Stack, router } from 'expo-router';
-import { ArrowLeft, Drama } from 'lucide-react-native';
 import Toast from 'react-native-toast-message';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ScenarioCard } from '@/components/ai/scenario-card';
 import { QuotaWidget, hasQuotaLeft } from '@/components/ai/quota-widget';
-import {
-  useAIQuota,
-  useAIScenarios,
-  useStartConversation,
-} from '@/hooks/use-ai';
+import { useAIQuota, useAIScenarios, useStartConversation } from '@/hooks/use-ai';
+import { glass, SunsetHeader, SunsetSubhead } from '@/components/sunset';
 
 const LANG_OPTIONS: { value: string; label: string; disabled?: boolean }[] = [
   { value: '', label: 'Все' },
@@ -35,19 +34,13 @@ const LEVEL_OPTIONS = [
   { value: 'C1', label: 'C1' },
 ];
 
-/**
- * /ai/roleplay — каталог roleplay-сценариев. Клик по карточке стартует
- * conversation со scenario=`roleplay_<id>` и редиректит в /ai/chat/[id].
- */
 export default function RoleplayScreen() {
   const [language, setLanguage] = useState('');
   const [level, setLevel] = useState('');
   const [pendingId, setPendingId] = useState<string | null>(null);
+  const insets = useSafeAreaInsets();
 
-  const list = useAIScenarios({
-    language: language || undefined,
-    user_level: level || undefined,
-  });
+  const list = useAIScenarios({ language: language || undefined, user_level: level || undefined });
   const quota = useAIQuota();
   const startMut = useStartConversation();
 
@@ -60,9 +53,7 @@ export default function RoleplayScreen() {
     try {
       const sc = scenarios.find((s) => s.id === scenarioId);
       const resp = await startMut.mutateAsync({
-        scenario: scenarioId.startsWith('roleplay_')
-          ? scenarioId
-          : `roleplay_${scenarioId}`,
+        scenario: scenarioId.startsWith('roleplay_') ? scenarioId : `roleplay_${scenarioId}`,
         target_language: sc?.language || language || undefined,
         user_level: sc?.user_level || level || undefined,
         title: sc?.title,
@@ -80,103 +71,69 @@ export default function RoleplayScreen() {
   };
 
   return (
-    <View className="flex-1 bg-background">
-      <Stack.Screen options={{ title: 'Roleplay' }} />
-      <ScrollView contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 80 }}>
-        <Pressable
-          onPress={() => router.back()}
-          className="flex-row items-center gap-1 self-start active:opacity-60"
-        >
-          <ArrowLeft size={16} color="#9ca3af" />
-          <Text className="text-muted-foreground font-bold">К AI hub</Text>
-        </Pressable>
-
-        <View className="gap-2">
-          <View className="flex-row items-center gap-2">
-            <Drama size={28} color="#f43f5e" />
-            <Text className="text-foreground font-black text-3xl">
-              Roleplay
-            </Text>
-          </View>
-          <Text className="text-muted-foreground font-medium">
-            Симуляция реальных ситуаций с AI. Каждый сценарий — своя роль,
-            контекст и фокус-вокабуляр.
-          </Text>
-        </View>
+    <View style={{ flex: 1 }}>
+      <Stack.Screen options={{ headerShown: false }} />
+      <StatusBar barStyle="light-content" />
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 100 + insets.bottom }}
+      >
+        <SunsetHeader title="Roleplay" />
 
         <QuotaWidget compact />
 
         {!canChat && (
-          <View
-            className="rounded-2xl px-3 py-2"
-            style={{
-              borderWidth: 2,
-              borderColor: 'rgba(245,158,11,0.3)',
-              backgroundColor: 'rgba(245,158,11,0.05)',
-            }}
-          >
-            <Text className="text-amber-500 font-medium text-sm">
-              Лимит чатов на сегодня исчерпан. Попробуйте завтра.
-            </Text>
+          <View style={s.warnCard}>
+            <Text style={s.warnText}>Лимит чатов на сегодня исчерпан. Попробуйте завтра.</Text>
           </View>
         )}
 
-        {/* Filters */}
-        <View className="bg-card rounded-3xl border-4 border-border p-4 gap-3">
-          <Text className="text-muted-foreground font-bold text-xs uppercase tracking-wider">
-            Фильтры
-          </Text>
-          <View className="gap-2">
-            <Text className="text-foreground font-bold text-sm">Язык</Text>
-            <View className="flex-row flex-wrap gap-2">
-              {LANG_OPTIONS.map((o) => (
-                <FilterPill
-                  key={o.value || 'all-lang'}
-                  active={language === o.value}
-                  label={o.label}
-                  disabled={o.disabled}
-                  onPress={() => setLanguage(o.value)}
-                />
-              ))}
-            </View>
+        {/* Фильтры */}
+        <View style={[s.filterCard, glass]}>
+          <Text style={s.filterLabel}>Язык</Text>
+          <View style={s.pillRow}>
+            {LANG_OPTIONS.map((o) => (
+              <FilterPill
+                key={o.value || 'all-lang'}
+                active={language === o.value}
+                label={o.label}
+                disabled={o.disabled}
+                onPress={() => setLanguage(o.value)}
+              />
+            ))}
           </View>
-          <View className="gap-2">
-            <Text className="text-foreground font-bold text-sm">Уровень</Text>
-            <View className="flex-row flex-wrap gap-2">
-              {LEVEL_OPTIONS.map((o) => (
-                <FilterPill
-                  key={o.value || 'all-level'}
-                  active={level === o.value}
-                  label={o.label}
-                  onPress={() => setLevel(o.value)}
-                />
-              ))}
-            </View>
+          <Text style={[s.filterLabel, { marginTop: 12 }]}>Уровень</Text>
+          <View style={s.pillRow}>
+            {LEVEL_OPTIONS.map((o) => (
+              <FilterPill
+                key={o.value || 'all-level'}
+                active={level === o.value}
+                label={o.label}
+                onPress={() => setLevel(o.value)}
+              />
+            ))}
           </View>
         </View>
 
-        {/* Scenarios */}
+        <SunsetSubhead title="Сценарии" />
+
         {list.isLoading ? (
-          <View className="bg-card rounded-3xl border-4 border-border p-12 items-center">
-            <ActivityIndicator color="#00FFA3" />
+          <View style={[s.emptyCard, glass]}>
+            <ActivityIndicator color="#FFD84A" />
           </View>
         ) : scenarios.length === 0 ? (
-          <View className="bg-card rounded-3xl border-4 border-border p-8 items-center gap-2">
-            <Drama size={42} color="#9ca3af" />
-            <Text className="text-foreground font-black text-xl">
-              Сценарии не найдены
-            </Text>
-            <Text className="text-muted-foreground font-medium text-center">
-              Попробуйте другие фильтры или сбросьте их.
-            </Text>
+          <View style={[s.emptyCard, glass]}>
+            <Text style={{ fontSize: 36, marginBottom: 8 }}>🎭</Text>
+            <Text style={s.emptyTitle}>Сценарии не найдены</Text>
+            <Text style={s.emptyText}>Попробуйте другие фильтры или сбросьте их.</Text>
           </View>
         ) : (
-          <View className="gap-3">
-            {scenarios.map((s) => (
+          <View style={{ gap: 12 }}>
+            {scenarios.map((sc) => (
               <ScenarioCard
-                key={s.id}
-                scenario={s}
-                loading={pendingId === s.id && startMut.isPending}
+                key={sc.id}
+                scenario={sc}
+                loading={pendingId === sc.id && startMut.isPending}
                 onStart={handleStart}
               />
             ))}
@@ -202,26 +159,44 @@ function FilterPill({
     <Pressable
       onPress={() => !disabled && onPress()}
       disabled={disabled}
-      className={`rounded-xl px-3 py-1.5 border-2 flex-row items-center gap-1.5 ${
-        disabled
-          ? 'bg-muted border-border opacity-50'
-          : active
-            ? 'bg-primary border-primary'
-            : 'bg-card border-border'
-      } ${disabled ? '' : 'active:opacity-80'}`}
+      style={[
+        s.pill,
+        active && !disabled ? s.pillActive : glass,
+        disabled && s.pillDisabled,
+      ]}
     >
-      <Text
-        className={`font-bold text-sm ${
-          active && !disabled ? 'text-primary-foreground' : 'text-foreground'
-        }`}
-      >
+      <Text style={[s.pillText, active && !disabled && s.pillTextActive]}>
         {label}
       </Text>
-      {disabled && (
-        <Text className="text-muted-foreground font-bold text-[10px] uppercase">
-          Скоро
-        </Text>
-      )}
+      {disabled && <Text style={s.soonText}>Скоро</Text>}
     </Pressable>
   );
 }
+
+const s = StyleSheet.create({
+  warnCard: {
+    marginTop: 14,
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    backgroundColor: 'rgba(245,158,11,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(245,158,11,0.25)',
+  },
+  warnText: { color: '#f59e0b', fontSize: 13, fontWeight: '600' },
+
+  filterCard: { borderRadius: 22, padding: 16, marginTop: 18 },
+  filterLabel: { color: 'rgba(255,255,255,0.6)', fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 8 },
+  pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+
+  pill: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 14, flexDirection: 'row', alignItems: 'center', gap: 5 },
+  pillActive: { backgroundColor: '#A8243F', borderWidth: 0 },
+  pillDisabled: { opacity: 0.45 },
+  pillText: { color: 'rgba(255,255,255,0.8)', fontSize: 13, fontWeight: '700' },
+  pillTextActive: { color: '#fff' },
+  soonText: { color: 'rgba(255,255,255,0.5)', fontSize: 9, fontWeight: '800', textTransform: 'uppercase' },
+
+  emptyCard: { borderRadius: 22, padding: 40, alignItems: 'center' },
+  emptyTitle: { color: '#fff', fontSize: 18, fontWeight: '800', marginBottom: 4 },
+  emptyText: { color: 'rgba(255,255,255,0.6)', fontSize: 14, fontWeight: '500', textAlign: 'center' },
+});

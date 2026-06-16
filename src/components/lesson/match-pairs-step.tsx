@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { View, Text, Pressable, ScrollView } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { FeedbackBar, type FeedbackState } from './FeedbackBar';
 import { parseStepContent, type StepComponentProps } from './step-types';
 import type { MatchPairsContent } from '@/types/api';
@@ -9,6 +10,7 @@ import type { MatchPairsContent } from '@/types/api';
  * Все собраны → submit.
  */
 export function MatchPairsStep({ step, onSubmit, onContinue, isLast }: StepComponentProps) {
+  const { t } = useTranslation();
   const content = parseStepContent<MatchPairsContent>(step);
   const pairs = content?.pairs ?? [];
 
@@ -94,8 +96,8 @@ export function MatchPairsStep({ step, onSubmit, onContinue, isLast }: StepCompo
             : isWrong
               ? 'border-red-500 bg-red-500/10'
               : isSelected
-                ? 'border-primary bg-primary/10'
-                : 'border-border bg-card'
+                ? 'border-[#FFDF5E] bg-[rgba(255,223,94,0.18)]'
+                : 'border-[rgba(255,255,255,0.22)] bg-[rgba(255,255,255,0.12)]'
         }`}
       >
         <Text className="font-bold text-foreground">{text}</Text>
@@ -106,7 +108,7 @@ export function MatchPairsStep({ step, onSubmit, onContinue, isLast }: StepCompo
   return (
     <ScrollView className="flex-1 px-4 pt-4" contentContainerClassName="pb-4">
       {content.instruction && (
-        <Text className="text-foreground font-bold text-base mb-4">{content.instruction}</Text>
+        <Text className="text-foreground font-bold text-base mb-4">{t('lesson.instruction.match_pairs')}</Text>
       )}
       <View className="flex-row gap-3 mb-5">
         <View className="flex-1">
@@ -127,7 +129,7 @@ export function MatchPairsStep({ step, onSubmit, onContinue, isLast }: StepCompo
         onSubmit={handleSubmit}
         onContinue={onContinue}
         isLast={isLast}
-        submitLabel="Готово"
+        submitLabel={t('lesson.feedback.done')}
       />
     </ScrollView>
   );

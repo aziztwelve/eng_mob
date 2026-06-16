@@ -1604,6 +1604,7 @@ export interface Flashcard {
   target_language: string;
   definition?: string;
   example_sentence?: string;
+  transcription?: string;
   audio_url?: string;
   image_url?: string;
   created_at: string;
@@ -1644,6 +1645,7 @@ export interface CreateFlashcardRequest {
   target_language: string;
   definition?: string;
   example_sentence?: string;
+  transcription?: string;
   audio_url?: string;
   image_url?: string;
 }
@@ -1653,8 +1655,21 @@ export interface UpdateFlashcardRequest {
   translation?: string;
   definition?: string;
   example_sentence?: string;
+  transcription?: string;
   audio_url?: string;
   image_url?: string;
+}
+
+/** Запрос ревью карточки: бинарная самооценка «помню/забыл». */
+export interface FlashcardReviewRequest {
+  remembered: boolean;
+  response_time_ms?: number;
+}
+
+/** Ответ ревью — обновлённый SRS-snapshot (см. SRSReviewResponse). */
+export interface FlashcardReviewResponse {
+  item: SRSItem;
+  history: SRSReviewHistory;
 }
 
 export interface BulkCreateFlashcardsRequest {

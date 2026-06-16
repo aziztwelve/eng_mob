@@ -22,8 +22,8 @@ export default function RoadmapScreen() {
   return (
     <OnboardingShell
       trackKey="roadmap"
-      step={12}
-      total={14}
+      step={10}
+      total={12}
       title={copy.title}
       subtitle={copy.subtitle}
       onContinue={() => router.push('/onboarding/value-prop')}

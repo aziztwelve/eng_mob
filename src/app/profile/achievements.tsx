@@ -1,14 +1,26 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, ScrollView, Pressable, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, Pressable, ActivityIndicator, StyleSheet } from 'react-native';
 import { Stack } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAchievements, useMyAchievements } from '@/hooks/use-achievements';
 import { AchievementCard } from '@/components/gamification';
+import { glass, GOLD } from '@/components/sunset';
 import type { UserAchievement } from '@/types/api';
 
 const CATEGORIES = ['all', 'learning', 'streak', 'xp', 'special'] as const;
 type Category = (typeof CATEGORIES)[number];
 
+const CATEGORY_LABEL: Record<Category, string> = {
+  all: 'Все',
+  learning: 'Учёба',
+  streak: 'Серия',
+  xp: 'XP',
+  special: 'Особые',
+};
+
 export default function AchievementsScreen() {
+  const insets = useSafeAreaInsets();
   const [category, setCategory] = useState<Category>('all');
   const all = useAchievements(category === 'all' ? undefined : { category });
   const mine = useMyAchievements();
@@ -27,27 +39,33 @@ export default function AchievementsScreen() {
   const isLoading = all.isLoading || mine.isLoading;
 
   return (
-    <View className="flex-1 bg-background">
+    <View style={{ flex: 1 }}>
       <Stack.Screen options={{ title: 'Достижения' }} />
-      <ScrollView contentContainerStyle={{ padding: 16, gap: 16 }}>
-        <View className="flex-row flex-wrap gap-2">
-          {CATEGORIES.map((c) => (
-            <Pressable
-              key={c}
-              onPress={() => setCategory(c)}
-              className={`rounded-full px-4 py-2 border-2 ${category === c ? 'bg-primary border-primary' : 'bg-card border-border'}`}
-            >
-              <Text
-                className={`font-bold capitalize ${category === c ? 'text-primary-foreground' : 'text-foreground'}`}
-              >
-                {c}
-              </Text>
-            </Pressable>
-          ))}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 40 + insets.bottom }}
+      >
+        <View style={s.pillRow}>
+          {CATEGORIES.map((c) => {
+            const active = category === c;
+            return (
+              <Pressable key={c} onPress={() => setCategory(c)}>
+                {active ? (
+                  <LinearGradient colors={GOLD} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.pill}>
+                    <Text style={s.pillTextActive}>{CATEGORY_LABEL[c]}</Text>
+                  </LinearGradient>
+                ) : (
+                  <View style={[glass, s.pill]}>
+                    <Text style={s.pillText}>{CATEGORY_LABEL[c]}</Text>
+                  </View>
+                )}
+              </Pressable>
+            );
+          })}
         </View>
 
         {isLoading ? (
-          <ActivityIndicator color="#22c55e" />
+          <ActivityIndicator color="#FFD84A" style={{ marginTop: 12 }} />
         ) : (
           <>
             {unlocked.length > 0 && (
@@ -69,9 +87,7 @@ export default function AchievementsScreen() {
               </Section>
             )}
             {items.length === 0 && (
-              <Text className="text-muted-foreground font-medium text-center py-8">
-                Достижений пока нет.
-              </Text>
+              <Text style={s.empty}>Достижений пока нет.</Text>
             )}
           </>
         )}
@@ -82,11 +98,20 @@ export default function AchievementsScreen() {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <View className="gap-3">
-      <Text className="text-muted-foreground font-black uppercase tracking-widest text-xs">
-        {title}
-      </Text>
-      <View className="flex-row flex-wrap gap-2">{children}</View>
+    <View style={{ gap: 12 }}>
+      <Text style={s.sectionTitle}>{title}</Text>
+      <View style={s.grid}>{children}</View>
     </View>
   );
 }
+
+const s = StyleSheet.create({
+  pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  pill: { borderRadius: 999, paddingHorizontal: 16, paddingVertical: 8 },
+  pillText: { color: '#fff', fontWeight: '800', fontSize: 13 },
+  pillTextActive: { color: '#5a3b00', fontWeight: '900', fontSize: 13 },
+
+  sectionTitle: { color: 'rgba(255,255,255,0.78)', fontWeight: '900', textTransform: 'uppercase', letterSpacing: 1.5, fontSize: 12 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  empty: { color: 'rgba(255,255,255,0.72)', fontWeight: '600', textAlign: 'center', paddingVertical: 32 },
+});

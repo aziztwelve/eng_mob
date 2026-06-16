@@ -768,6 +768,8 @@ import type {
   ListTodayQueueResponse,
   SuggestFlashcardsRequest,
   SuggestFlashcardsResponse,
+  FlashcardReviewRequest,
+  FlashcardReviewResponse,
 } from '@/types/api';
 
 export const FlashcardsApi = {
@@ -802,6 +804,16 @@ export const FlashcardsApi = {
 
   stats: () =>
     ApiClient.get<FlashcardStats>('/flashcards/stats'),
+
+  /** Ревью карточки: помню/забыл → SM-2 на бэке. */
+  review: (id: string, data: FlashcardReviewRequest) =>
+    ApiClient.post<FlashcardReviewResponse>(`/flashcards/${encodeURIComponent(id)}/review`, data),
+
+  /** Стартовый набор из системного словаря (идемпотентно) + пин на сегодня. */
+  seedStarter: (language = 'en') =>
+    ApiClient.post<{ created: number; already: boolean; total?: number }>(
+      `/flashcards/starter?language=${encodeURIComponent(language)}`,
+    ),
 
   // Today queue
   listToday: (queuedForDate?: string, includeSrs = false) => {

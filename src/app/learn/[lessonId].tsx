@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, ActivityIndicator } from 'react-native';
+import { View, Text, Pressable, ActivityIndicator, StyleSheet, StatusBar, KeyboardAvoidingView, Platform } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Toast from 'react-native-toast-message';
 import { useLesson } from '@/hooks/use-lessons';
@@ -7,15 +10,15 @@ import { useCompleteStep } from '@/hooks/use-progress';
 import { useStepSubmit } from '@/hooks/use-step-submit';
 import { useLessonGamificationFx } from '@/hooks/use-gamification-fx';
 import { fx } from '@/lib/fx';
+import { NeonScreen, neon } from '@/components/neon-screen';
 import {
-  VideoContent,
   TextContent,
   QuizContent,
   UserAchievement,
   isInteractiveStep,
   SubmitAnswerResponse,
 } from '@/types/api';
-import { VideoStep } from '@/components/lesson/video-step';
+// import { VideoStep } from '@/components/lesson/video-step'; // DISABLED: crashes on Android API 29
 import { TextStep } from '@/components/lesson/text-step';
 import { QuizStep } from '@/components/lesson/quiz-step';
 import { StepRenderer } from '@/components/lesson/StepRenderer';
@@ -24,6 +27,10 @@ import {
   LevelUpOverlay,
   XPGainAnimation,
 } from '@/components/gamification';
+
+// Candy CTA / progress gradients — совпадают с home/login экранами.
+const CTA_GRADIENT = ['#FFDF5E', '#FFB338'] as const;
+const PROGRESS_GRADIENT = ['#FFDF5E', '#FF9E6E'] as const;
 
 // Helper: legacy quiz формат содержит массив `questions`. Phase-2 quiz —
 // одиночный `options[]`. Парсинг без выкидывания исключения.
@@ -39,6 +46,8 @@ function tryHasQuestions(raw: string): boolean {
 export default function LessonPlayerScreen() {
   const { lessonId } = useLocalSearchParams<{ lessonId: string }>();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const { data: lessonData, isLoading, error } = useLesson(lessonId);
   const completeStepMutation = useCompleteStep();
   const submitStepMutation = useStepSubmit();
@@ -54,24 +63,24 @@ export default function LessonPlayerScreen() {
 
   if (isLoading) {
     return (
-      <View className="flex-1 bg-background items-center justify-center">
-        <ActivityIndicator size="large" color="#00FFA3" />
-        <Text className="text-muted-foreground mt-4">Loading lesson...</Text>
-      </View>
+      <NeonScreen style={styles.center}>
+        <StatusBar barStyle="light-content" />
+        <ActivityIndicator size="large" color={neon.primary} />
+        <Text style={styles.loadingText}>{t('lesson.loading')}</Text>
+      </NeonScreen>
     );
   }
 
   if (error || !lessonData) {
     return (
-      <View className="flex-1 bg-background items-center justify-center px-6">
-        <Text className="text-4xl mb-4">😕</Text>
-        <Text className="text-foreground font-bold text-lg mb-2">
-          Lesson not found
+      <NeonScreen style={styles.center}>
+        <StatusBar barStyle="light-content" />
+        <Text style={styles.errorEmoji}>😕</Text>
+        <Text style={styles.errorTitle}>{t('lesson.not_found')}</Text>
+        <Text style={styles.errorBody}>
+          {(error as any)?.message || t('lesson.not_found_desc')}
         </Text>
-        <Text className="text-muted-foreground text-center">
-          {(error as any)?.message || 'Unable to load lesson'}
-        </Text>
-      </View>
+      </NeonScreen>
     );
   }
 
@@ -193,15 +202,19 @@ export default function LessonPlayerScreen() {
       // Legacy text / video.
       switch (currentStep.type) {
         case 'video': {
-          const videoContent = content as VideoContent;
-          const videoUrl =
-            'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
           return (
-            <VideoStep
-              content={videoContent}
-              videoUrl={videoUrl}
-              onComplete={handleStepComplete}
-            />
+            <View style={styles.fallback}>
+              <Text style={styles.fallbackEmoji}>🎬</Text>
+              <Text style={styles.fallbackTitle}>Видео урок</Text>
+              <Text style={styles.fallbackBody}>
+                Видео временно недоступно
+              </Text>
+              <Pressable onPress={() => handleStepComplete()}>
+                <LinearGradient colors={CTA_GRADIENT} style={styles.fallbackCta}>
+                  <Text style={styles.fallbackCtaText}>{t('lesson.continue').toUpperCase()}</Text>
+                </LinearGradient>
+              </Pressable>
+            </View>
           );
         }
         case 'text': {
@@ -212,18 +225,18 @@ export default function LessonPlayerScreen() {
         }
         default:
           return (
-            <View className="flex-1 items-center justify-center p-6">
-              <Text className="text-foreground text-center">
-                Step type "{currentStep.type}" is not yet supported
+            <View style={styles.fallback}>
+              <Text style={styles.fallbackBody}>
+                {t('lesson.unsupported')}
               </Text>
             </View>
           );
       }
     } catch {
       return (
-        <View className="flex-1 items-center justify-center p-6">
-          <Text className="text-destructive text-center">
-            Error loading step content
+        <View style={styles.fallback}>
+          <Text style={[styles.fallbackBody, { color: neon.hearts }]}>
+            {t('lesson.error_content')}
           </Text>
         </View>
       );
@@ -236,37 +249,65 @@ export default function LessonPlayerScreen() {
     isInteractiveStep(currentStep.type) &&
     !(currentStep.type === 'quiz' && tryHasQuestions(currentStep.content));
 
+  const progressPct = ((currentStepIndex + 1) / steps.length) * 100;
+
   return (
-    <View className="flex-1 bg-background">
-      {/* Header */}
-      <View className="bg-card border-b-2 border-border px-4 pt-12 pb-4">
-        <Text className="text-sm text-muted-foreground mb-1">
-          {lesson.title}
-        </Text>
-        <Text className="text-xl font-black text-foreground mb-3">
-          {currentStep.title}
-        </Text>
-        
-        {/* Progress Bar */}
-        <View className="flex-row items-center">
-          <View className="flex-1 bg-muted rounded-full h-2 overflow-hidden mr-3">
-            <View 
-              className="bg-primary h-full"
-              style={{ width: `${((currentStepIndex + 1) / steps.length) * 100}%` }}
-            />
+    <NeonScreen>
+      <StatusBar barStyle="light-content" />
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        {/* Header */}
+        <View style={[styles.header, { paddingTop: insets.top + 14 }]}>
+          <Text style={styles.lessonTitle} numberOfLines={1}>{lesson.title}</Text>
+          <Text style={styles.stepTitle} numberOfLines={1}>{currentStep.title}</Text>
+
+          {/* Progress Bar */}
+          <View style={styles.progressRow}>
+            <View style={styles.progressTrack}>
+              <LinearGradient
+                colors={PROGRESS_GRADIENT}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={[styles.progressFill, { width: `${progressPct}%` }]}
+              />
+            </View>
+            <Text style={styles.progressLabel}>
+              {currentStepIndex + 1}/{steps.length}
+            </Text>
           </View>
-          <Text className="text-muted-foreground text-sm font-semibold">
-            {currentStepIndex + 1}/{steps.length}
-          </Text>
         </View>
-      </View>
 
-      {/* Step Content */}
-      <View className="flex-1">
-        {renderStep()}
-      </View>
+        {/* Step Content — key по step.id заставляет React пересоздавать
+            компонент шага при переходе, сбрасывая его внутренний state
+            (иначе ответ/feedback «перетекают» на следующий шаг того же типа). */}
+        <View key={currentStep.id} style={[styles.content, isPhaseTwoInteractive ? { paddingBottom: insets.bottom } : null]}>
+          {renderStep()}
+        </View>
 
-      {/* Gamification FX overlays */}
+        {/* Navigation — только для legacy шагов. Phase-2 шаги управляют
+            своей кнопкой Check/Continue через FeedbackBar. */}
+        {!isPhaseTwoInteractive && (
+          <View style={[styles.nav, { paddingBottom: insets.bottom + 16 }]}>
+            {currentStepIndex > 0 && (
+              <Pressable onPress={handlePrevious} style={[styles.navBtn, styles.navBtnGhost]}>
+                <Text style={styles.navBtnGhostText}>← {t('lesson.previous')}</Text>
+              </Pressable>
+            )}
+
+            <Pressable onPress={() => handleStepComplete()} style={styles.navBtn}>
+              <LinearGradient colors={CTA_GRADIENT} style={styles.navBtnCta}>
+                <Text style={styles.navBtnCtaText}>
+                  {isLastStep ? t('lesson.finish').toUpperCase() : `${t('lesson.continue').toUpperCase()} →`}
+                </Text>
+              </LinearGradient>
+            </Pressable>
+          </View>
+        )}
+      </KeyboardAvoidingView>
+
+      {/* Gamification FX overlays — поверх всего, вне KeyboardAvoidingView */}
       {xpGain && (
         <XPGainAnimation
           key={xpGain.key}
@@ -283,32 +324,69 @@ export default function LessonPlayerScreen() {
         level={levelUpTo}
         onDismiss={() => setLevelUpTo(null)}
       />
-
-      {/* Navigation — только для legacy шагов. Phase-2 шаги управляют
-          своей кнопкой Check/Continue через FeedbackBar. */}
-      {!isPhaseTwoInteractive && (
-        <View className="bg-card border-t-2 border-border p-4 flex-row space-x-3">
-          {currentStepIndex > 0 && (
-            <Pressable
-              onPress={handlePrevious}
-              className="flex-1 bg-muted border-2 border-border rounded-2xl py-3"
-            >
-              <Text className="text-center font-bold text-foreground">
-                ← Previous
-              </Text>
-            </Pressable>
-          )}
-
-          <Pressable
-            onPress={() => handleStepComplete()}
-            className="flex-1 bg-primary rounded-2xl py-3"
-          >
-            <Text className="text-center font-black text-primary-foreground uppercase">
-              {isLastStep ? 'Finish' : 'Continue →'}
-            </Text>
-          </Pressable>
-        </View>
-      )}
-    </View>
+    </NeonScreen>
   );
 }
+
+const styles = StyleSheet.create({
+  flex: { flex: 1 },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 },
+  loadingText: { color: neon.muted, marginTop: 16, fontSize: 15 },
+  errorEmoji: { fontSize: 44, marginBottom: 12 },
+  errorTitle: { color: neon.text, fontWeight: '900', fontSize: 18, marginBottom: 6 },
+  errorBody: { color: neon.muted, textAlign: 'center', fontSize: 14, lineHeight: 20 },
+
+  header: {
+    paddingTop: 52,
+    paddingBottom: 16,
+    paddingHorizontal: 20,
+    backgroundColor: 'rgba(255,255,255,0.10)',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.18)',
+  },
+  lessonTitle: { color: neon.muted, fontSize: 13, fontWeight: '600', marginBottom: 2 },
+  stepTitle: { color: neon.text, fontSize: 20, fontWeight: '900', marginBottom: 12 },
+  progressRow: { flexDirection: 'row', alignItems: 'center' },
+  progressTrack: {
+    flex: 1,
+    height: 9,
+    borderRadius: 6,
+    backgroundColor: 'rgba(255,255,255,0.20)',
+    overflow: 'hidden',
+    marginRight: 12,
+  },
+  progressFill: { height: '100%', borderRadius: 6 },
+  progressLabel: { color: neon.muted, fontSize: 13, fontWeight: '700', minWidth: 38, textAlign: 'right' },
+
+  content: { flex: 1 },
+
+  fallback: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
+  fallbackEmoji: { fontSize: 44, marginBottom: 12 },
+  fallbackTitle: { color: neon.text, fontWeight: '900', fontSize: 18, marginBottom: 8 },
+  fallbackBody: { color: neon.muted, textAlign: 'center', fontSize: 14, lineHeight: 20, marginBottom: 22 },
+  fallbackCta: { paddingHorizontal: 28, paddingVertical: 14, borderRadius: 18 },
+  fallbackCtaText: { color: neon.ink, fontWeight: '900', fontSize: 14, letterSpacing: 0.5 },
+
+  nav: {
+    flexDirection: 'row',
+    gap: 12,
+    padding: 16,
+    paddingBottom: 28,
+    backgroundColor: 'rgba(255,255,255,0.10)',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.18)',
+  },
+  navBtn: { flex: 1 },
+  navBtnGhost: {
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.24)',
+    borderRadius: 18,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  navBtnGhostText: { color: neon.text, fontWeight: '700', fontSize: 15 },
+  navBtnCta: { borderRadius: 18, paddingVertical: 14, alignItems: 'center', justifyContent: 'center' },
+  navBtnCtaText: { color: neon.ink, fontWeight: '900', fontSize: 15, letterSpacing: 0.5 },
+});

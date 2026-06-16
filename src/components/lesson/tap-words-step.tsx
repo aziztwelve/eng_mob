@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { View, Text, Pressable, ScrollView } from 'react-native';
 import { Volume2 } from 'lucide-react-native';
 import { Audio } from 'expo-av';
+import { useTranslation } from 'react-i18next';
 import { FeedbackBar, type FeedbackState } from './FeedbackBar';
 import { DraggableWordBank } from './draggable-word-bank';
 import { parseStepContent, type StepComponentProps } from './step-types';
@@ -12,6 +13,7 @@ import type { TapWordsContent } from '@/types/api';
  * Порядок слов важен — submit проверяет per-position match.
  */
 export function TapWordsStep({ step, onSubmit, onContinue, isLast }: StepComponentProps) {
+  const { t } = useTranslation();
   const content = parseStepContent<TapWordsContent>(step);
   const bank = content?.word_bank ?? [];
   const soundRef = useRef<Audio.Sound | null>(null);
@@ -70,16 +72,16 @@ export function TapWordsStep({ step, onSubmit, onContinue, isLast }: StepCompone
   return (
     <ScrollView className="flex-1 px-4 pt-4" contentContainerClassName="pb-4">
       {content.instruction && (
-        <Text className="text-foreground font-bold text-base mb-4">{content.instruction}</Text>
+        <Text className="text-foreground font-bold text-base mb-4">{t('lesson.instruction.tap_words')}</Text>
       )}
 
-      <View className="bg-primary/10 rounded-2xl border-2 border-primary/20 p-4 mb-5 flex-row items-center gap-3">
+      <View className="bg-[rgba(255,255,255,0.10)] rounded-2xl border border-[rgba(255,255,255,0.22)] p-4 mb-5 flex-row items-center gap-3">
         {content.audio_url ? (
           <Pressable
             onPress={play}
-            className="bg-primary w-16 h-16 rounded-full items-center justify-center"
+            className="bg-[#FFDF5E] w-16 h-16 rounded-full items-center justify-center"
           >
-            <Volume2 size={28} color="#fff" />
+            <Volume2 size={28} color="#3D0A1A" />
           </Pressable>
         ) : (
           <Text className="text-foreground font-bold text-base">{content.audio_text}</Text>
@@ -91,7 +93,7 @@ export function TapWordsStep({ step, onSubmit, onContinue, isLast }: StepCompone
         picked={picked}
         onChange={setPicked}
         disabled={locked}
-        emptyHint="Нажми или перетащи слова в правильном порядке"
+        emptyHint={t('lesson.word_bank_hint')}
       />
 
       <FeedbackBar

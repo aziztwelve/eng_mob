@@ -3,34 +3,33 @@ import {
   ActivityIndicator,
   Pressable,
   ScrollView,
+  StatusBar,
+  StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
 import { Stack, router } from 'expo-router';
-import { ArrowLeft, PenLine, RotateCcw } from 'lucide-react-native';
+import { RotateCcw } from 'lucide-react-native';
 import Toast from 'react-native-toast-message';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AssessmentResult } from '@/components/ai/assessment-result';
 import { LangPills } from '@/components/ai/lang-pills';
 import { QuotaWidget, hasQuotaLeft } from '@/components/ai/quota-widget';
 import { useAIQuota, useAssessWriting } from '@/hooks/use-ai';
 import { AI_TARGET_LANGS, DEFAULT_TARGET_LANG } from '@/lib/ai-languages';
+import { glass, SunsetHeader, SunsetSubhead, CtaButton } from '@/components/sunset';
 
 const LEVEL_OPTIONS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
-
 const MIN_WORDS = 10;
 
-/**
- * /ai/writing — отправка эссе/текста + AssessmentResult после ответа.
- *
- * Frontend guard: минимум 10 слов — иначе бэк вернёт мало смысла.
- */
 export default function WritingScreen() {
   const [prompt, setPrompt] = useState('');
   const [text, setText] = useState('');
   const [lang, setLang] = useState(DEFAULT_TARGET_LANG);
   const [level, setLevel] = useState('B1');
+  const insets = useSafeAreaInsets();
 
   const quota = useAIQuota();
   const mut = useAssessWriting();
@@ -43,194 +42,124 @@ export default function WritingScreen() {
   const handleSubmit = async () => {
     if (!submittable) return;
     try {
-      await mut.mutateAsync({
-        prompt: prompt.trim() || undefined,
-        user_text: text,
-        target_language: lang,
-        user_level: level,
-      });
+      await mut.mutateAsync({ prompt: prompt.trim() || undefined, user_text: text, target_language: lang, user_level: level });
     } catch (err) {
-      Toast.show({
-        type: 'error',
-        text1: 'Ошибка проверки',
-        text2: err instanceof Error ? err.message : undefined,
-      });
+      Toast.show({ type: 'error', text1: 'Ошибка проверки', text2: err instanceof Error ? err.message : undefined });
     }
   };
 
-  const handleReset = () => {
-    mut.reset();
-    setText('');
-    setPrompt('');
-  };
+  const handleReset = () => { mut.reset(); setText(''); setPrompt(''); };
 
   return (
-    <View className="flex-1 bg-background">
-      <Stack.Screen options={{ title: 'Проверить эссе' }} />
-      <ScrollView contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 80 }}>
-        <Pressable
-          onPress={() => router.back()}
-          className="flex-row items-center gap-1 self-start active:opacity-60"
-        >
-          <ArrowLeft size={16} color="#9ca3af" />
-          <Text className="text-muted-foreground font-bold">К AI hub</Text>
-        </Pressable>
-
-        <View className="gap-2">
-          <View className="flex-row items-center gap-2">
-            <PenLine size={28} color="#3b82f6" />
-            <Text className="text-foreground font-black text-3xl">
-              Проверить эссе
-            </Text>
-          </View>
-          <Text className="text-muted-foreground font-medium">
-            AI оценит грамматику, лексику, связность и стиль. Также получите
-            исправленный текст и фидбэк по категориям.
-          </Text>
-        </View>
+    <View style={{ flex: 1 }}>
+      <Stack.Screen options={{ headerShown: false }} />
+      <StatusBar barStyle="light-content" />
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 100 + insets.bottom }}
+      >
+        <SunsetHeader title="Проверить эссе" />
 
         <QuotaWidget compact />
 
         {mut.data ? (
-          <View className="gap-4">
+          <View style={{ gap: 14, marginTop: 18 }}>
             <AssessmentResult data={mut.data} />
-            <Pressable
-              onPress={handleReset}
-              className="bg-card border-4 border-border rounded-2xl px-4 py-3 flex-row items-center justify-center gap-2 active:opacity-80"
-            >
-              <RotateCcw size={16} color="#fff" />
-              <Text className="text-foreground font-bold">
-                Проверить ещё одну работу
-              </Text>
+            <Pressable onPress={handleReset} style={[s.resetBtn, glass]}>
+              <RotateCcw size={15} color="rgba(255,255,255,0.7)" />
+              <Text style={s.resetText}>Проверить ещё одну работу</Text>
             </Pressable>
           </View>
         ) : (
-          <View className="bg-card rounded-3xl border-4 border-border p-5 gap-4">
-            {/* Lang + Level */}
-            <View className="flex-row gap-3">
-              <View className="flex-1 gap-1">
-                <Text className="text-muted-foreground font-bold text-xs uppercase tracking-wider">
-                  Язык
-                </Text>
-                <LangPills
-                  options={AI_TARGET_LANGS}
-                  value={lang}
-                  onChange={setLang}
-                />
-              </View>
-            </View>
+          <View style={{ gap: 14, marginTop: 18 }}>
+            {/* Настройки */}
+            <View style={[s.card, glass]}>
+              <Text style={s.label}>Язык</Text>
+              <LangPills options={AI_TARGET_LANGS} value={lang} onChange={setLang} />
 
-            <View className="gap-1">
-              <Text className="text-muted-foreground font-bold text-xs uppercase tracking-wider">
-                Уровень
-              </Text>
-              <View className="flex-row flex-wrap gap-2">
+              <Text style={[s.label, { marginTop: 14 }]}>Уровень</Text>
+              <View style={s.pillRow}>
                 {LEVEL_OPTIONS.map((o) => (
                   <Pressable
                     key={o}
                     onPress={() => setLevel(o)}
-                    className={`rounded-xl px-2.5 py-1.5 border-2 ${
-                      level === o
-                        ? 'bg-primary border-primary'
-                        : 'bg-card border-border'
-                    } active:opacity-80`}
+                    style={[s.pill, level === o ? s.pillActive : glass]}
                   >
-                    <Text
-                      className={`font-bold text-xs ${
-                        level === o
-                          ? 'text-primary-foreground'
-                          : 'text-foreground'
-                      }`}
-                    >
-                      {o}
-                    </Text>
+                    <Text style={[s.pillText, level === o && s.pillTextActive]}>{o}</Text>
                   </Pressable>
                 ))}
               </View>
             </View>
 
-            {/* Prompt (optional) */}
-            <View className="gap-1">
-              <Text className="text-muted-foreground font-bold text-xs uppercase tracking-wider">
-                Задание (опционально)
-              </Text>
+            {/* Задание */}
+            <View style={[s.card, glass]}>
+              <Text style={s.label}>Задание (опционально)</Text>
               <TextInput
                 value={prompt}
                 onChangeText={setPrompt}
                 placeholder="Например: Опишите ваш типичный рабочий день."
-                placeholderTextColor="#6b7280"
-                className="text-foreground font-medium"
-                style={{
-                  borderWidth: 2,
-                  borderColor: 'rgba(255,255,255,0.15)',
-                  borderRadius: 12,
-                  paddingHorizontal: 12,
-                  paddingVertical: 10,
-                  color: '#fff',
-                }}
+                placeholderTextColor="rgba(255,255,255,0.35)"
+                style={s.input}
               />
             </View>
 
-            {/* User text */}
-            <View className="gap-1">
-              <Text className="text-muted-foreground font-bold text-xs uppercase tracking-wider">
-                Ваш текст
-              </Text>
+            {/* Текст */}
+            <View style={[s.card, glass]}>
+              <Text style={s.label}>Ваш текст</Text>
               <TextInput
                 value={text}
                 onChangeText={setText}
                 placeholder="Напишите минимум 10 слов…"
-                placeholderTextColor="#6b7280"
+                placeholderTextColor="rgba(255,255,255,0.35)"
                 multiline
                 textAlignVertical="top"
-                className="text-foreground font-medium"
-                style={{
-                  borderWidth: 2,
-                  borderColor: 'rgba(255,255,255,0.15)',
-                  borderRadius: 12,
-                  paddingHorizontal: 12,
-                  paddingVertical: 10,
-                  color: '#fff',
-                  minHeight: 160,
-                }}
+                style={[s.input, { minHeight: 140 }]}
               />
-              <Text className="text-muted-foreground font-medium text-xs">
-                {wordCount} слов
-                {tooShort ? ` — минимум ${MIN_WORDS}` : ''}
+              <Text style={s.wordCount}>
+                {wordCount} слов{tooShort ? ` — минимум ${MIN_WORDS}` : ''}
               </Text>
             </View>
 
             {!canWrite && (
-              <Text className="text-destructive font-medium text-sm">
-                Лимит проверок на сегодня исчерпан. Сбрасывается завтра.
-              </Text>
+              <Text style={s.limitText}>Лимит проверок на сегодня исчерпан. Сбрасывается завтра.</Text>
             )}
 
-            <Pressable
+            <CtaButton
+              label={mut.isPending ? 'Анализируем…' : 'Проверить'}
               onPress={handleSubmit}
-              disabled={!submittable}
-              className={`rounded-2xl px-4 py-3 flex-row items-center justify-center gap-2 ${
-                submittable
-                  ? 'bg-primary active:opacity-80'
-                  : 'bg-muted opacity-60'
-              }`}
-            >
-              {mut.isPending ? (
-                <>
-                  <ActivityIndicator size="small" color="#1a1a1a" />
-                  <Text className="text-primary-foreground font-black">
-                    Анализируем…
-                  </Text>
-                </>
-              ) : (
-                <Text className="text-primary-foreground font-black">
-                  Проверить
-                </Text>
-              )}
-            </Pressable>
+              block
+            />
           </View>
         )}
       </ScrollView>
     </View>
   );
 }
+
+const s = StyleSheet.create({
+  card: { borderRadius: 22, padding: 16, gap: 8 },
+  label: { color: 'rgba(255,255,255,0.6)', fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.8 },
+
+  pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 2 },
+  pill: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 14 },
+  pillActive: { backgroundColor: '#A8243F', borderWidth: 0 },
+  pillText: { color: 'rgba(255,255,255,0.8)', fontSize: 13, fontWeight: '700' },
+  pillTextActive: { color: '#fff' },
+
+  input: {
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.18)',
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '500',
+    marginTop: 6,
+  },
+  wordCount: { color: 'rgba(255,255,255,0.5)', fontSize: 12, fontWeight: '500', marginTop: 4 },
+  limitText: { color: '#f87171', fontSize: 13, fontWeight: '600' },
+
+  resetBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 18, paddingVertical: 13 },
+  resetText: { color: '#fff', fontSize: 14, fontWeight: '700' },
+});

@@ -1,8 +1,9 @@
 import React from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ApiClient } from '@/lib/api-client';
+import { ApiClient, OnboardingApi } from '@/lib/api-client';
 import { AuthService } from '@/lib/auth-service';
-import { isOnboarded } from '@/lib/onboarding-storage';
+import { isOnboarded, mergeBackendState } from '@/lib/onboarding-storage';
+import { ONBOARDING_KEY } from '@/hooks/use-onboarding';
 import {
   LoginRequest,
   RegisterRequest,
@@ -43,15 +44,24 @@ export const useLogin = () => {
     onSuccess: async (data) => {
       await AuthService.saveAuthResponse(data);
       queryClient.setQueryData(['currentUser'], data.user);
+      // Подтягиваем серверный профиль онбординга в локальный кэш
+      // (target_language/level/goal) — чтобы домашние экраны не были
+      // пустыми. Best-effort, не блокирует вход.
+      try {
+        const remote = await OnboardingApi.getState();
+        await mergeBackendState(remote);
+        queryClient.invalidateQueries({ queryKey: ONBOARDING_KEY });
+      } catch {
+        // offline — не критично, догонит на следующем open
+      }
       Toast.show({
         type: 'success',
         text1: 'Welcome back!',
       });
-      // Sprint 2: новые юзеры (и старые, не прошедшие onboarding)
-      // отправляются в флоу. completed_at хранится локально per-device,
-      // поэтому на новом устройстве onboarding пройдёт заново.
-      const onboarded = await isOnboarded();
-      router.replace(onboarded ? '/(tabs)' : '/onboarding/welcome');
+      // Логин = возвращающийся пользователь (он уже регистрировался и
+      // проходил онбординг). Ведём сразу в приложение; guest-gate в
+      // (tabs) пропустит, т.к. токен не гостевой.
+      router.replace('/(tabs)');
     },
     onError: (error: any) => {
       Toast.show({
@@ -114,10 +124,15 @@ export const useLogout = () => {
 
 // Current user hook
 export const useCurrentUser = () => {
+  const { isAuthenticated } = useIsAuthenticated();
   return useQuery({
     queryKey: ['currentUser'],
     queryFn: authApi.getCurrentUser,
-    enabled: false, // Will be enabled manually after checking auth
+    // Подтягиваем актуальный профиль с backend (`GET /auth/me`), как только
+    // знаем, что есть валидный токен. Логин дополнительно сидит кэш через
+    // setQueryData(['currentUser']) — поэтому имя видно мгновенно, а на
+    // холодном старте догружается реальными данными.
+    enabled: isAuthenticated,
     staleTime: 5 * 60 * 1000, // 5 minutes
     retry: false,
   });

@@ -28,7 +28,7 @@ import {
  * См. docs/tasks/mob/onboarding-v3-oki-style.md §3.11.
  */
 
-const TOTAL = 14;
+const TOTAL = 12;
 
 /** Render placement-question'а с params, через i18n. */
 function renderPrompt(
@@ -137,7 +137,7 @@ export default function PlacementTestScreen() {
   return (
     <OnboardingShell
       trackKey="placement-test"
-      step={4}
+      step={3}
       total={TOTAL}
       title={prompt.title}
       subtitle={prompt.subtitle}

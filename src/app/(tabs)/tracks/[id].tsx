@@ -1,92 +1,135 @@
 import React from 'react';
-import { View, Text, ScrollView, Pressable, ActivityIndicator, Image } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { View, Text, ScrollView, Pressable, ActivityIndicator, Image, StyleSheet } from 'react-native';
+import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useTrack } from '@/hooks/use-tracks';
-import { TrackLessonsList } from '@/components/tracks/track-lessons-list';
+
+const CTA = ['#A8243F', '#CC5A1F'] as const;
+const GOLD = ['#FFDF5E', '#FFB338'] as const;
+const glass = {
+  backgroundColor: 'rgba(255,255,255,0.14)',
+  borderWidth: 1,
+  borderColor: 'rgba(255,255,255,0.22)',
+} as const;
+
+const TYPE_EMOJI: Record<string, string> = {
+  daily: '🗓️', stories: '📖', podcast: '🎧', thematic: '🎯', personal: '🧭',
+};
 
 export default function TrackDetailsScreen() {
-  // :id может быть UUID или code (gateway различает по эвристике)
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { data: track, isLoading, error } = useTrack(id, true);
 
   if (isLoading) {
     return (
-      <View className="flex-1 bg-background items-center justify-center">
-        <ActivityIndicator size="large" color="#00FFA3" />
-        <Text className="text-muted-foreground mt-4">Loading track...</Text>
+      <View style={s.center}>
+        <Stack.Screen options={{ title: 'Трек' }} />
+        <ActivityIndicator size="large" color="#FFD84A" />
       </View>
     );
   }
 
   if (error || !track) {
     return (
-      <View className="flex-1 bg-background items-center justify-center px-6">
-        <Text className="text-4xl mb-4">😕</Text>
-        <Text className="text-foreground font-bold text-lg mb-2">Track not found</Text>
-        <Text className="text-muted-foreground text-center mb-6">
-          {(error as any)?.message || 'Unable to load track.'}
-        </Text>
-        <Pressable
-          onPress={() => router.back()}
-          className="bg-primary px-6 py-3 rounded-2xl"
-        >
-          <Text className="text-primary-foreground font-black uppercase">Go back</Text>
+      <View style={s.center}>
+        <Stack.Screen options={{ title: 'Трек' }} />
+        <Text style={{ fontSize: 44, marginBottom: 12 }}>😕</Text>
+        <Text style={s.errTitle}>Трек не найден</Text>
+        <Pressable onPress={() => router.back()} style={s.backBtnWrap}>
+          <LinearGradient colors={CTA} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.backBtn}>
+            <Text style={s.backBtnText}>Назад</Text>
+          </LinearGradient>
         </Pressable>
       </View>
     );
   }
 
-  return (
-    <ScrollView className="flex-1 bg-background">
-      {/* Header */}
-      <View className="bg-card border-b-2 border-border">
-        {track.icon_url ? (
-          <Image
-            source={{ uri: track.icon_url }}
-            className="w-full h-48 bg-muted"
-            resizeMode="cover"
-          />
-        ) : (
-          <View className="w-full h-48 bg-muted items-center justify-center">
-            <Text className="text-6xl">🧭</Text>
-          </View>
-        )}
+  const emoji = TYPE_EMOJI[track.track_type as string] ?? '✨';
+  const lessons = track.lessons ?? [];
 
-        <View className="px-4 py-4">
-          <View className="flex-row flex-wrap gap-2 mb-2">
-            <View className="px-3 py-1 rounded-full border-2 border-primary/40 bg-primary/20">
-              <Text className="text-primary font-black text-xs uppercase">
-                {track.track_type}
-              </Text>
-            </View>
-            {!!track.language && (
-              <View className="px-3 py-1 rounded-full border-2 border-border">
-                <Text className="text-foreground font-bold text-xs uppercase">
-                  {track.language}
-                </Text>
-              </View>
-            )}
-            {!!track.level && (
-              <View className="px-3 py-1 rounded-full border-2 border-border">
-                <Text className="text-foreground font-bold text-xs">{track.level}</Text>
-              </View>
+  return (
+    <View style={{ flex: 1 }}>
+      <Stack.Screen options={{ title: track.title }} />
+      <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: 40, gap: 16 }} showsVerticalScrollIndicator={false}>
+        {/* Hero */}
+        <View style={[s.hero, glass]}>
+          <View style={s.heroThumb}>
+            {track.icon_url ? (
+              <Image source={{ uri: track.icon_url }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+            ) : (
+              <Text style={{ fontSize: 44 }}>{emoji}</Text>
             )}
           </View>
-          <Text className="text-foreground font-black text-2xl mb-2">{track.title}</Text>
-          {!!track.description && (
-            <Text className="text-muted-foreground text-base">{track.description}</Text>
+          <Text style={s.title}>{track.title}</Text>
+          <LinearGradient colors={GOLD} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.underline} />
+          {!!track.description && <Text style={s.desc}>{track.description}</Text>}
+        </View>
+
+        {/* Lessons */}
+        <View style={{ gap: 12 }}>
+          <Text style={s.section}>Уроки {lessons.length ? `· ${lessons.length}` : ''}</Text>
+          {lessons.length > 0 ? (
+            lessons.map((lesson, idx) => (
+              <Pressable
+                key={lesson.id}
+                onPress={() => router.push(`/learn/${lesson.id}`)}
+                style={[s.lesson, glass]}
+              >
+                <View style={s.num}>
+                  <Text style={s.numText}>{idx + 1}</Text>
+                </View>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={s.lessonTitle} numberOfLines={2}>{lesson.title}</Text>
+                  {!!lesson.description && (
+                    <Text style={s.lessonDesc} numberOfLines={2}>{lesson.description}</Text>
+                  )}
+                </View>
+                <LinearGradient colors={CTA} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.go}>
+                  <Text style={s.goText}>›</Text>
+                </LinearGradient>
+              </Pressable>
+            ))
+          ) : (
+            <View style={[s.emptyCard, glass]}>
+              <Text style={{ fontSize: 36 }}>🦉</Text>
+              <Text style={s.emptyText}>Уроки скоро появятся</Text>
+            </View>
           )}
         </View>
-      </View>
-
-      {/* Lessons */}
-      <View className="px-4 py-4">
-        <Text className="text-foreground font-black text-xl mb-3">
-          Lessons {track.lessons ? `(${track.lessons.length})` : ''}
-        </Text>
-        <TrackLessonsList lessons={track.lessons ?? []} />
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
+
+const s = StyleSheet.create({
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
+  errTitle: { color: '#fff', fontWeight: '800', fontSize: 18, marginBottom: 16 },
+  backBtnWrap: { borderRadius: 16, overflow: 'hidden' },
+  backBtn: { paddingVertical: 14, paddingHorizontal: 28 },
+  backBtnText: { color: '#fff', fontWeight: '900', fontSize: 15 },
+
+  hero: { borderRadius: 28, padding: 20, alignItems: 'flex-start', gap: 10 },
+  heroThumb: {
+    width: 72, height: 72, borderRadius: 20, alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
+    backgroundColor: 'rgba(255,255,255,0.18)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)',
+  },
+  title: { color: '#fff', fontSize: 24, fontWeight: '900', marginTop: 4 },
+  underline: { width: 44, height: 3, borderRadius: 2 },
+  desc: { color: 'rgba(255,255,255,0.85)', fontSize: 14, lineHeight: 20 },
+
+  section: { color: '#fff', fontSize: 18, fontWeight: '900' },
+  lesson: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 20 },
+  num: {
+    width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: 'rgba(255,216,74,0.25)', borderWidth: 1, borderColor: 'rgba(255,216,74,0.5)',
+  },
+  numText: { color: '#FFD84A', fontWeight: '900', fontSize: 15 },
+  lessonTitle: { color: '#fff', fontSize: 15, fontWeight: '800' },
+  lessonDesc: { color: 'rgba(255,255,255,0.8)', fontSize: 12, marginTop: 3 },
+  go: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  goText: { color: '#fff', fontSize: 20, fontWeight: '900', marginTop: -2 },
+
+  emptyCard: { borderRadius: 20, padding: 28, alignItems: 'center', gap: 10 },
+  emptyText: { color: 'rgba(255,255,255,0.85)', fontWeight: '700', fontSize: 14 },
+});

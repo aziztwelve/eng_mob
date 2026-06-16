@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { FeedbackBar, type FeedbackState } from './FeedbackBar';
 import { DraggableWordBank } from './draggable-word-bank';
 import { parseStepContent, type StepComponentProps } from './step-types';
@@ -14,6 +15,7 @@ import type { TranslateContent } from '@/types/api';
  * Submit отправляет `{ words: [...] }`.
  */
 export function TranslateStep({ step, onSubmit, onContinue, isLast }: StepComponentProps) {
+  const { t } = useTranslation();
   const content = parseStepContent<TranslateContent>(step);
   const bank = content?.word_bank ?? [];
   const [picked, setPicked] = useState<number[]>([]);
@@ -56,13 +58,11 @@ export function TranslateStep({ step, onSubmit, onContinue, isLast }: StepCompon
       className="flex-1 px-4 pt-4"
       contentContainerClassName="pb-4"
     >
-      <View className="bg-primary/10 rounded-2xl border-2 border-primary/20 p-4 mb-5">
+      <View className="bg-[rgba(255,255,255,0.10)] rounded-2xl border border-[rgba(255,255,255,0.22)] p-4 mb-5">
         <Text className="text-foreground text-lg font-black">{content.source_text}</Text>
-        {content.instruction && (
-          <Text className="text-muted-foreground text-sm font-medium mt-2">
-            {content.instruction}
-          </Text>
-        )}
+        <Text className="text-sm font-medium mt-2" style={{ color: 'rgba(255,255,255,0.75)' }}>
+          {t('lesson.instruction.translate')}
+        </Text>
       </View>
 
       <DraggableWordBank
@@ -70,7 +70,7 @@ export function TranslateStep({ step, onSubmit, onContinue, isLast }: StepCompon
         picked={picked}
         onChange={setPicked}
         disabled={locked}
-        emptyHint="Нажми или перетащи слова сюда"
+        emptyHint={t('lesson.word_bank_hint')}
       />
 
       <FeedbackBar

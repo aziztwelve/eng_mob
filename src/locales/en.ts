@@ -14,7 +14,7 @@ const en = {
     },
 
     welcome: {
-      brand: 'LingoLearn',
+      brand: 'Fluent',
       greeting_title: 'Hi! Ready to start?',
       greeting_subtitle: 'Learn languages with Lumi.',
       features: {
@@ -35,7 +35,7 @@ const en = {
       terms_modal_title: 'Terms of Service',
       terms_modal_body:
         'Last updated: January 1, 2026.\n\n' +
-        '1. Acceptance\nBy using the LingoLearn application (the "Service"), you confirm that you have read, understood, and agree to these Terms. If you do not agree, please stop using the Service.\n\n' +
+        '1. Acceptance\nBy using the Fluent application (the "Service"), you confirm that you have read, understood, and agree to these Terms. If you do not agree, please stop using the Service.\n\n' +
         '2. Eligibility\nThe Service is available to users aged 13 and over. Users under 18 must have permission from a legal guardian.\n\n' +
         '3. Account\nYou may use the Service as a guest or create an account via email or OAuth (Google/Apple). You are responsible for keeping your password safe and for all activity on your account. Notify us of any unauthorized access.\n\n' +
         '4. License\nWe grant you a limited, non-exclusive, non-transferable license to use the Service for personal, non-commercial language learning.\n\n' +
@@ -46,7 +46,7 @@ const en = {
         '9. Disclaimer\nThe Service is provided "as is" without express or implied warranties. We do not guarantee that learning outcomes will meet your expectations.\n\n' +
         '10. Limitation of liability\nTo the maximum extent permitted by law, we are not liable for indirect, incidental, or punitive damages arising from your use of the Service.\n\n' +
         '11. Changes\nWe may update these Terms. We will notify you of material changes through the app. Continued use means you accept the updated Terms.\n\n' +
-        '12. Contact\nQuestions: support@lingolearn.app',
+        '12. Contact\nQuestions: support@fluent.app',
       privacy_modal_title: 'Privacy Policy',
       privacy_modal_body:
         'Last updated: January 1, 2026.\n\n' +
@@ -54,12 +54,12 @@ const en = {
         '2. How we use it\n• To provide and improve the Service (sync progress, personalized recommendations).\n• To run AI features (we forward request content to our AI providers — e.g. OpenAI).\n• To send push notifications for reminders, streaks, and achievements.\n• Security and abuse prevention.\n• Aggregated analytics to improve the product.\n\n' +
         '3. Sharing with third parties\nWe share data only with processors required to run the Service: cloud hosting, analytics (anonymized), AI API providers, push services (Expo/FCM/APNs), App Store / Google Play (for billing). We do not sell your data.\n\n' +
         '4. Data retention\nWe keep data while your account is active. After account deletion, learning data is removed within 30 days; anonymized analytics may be kept longer.\n\n' +
-        '5. Your rights\nYou can: request a copy of your data, correct inaccuracies, delete your account, withdraw push notification consent, export your progress. Contact privacy@lingolearn.app.\n\n' +
+        '5. Your rights\nYou can: request a copy of your data, correct inaccuracies, delete your account, withdraw push notification consent, export your progress. Contact privacy@fluent.app.\n\n' +
         '6. Children\nThe Service is not intended for children under 13. We do not knowingly collect their data. Parents who discover such data — please contact us for removal.\n\n' +
         '7. Security\nWe use encryption (HTTPS/TLS) in transit and standard back-end security practices. However, no system can guarantee 100% security.\n\n' +
         '8. International transfers\nOur servers may be located in different countries. By using the Service you consent to data transfers to those jurisdictions with appropriate safeguards.\n\n' +
         '9. Changes\nWe will notify you of material changes through the app or by email.\n\n' +
-        '10. Contact\nPrivacy questions: privacy@lingolearn.app',
+        '10. Contact\nPrivacy questions: privacy@fluent.app',
     },
 
     goal: {
@@ -198,11 +198,11 @@ const en = {
 
     building: {
       title: 'Combining your answers into one path.',
-      subtitle: 'Every choice you made turns into a personal plan.',
-      stat_a_number: '400K+',
-      stat_a_label: 'learners launched\nnew languages',
-      stat_b_number: '20K+',
-      stat_b_label: '4.7+ ratings\non the App Store',
+      subtitle: 'Everything you chose becomes a personal plan.',
+      feat_a_title: 'AI Speaking',
+      feat_a_label: 'Conversation practice\n24/7, no judgment',
+      feat_b_title: 'Smart Review',
+      feat_b_label: 'Words and mistakes —\nat the right moment',
     },
 
     projection_chart: {
@@ -236,17 +236,9 @@ const en = {
     },
 
     value_prop: {
-      title: '50× more affordable than a tutor.',
-      subtitle: 'And every day — no schedule, any time.',
+      title: 'Everything you need — in one app.',
+      subtitle: 'Speaking, Writing, Vocab and AI lessons — no tutor needed.',
       continue_label: 'See the plan',
-      stats: {
-        users_number: '500K+',
-        users_label: 'learners',
-        rating_number: '4.8',
-        rating_label: 'average rating',
-        cheaper_number: '50×',
-        cheaper_label: 'cheaper',
-      },
     },
 
     notifications: {
@@ -403,6 +395,83 @@ const en = {
     cta_submitting: 'Saving…',
     success_title: 'Language switched',
     success_body: 'Home will refresh automatically.',
+  },
+
+  auth: {
+    login: {
+      title: 'Welcome back!',
+      subtitle: 'Sign in to continue learning',
+      email_label: 'Email',
+      email_placeholder: 'your@email.com',
+      email_required: 'Email is required',
+      email_invalid: 'Invalid email address',
+      password_label: 'Password',
+      password_placeholder: 'Enter your password',
+      password_required: 'Password is required',
+      password_min: 'At least 6 characters',
+      submit: 'Sign In 🍬',
+      submitting: 'Signing in...',
+      no_account: "Don't have an account? ",
+      signup_link: 'Sign Up',
+    },
+    register: {
+      title: 'Create Account',
+      subtitle: 'Start your language learning journey',
+      username_label: 'Username',
+      username_placeholder: 'Choose a username',
+      username_required: 'Username is required',
+      username_min: 'At least 3 characters',
+      email_label: 'Email',
+      email_placeholder: 'your@email.com',
+      email_required: 'Email is required',
+      email_invalid: 'Invalid email address',
+      password_label: 'Password',
+      password_placeholder: 'Create a password',
+      password_required: 'Password is required',
+      password_min: 'At least 8 characters',
+      submit: 'Sign Up 🍭',
+      submitting: 'Creating Account...',
+      has_account: 'Already have an account? ',
+      login_link: 'Sign In',
+    },
+  },
+
+  tabs: {
+    home: 'Home',
+    practice: 'Practice',
+    ai: 'AI',
+    social: 'Social',
+    profile: 'Profile',
+  },
+  lesson: {
+    loading: 'Loading lesson…',
+    not_found: 'Lesson not found',
+    not_found_desc: 'Unable to load lesson',
+    continue: 'Continue',
+    finish: 'Finish',
+    previous: 'Previous',
+    error_content: 'Error loading step content',
+    unsupported: 'This step type is not supported yet',
+    instruction: {
+      fill_blank: 'Fill in the blank',
+      match_pairs: 'Match the word to its translation',
+      quiz: 'Choose the correct word',
+      translate: 'Translate',
+      tap_words: 'Put the words in the correct order',
+      listening: 'Type what you hear',
+    },
+    feedback: {
+      check: 'Check',
+      done: 'Done',
+      correct: 'Correct!',
+      incorrect: 'Incorrect',
+      correct_answer: 'Correct answer:',
+      next: 'Next',
+      finish: 'Finish',
+    },
+    answer_placeholder: 'Type your answer…',
+    listening_placeholder: 'Type what you hear…',
+    word_bank_hint: 'Tap or drag the words here',
   },
 } as const;
 

@@ -5,14 +5,12 @@ import {
   ScrollView,
   Pressable,
   ActivityIndicator,
+  StyleSheet,
 } from 'react-native';
-import { Stack, Link, router } from 'expo-router';
-import {
-  ArrowLeft,
-  Layers,
-  TrendingDown,
-  TrendingUp,
-} from 'lucide-react-native';
+import { Stack, router } from 'expo-router';
+import { Layers, TrendingDown, TrendingUp } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useSkillStrengths, useWeakSkills } from '@/hooks/use-srs';
 import { tsToDate } from '@/lib/api-client';
@@ -21,13 +19,14 @@ import {
   type SkillDecay,
   type SkillTypeShort,
 } from '@/types/api';
+import { glass, CtaButton, SunsetTabs } from '@/components/sunset';
 
 type Filter = 'all' | 'module' | 'lesson';
 
-const TABS: Array<{ value: Filter; label: string }> = [
-  { value: 'all', label: 'Все' },
-  { value: 'module', label: 'Модули' },
-  { value: 'lesson', label: 'Уроки' },
+const TABS = [
+  { key: 'all', label: 'Все' },
+  { key: 'module', label: 'Модули' },
+  { key: 'lesson', label: 'Уроки' },
 ];
 
 /**
@@ -38,6 +37,7 @@ const TABS: Array<{ value: Filter; label: string }> = [
  * current_strength по decay_rate (default 0.05/day).
  */
 export default function StrengthScreen() {
+  const insets = useSafeAreaInsets();
   const [filter, setFilter] = useState<Filter>('all');
   const skillType: SkillTypeShort | undefined =
     filter === 'all' ? undefined : filter;
@@ -45,122 +45,79 @@ export default function StrengthScreen() {
   const weak = useWeakSkills({ skill_type: skillType, limit: 5 });
   const all = useSkillStrengths({ skill_type: skillType, limit: 100 });
 
-  // Сортируем по current_strength ASC — слабые в начале.
   const sorted = useMemo(() => {
     const items = all.data?.skills ?? [];
     return [...items].sort((a, b) => a.current_strength - b.current_strength);
   }, [all.data]);
 
   return (
-    <View className="flex-1 bg-background">
+    <View style={{ flex: 1 }}>
       <Stack.Screen options={{ title: 'Сила навыков' }} />
-      <ScrollView contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 80 }}>
-        <Pressable
-          onPress={() => router.back()}
-          className="flex-row items-center gap-1 self-start active:opacity-60"
-        >
-          <ArrowLeft size={16} color="#9ca3af" />
-          <Text className="text-muted-foreground font-bold">Назад</Text>
-        </Pressable>
-
-        <View className="gap-2">
-          <View className="flex-row items-center gap-2">
-            <Layers size={28} color="#00FFA3" />
-            <Text className="text-foreground font-black text-3xl">
-              Сила навыков
-            </Text>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 40 + insets.bottom }}
+      >
+        <View style={{ gap: 8 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            <Layers size={28} color="#FFD84A" />
+            <Text style={s.title}>Сила навыков</Text>
           </View>
-          <Text className="text-muted-foreground font-medium">
+          <Text style={s.subtitle}>
             Каждый завершённый урок и модуль становятся «навыком». Без практики
-            навык медленно «ржавеет» (decay) — практикуйтесь, чтобы сохранить
-            силу.
+            навык медленно «ржавеет» — практикуйтесь, чтобы сохранить силу.
           </Text>
         </View>
 
-        {/* Tabs */}
-        <View className="flex-row bg-card rounded-2xl border-2 border-border p-1">
-          {TABS.map((t) => {
-            const active = filter === t.value;
-            return (
-              <Pressable
-                key={t.value}
-                onPress={() => setFilter(t.value)}
-                className={`flex-1 rounded-xl py-2 items-center ${
-                  active ? 'bg-primary' : 'bg-transparent'
-                }`}
-              >
-                <Text
-                  className={`font-bold text-xs ${
-                    active ? 'text-primary-foreground' : 'text-foreground'
-                  }`}
-                >
-                  {t.label}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
+        <SunsetTabs
+          tabs={TABS}
+          active={filter}
+          onChange={(k) => setFilter(k as Filter)}
+        />
 
         {/* Top weak */}
-        <View className="bg-card rounded-3xl border-4 border-border p-4 gap-3">
-          <View className="flex-row items-center justify-between flex-wrap gap-2">
-            <View className="flex-row items-center gap-2">
-              <TrendingDown size={18} color="#f59e0b" />
-              <Text className="text-foreground font-black text-lg">
-                Слабые навыки
-              </Text>
+        <View style={[glass, s.card]}>
+          <View style={s.cardHead}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <TrendingDown size={18} color="#FFB338" />
+              <Text style={s.cardTitle}>Слабые навыки</Text>
             </View>
-            <Link href="/practice/session" asChild>
-              <Pressable className="bg-primary rounded-2xl px-4 py-2 active:opacity-80">
-                <Text className="text-primary-foreground font-bold text-sm">
-                  Подтянуть
-                </Text>
-              </Pressable>
-            </Link>
+            <View style={{ width: 130 }}>
+              <CtaButton label="Подтянуть" onPress={() => router.push('/practice/session')} />
+            </View>
           </View>
           {weak.isLoading ? (
-            <View className="items-center py-4">
-              <ActivityIndicator color="#00FFA3" />
-            </View>
+            <ActivityIndicator color="#FFD84A" style={{ marginVertical: 12 }} />
           ) : (weak.data?.skills?.length ?? 0) === 0 ? (
-            <Text className="text-muted-foreground font-medium text-sm">
-              Слабых навыков нет — отлично!
-            </Text>
+            <Text style={s.empty}>Слабых навыков нет — отлично!</Text>
           ) : (
-            <View className="gap-2">
-              {weak.data?.skills?.map((s) => (
-                <SkillBar key={`${s.user_id}:${s.skill_id}`} skill={s} />
+            <View style={{ gap: 12, marginTop: 4 }}>
+              {weak.data?.skills?.map((sk) => (
+                <SkillBar key={`${sk.user_id}:${sk.skill_id}`} skill={sk} />
               ))}
             </View>
           )}
         </View>
 
         {/* All */}
-        <View className="bg-card rounded-3xl border-4 border-border p-4 gap-3">
-          <View className="flex-row items-center gap-2">
-            <TrendingUp size={18} color="#10b981" />
-            <Text className="text-foreground font-black text-lg">
-              Все навыки
-            </Text>
+        <View style={[glass, s.card]}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <TrendingUp size={18} color="#34D399" />
+            <Text style={s.cardTitle}>Все навыки</Text>
             {sorted.length > 0 && (
-              <Text className="text-muted-foreground font-bold">
-                · {sorted.length}
-              </Text>
+              <Text style={s.count}>· {sorted.length}</Text>
             )}
           </View>
 
           {all.isLoading ? (
-            <View className="items-center py-4">
-              <ActivityIndicator color="#00FFA3" />
-            </View>
+            <ActivityIndicator color="#FFD84A" style={{ marginVertical: 12 }} />
           ) : sorted.length === 0 ? (
-            <Text className="text-muted-foreground font-medium text-sm">
+            <Text style={s.empty}>
               Здесь будут навыки, когда вы пройдёте первый урок.
             </Text>
           ) : (
-            <View className="gap-2">
-              {sorted.map((s) => (
-                <SkillBar key={`${s.user_id}:${s.skill_id}`} skill={s} />
+            <View style={{ gap: 12, marginTop: 8 }}>
+              {sorted.map((sk) => (
+                <SkillBar key={`${sk.user_id}:${sk.skill_id}`} skill={sk} />
               ))}
             </View>
           )}
@@ -171,44 +128,48 @@ export default function StrengthScreen() {
 }
 
 function SkillBar({ skill }: { skill: SkillDecay }) {
-  const pct = Math.round(
-    Math.max(0, Math.min(1, skill.current_strength)) * 100,
-  );
+  const pct = Math.round(Math.max(0, Math.min(1, skill.current_strength)) * 100);
   const last = tsToDate(skill.last_practiced_at ?? null);
   const kind = skillTypeShort(skill.skill_type);
-  const colorClass =
-    pct >= 80 ? 'bg-emerald-500' : pct >= 50 ? 'bg-amber-500' : 'bg-red-500';
+  const barColor = pct >= 80 ? '#34D399' : pct >= 50 ? '#FFB338' : '#FF6FA0';
 
   return (
-    <View className="flex-row items-center gap-3">
-      <View className="flex-1 gap-1.5 min-w-0">
-        <View className="flex-row items-center gap-2 flex-wrap">
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+      <View style={{ flex: 1, gap: 6, minWidth: 0 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           {kind && (
-            <View className="bg-card border-2 border-border rounded-full px-2 py-0.5">
-              <Text className="text-foreground text-[10px] font-bold uppercase">
-                {kind === 'module' ? 'Модуль' : 'Урок'}
-              </Text>
+            <View style={s.kindPill}>
+              <Text style={s.kindText}>{kind === 'module' ? 'Модуль' : 'Урок'}</Text>
             </View>
           )}
-          <Text
-            className="text-muted-foreground text-xs font-mono flex-1"
-            numberOfLines={1}
-          >
-            {skill.skill_id}
-          </Text>
+          <Text style={s.skillId} numberOfLines={1}>{skill.skill_id}</Text>
         </View>
-        <View className="h-3 bg-muted rounded-full overflow-hidden border-2 border-border">
-          <View className={`h-full ${colorClass}`} style={{ width: `${pct}%` }} />
+        <View style={s.barTrack}>
+          <View style={{ height: '100%', borderRadius: 6, width: `${pct}%`, backgroundColor: barColor }} />
         </View>
       </View>
-      <View className="items-end">
-        <Text className="text-foreground font-black text-lg tabular-nums">
-          {pct}%
-        </Text>
-        <Text className="text-muted-foreground text-[10px] uppercase tracking-wider font-bold">
-          {last ? last.toLocaleDateString() : '—'}
-        </Text>
+      <View style={{ alignItems: 'flex-end' }}>
+        <Text style={s.pct}>{pct}%</Text>
+        <Text style={s.pctDate}>{last ? last.toLocaleDateString() : '—'}</Text>
       </View>
     </View>
   );
 }
+
+const s = StyleSheet.create({
+  title: { color: '#fff', fontWeight: '900', fontSize: 28 },
+  subtitle: { color: 'rgba(255,255,255,0.72)', fontSize: 13, lineHeight: 19, fontWeight: '500' },
+
+  card: { borderRadius: 24, padding: 16, gap: 4 },
+  cardHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, marginBottom: 4 },
+  cardTitle: { color: '#fff', fontWeight: '900', fontSize: 16 },
+  count: { color: 'rgba(255,255,255,0.7)', fontWeight: '800', fontSize: 14 },
+  empty: { color: 'rgba(255,255,255,0.72)', fontWeight: '600', fontSize: 13, marginTop: 6 },
+
+  kindPill: { backgroundColor: 'rgba(255,255,255,0.16)', borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 },
+  kindText: { color: '#fff', fontSize: 10, fontWeight: '800', textTransform: 'uppercase' },
+  skillId: { color: 'rgba(255,255,255,0.7)', fontSize: 12, flex: 1, fontFamily: 'monospace' },
+  barTrack: { height: 10, borderRadius: 6, backgroundColor: 'rgba(255,255,255,0.16)', overflow: 'hidden' },
+  pct: { color: '#fff', fontWeight: '900', fontSize: 17 },
+  pctDate: { color: 'rgba(255,255,255,0.6)', fontSize: 10, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5 },
+});

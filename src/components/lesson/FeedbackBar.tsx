@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, Pressable } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { CheckCircle2, XCircle } from 'lucide-react-native';
 
 /**
@@ -17,6 +18,7 @@ interface FeedbackBarProps {
   onSubmit: () => void;
   onContinue: () => void;
   isLast?: boolean;
+  /** Кастомный лейбл кнопки submit. По умолчанию — localized «Check». */
   submitLabel?: string;
 }
 
@@ -26,8 +28,9 @@ export function FeedbackBar({
   onSubmit,
   onContinue,
   isLast,
-  submitLabel = 'Проверить',
+  submitLabel,
 }: FeedbackBarProps) {
+  const { t } = useTranslation();
   if (state.kind === 'correct' || state.kind === 'wrong') {
     const correct = state.kind === 'correct';
     return (
@@ -46,11 +49,11 @@ export function FeedbackBar({
           )}
           <View className="flex-1">
             <Text className="font-black text-foreground text-base">
-              {correct ? 'Правильно!' : 'Неправильно'}
+              {correct ? t('lesson.feedback.correct') : t('lesson.feedback.incorrect')}
             </Text>
             {!correct && state.correctText && (
               <Text className="text-sm font-bold text-foreground mt-1">
-                Правильный ответ: {state.correctText}
+                {t('lesson.feedback.correct_answer')} {state.correctText}
               </Text>
             )}
             {state.explanation && (
@@ -62,10 +65,10 @@ export function FeedbackBar({
         </View>
         <Pressable
           onPress={onContinue}
-          className="bg-primary rounded-2xl py-3 items-center"
+          className="bg-[#FFDF5E] rounded-2xl py-3 items-center"
         >
-          <Text className="text-primary-foreground font-black uppercase">
-            {isLast ? 'Завершить' : 'Дальше →'}
+          <Text className="text-[#3D0A1A] font-black uppercase">
+            {isLast ? t('lesson.feedback.finish') : `${t('lesson.feedback.next')} →`}
           </Text>
         </Pressable>
       </View>
@@ -78,15 +81,15 @@ export function FeedbackBar({
       onPress={onSubmit}
       disabled={disabled}
       className={`rounded-2xl py-4 items-center ${
-        disabled ? 'bg-muted' : 'bg-primary'
+        disabled ? 'bg-[rgba(255,255,255,0.12)]' : 'bg-[#FFDF5E]'
       }`}
     >
       <Text
         className={`font-black uppercase ${
-          disabled ? 'text-muted-foreground' : 'text-primary-foreground'
+          disabled ? 'text-[rgba(255,255,255,0.6)]' : 'text-[#3D0A1A]'
         }`}
       >
-        {submitLabel}
+        {submitLabel ?? t('lesson.feedback.check')}
       </Text>
     </Pressable>
   );

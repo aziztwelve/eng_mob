@@ -1,6 +1,7 @@
 import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { Check } from 'lucide-react-native';
+import { neon } from '@/components/neon-screen';
 
 /**
  * <OptionCard> — карточка single-select опции в шагах онбординга v3.
@@ -40,33 +41,44 @@ export function OptionCard({
       accessibilityRole="radio"
       accessibilityState={{ selected, disabled }}
       accessibilityLabel={subtitle ? `${title}. ${subtitle}` : title}
-      className={`rounded-2xl border-4 px-4 py-3 flex-row items-center gap-3 ${
-        selected
-          ? 'border-primary bg-primary/10'
-          : 'border-border bg-card'
-      } ${disabled ? 'opacity-50' : 'active:opacity-80'}`}
+      style={{
+        borderRadius: 20,
+        borderWidth: selected ? 2 : 1,
+        borderColor: selected ? neon.primary : neon.border,
+        backgroundColor: selected ? 'rgba(46,236,200,0.10)' : neon.surface,
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        opacity: disabled ? 0.5 : 1,
+        shadowColor: neon.primary,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: selected ? 0.24 : 0,
+        shadowRadius: 16,
+      }}
     >
       {emoji ? (
-        <View className="w-10 h-10 items-center justify-center">
+        <View style={{ width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.05)' }}>
           <Text style={{ fontSize: 28 }}>{emoji}</Text>
         </View>
       ) : null}
-      <View className="flex-1">
+      <View style={{ flex: 1 }}>
         <Text
-          className={`font-black text-base ${selected ? 'text-primary' : 'text-foreground'}`}
+          style={{ color: selected ? neon.primary : neon.text, fontWeight: '900', fontSize: 16 }}
         >
           {title}
         </Text>
         {subtitle ? (
-          <Text className="text-muted-foreground font-medium text-sm mt-0.5">
+          <Text style={{ color: neon.muted, fontWeight: '600', fontSize: 14, marginTop: 2 }}>
             {subtitle}
           </Text>
         ) : null}
       </View>
       {trailing}
       {selected ? (
-        <View className="w-6 h-6 items-center justify-center rounded-full bg-primary">
-          <Check size={14} color="#0f0f15" strokeWidth={4} />
+        <View style={{ width: 26, height: 26, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: neon.primary }}>
+          <Check size={14} color={neon.ink} strokeWidth={4} />
         </View>
       ) : null}
     </Pressable>

@@ -1,15 +1,9 @@
-import React, { useState } from 'react';
-import { ActivityIndicator, Pressable, TextInput, View } from 'react-native';
+import React, { useRef, useState } from 'react';
+import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { Send, Volume2 } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { glass, CTA } from '@/components/sunset';
 
-/**
- * ChatInput — TextInput + send-button + want_audio toggle.
- *
- * Mirror eng_next2 ChatInput, но без Enter-to-send (на mobile это
- * стандартное Return — letting `multiline` поведение работать естественно).
- *
- * Send disabled когда строка пуста или loading=true.
- */
 export function ChatInput({
   onSend,
   loading = false,
@@ -23,65 +17,101 @@ export function ChatInput({
 }) {
   const [text, setText] = useState('');
   const [wantAudio, setWantAudio] = useState(false);
+  // Локальный ref — блокирует повторный тап до завершения отправки
+  const submittingRef = useRef(false);
 
   const submit = async () => {
+    if (submittingRef.current || loading) return;
     const trimmed = text.trim();
-    if (!trimmed || loading) return;
+    if (!trimmed) return;
+    submittingRef.current = true;
     setText('');
-    await onSend(trimmed, wantAudio);
+    try {
+      await onSend(trimmed, wantAudio);
+    } finally {
+      submittingRef.current = false;
+    }
   };
 
   const canSubmit = text.trim().length > 0 && !loading;
 
   return (
-    <View className="bg-card border-4 border-border rounded-3xl p-2 flex-row items-end gap-2">
+    <View style={[s.wrap, glass]}>
       <TextInput
         value={text}
         onChangeText={setText}
         placeholder={placeholder}
-        placeholderTextColor="#6b7280"
+        placeholderTextColor="rgba(255,255,255,0.35)"
         editable={!loading}
         multiline
         numberOfLines={1}
-        className="flex-1 text-foreground font-medium"
-        style={{
-          paddingHorizontal: 12,
-          paddingVertical: 10,
-          color: '#fff',
-          maxHeight: 120,
-          minHeight: 44,
-        }}
+        style={s.input}
       />
 
       {showAudioToggle && (
         <Pressable
           onPress={() => setWantAudio((v) => !v)}
           disabled={loading}
-          className={`h-11 w-11 rounded-2xl items-center justify-center ${
-            wantAudio ? 'bg-primary' : 'bg-muted border-2 border-border'
-          } active:opacity-80`}
+          style={[s.iconBtn, wantAudio ? s.iconBtnActive : glass]}
           accessibilityLabel={wantAudio ? 'Audio reply on' : 'Audio reply off'}
         >
-          <Volume2
-            size={18}
-            color={wantAudio ? '#1a1a1a' : '#9ca3af'}
-          />
+          <Volume2 size={17} color={wantAudio ? '#fff' : 'rgba(255,255,255,0.55)'} />
         </Pressable>
       )}
 
-      <Pressable
-        onPress={submit}
-        disabled={!canSubmit}
-        className={`h-11 px-4 rounded-2xl items-center justify-center flex-row gap-1 ${
-          canSubmit ? 'bg-primary active:opacity-80' : 'bg-muted opacity-60'
-        }`}
-      >
-        {loading ? (
-          <ActivityIndicator size="small" color="#1a1a1a" />
-        ) : (
-          <Send size={18} color={canSubmit ? '#1a1a1a' : '#9ca3af'} />
-        )}
+      <Pressable onPress={submit} disabled={!canSubmit || loading} style={s.sendWrap}>
+        <LinearGradient
+          colors={canSubmit ? CTA : ['rgba(255,255,255,0.12)', 'rgba(255,255,255,0.12)']}
+          style={s.sendBtn}
+        >
+          {loading ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Send size={17} color={canSubmit ? '#fff' : 'rgba(255,255,255,0.4)'} />
+          )}
+        </LinearGradient>
       </Pressable>
     </View>
   );
 }
+
+const s = StyleSheet.create({
+  wrap: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    borderRadius: 22,
+    paddingHorizontal: 6,
+    paddingVertical: 6,
+    gap: 6,
+  },
+  input: {
+    flex: 1,
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '500',
+    paddingHorizontal: 10,
+    paddingVertical: 9,
+    maxHeight: 120,
+    minHeight: 40,
+  },
+  iconBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconBtnActive: {
+    backgroundColor: 'rgba(168,36,63,0.7)',
+    borderWidth: 1,
+    borderColor: 'rgba(168,36,63,0.4)',
+  },
+  sendWrap: { borderRadius: 14, overflow: 'hidden' },
+  sendBtn: {
+    width: 38,
+    height: 38,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 14,
+  },
+});

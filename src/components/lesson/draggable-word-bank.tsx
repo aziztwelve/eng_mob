@@ -113,10 +113,10 @@ export function DraggableWordBank({
       {/* Answer area (top) */}
       <Animated.View
         ref={answerRef}
-        className="min-h-[80px] rounded-2xl border-2 border-dashed border-border bg-muted/20 p-3 mb-4 flex-row flex-wrap gap-2"
+        className="min-h-[80px] rounded-2xl border-2 border-dashed border-[rgba(255,255,255,0.30)] bg-[rgba(255,255,255,0.06)] p-3 mb-4 flex-row flex-wrap gap-2"
       >
         {picked.length === 0 ? (
-          <Text className="text-muted-foreground text-sm font-medium m-auto">
+          <Text className="text-sm font-medium m-auto" style={{ color: 'rgba(255,255,255,0.65)' }}>
             {emptyHint}
           </Text>
         ) : (
@@ -276,7 +276,7 @@ function DraggableWord({
       <Animated.View
         onLayout={handleLayout}
         style={style}
-        className="px-3 py-2 rounded-xl border-2 bg-card"
+        className="px-3 py-2 rounded-xl border border-[rgba(255,255,255,0.24)] bg-[rgba(255,255,255,0.14)]"
       >
         <Text className="font-bold text-foreground">{label}</Text>
       </Animated.View>

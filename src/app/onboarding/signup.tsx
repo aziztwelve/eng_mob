@@ -17,6 +17,7 @@ import { useTranslation } from 'react-i18next';
 
 import { Mascot } from '@/components/onboarding/Mascot';
 import { OAuthButton } from '@/components/onboarding/OAuthButton';
+import { NeonScreen, neon, neonStyles } from '@/components/neon-screen';
 import { useClaimAccount } from '@/hooks/use-claim-account';
 import { useCompleteOnboarding } from '@/hooks/use-onboarding';
 import { analytics } from '@/lib/analytics';
@@ -161,18 +162,13 @@ export default function SignupScreen() {
     }
   };
 
-  const onSkip = async () => {
-    if (busy) return;
-    analytics.track('claim_skipped');
-    await finishAndGoHome();
-  };
-
   const onLogin = () => router.push('/auth/login');
 
   return (
-    <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1 }} className="bg-background">
+    <NeonScreen>
+    <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1, backgroundColor: 'transparent' }}>
       {/* Header back */}
-      <View className="flex-row items-center px-4 pt-2 pb-2">
+      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 8, paddingBottom: 8 }}>
         <Pressable
           onPress={() => router.back()}
           hitSlop={12}
@@ -180,7 +176,7 @@ export default function SignupScreen() {
         >
           <ArrowLeft size={22} color="#9ca3af" />
         </Pressable>
-        <View className="flex-1" />
+        <View style={{ flex: 1 }} />
       </View>
 
       <KeyboardAvoidingView
@@ -188,34 +184,43 @@ export default function SignupScreen() {
         style={{ flex: 1 }}
       >
         <ScrollView
-          className="flex-1"
+          style={{ flex: 1 }}
           contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 16 }}
           keyboardShouldPersistTaps="handled"
         >
-          <Animated.View entering={FadeIn.duration(220)} className="items-center mt-2">
+          <Animated.View entering={FadeIn.duration(220)} style={{ alignItems: 'center', marginTop: 8 }}>
             <Mascot pose="thumbs_up" size={120} />
           </Animated.View>
 
           <Animated.Text
             entering={FadeInDown.duration(280).delay(100)}
-            className="text-foreground font-black text-3xl text-center mt-3"
+            style={[neonStyles.title, { textAlign: 'center', marginTop: 12, fontSize: 28 }]}
           >
             {t('onboarding.signup.title')}
           </Animated.Text>
           <Animated.Text
             entering={FadeInDown.duration(280).delay(160)}
-            className="text-muted-foreground font-medium text-base text-center mt-2"
+            style={{ color: neon.muted, fontWeight: '600', fontSize: 15, textAlign: 'center', marginTop: 8, lineHeight: 22 }}
           >
             {t('onboarding.signup.subtitle')}
           </Animated.Text>
 
           {/* Email form (Android) */}
           {showEmailForm ? (
-            <View className="gap-2 mt-5">
+            <View style={{ gap: 10, marginTop: 20 }}>
               <TextInput
-                className="bg-card border-2 border-border rounded-2xl px-4 py-3 text-foreground text-base"
+                style={{
+                  backgroundColor: 'rgba(255,255,255,0.15)',
+                  borderWidth: 1.5,
+                  borderColor: 'rgba(255,255,255,0.3)',
+                  borderRadius: 20,
+                  paddingHorizontal: 18,
+                  paddingVertical: 14,
+                  fontSize: 15,
+                  color: '#fff',
+                }}
                 placeholder={t('onboarding.signup.email.email_placeholder')}
-                placeholderTextColor="#666"
+                placeholderTextColor="rgba(255,255,255,0.4)"
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
@@ -224,9 +229,18 @@ export default function SignupScreen() {
                 editable={!busy}
               />
               <TextInput
-                className="bg-card border-2 border-border rounded-2xl px-4 py-3 text-foreground text-base"
+                style={{
+                  backgroundColor: 'rgba(255,255,255,0.15)',
+                  borderWidth: 1.5,
+                  borderColor: 'rgba(255,255,255,0.3)',
+                  borderRadius: 20,
+                  paddingHorizontal: 18,
+                  paddingVertical: 14,
+                  fontSize: 15,
+                  color: '#fff',
+                }}
                 placeholder={t('onboarding.signup.email.username_placeholder')}
-                placeholderTextColor="#666"
+                placeholderTextColor="rgba(255,255,255,0.4)"
                 value={username}
                 onChangeText={setUsername}
                 autoCapitalize="none"
@@ -234,9 +248,18 @@ export default function SignupScreen() {
                 editable={!busy}
               />
               <TextInput
-                className="bg-card border-2 border-border rounded-2xl px-4 py-3 text-foreground text-base"
+                style={{
+                  backgroundColor: 'rgba(255,255,255,0.15)',
+                  borderWidth: 1.5,
+                  borderColor: 'rgba(255,255,255,0.3)',
+                  borderRadius: 20,
+                  paddingHorizontal: 18,
+                  paddingVertical: 14,
+                  fontSize: 15,
+                  color: '#fff',
+                }}
                 placeholder={t('onboarding.signup.email.password_placeholder')}
-                placeholderTextColor="#666"
+                placeholderTextColor="rgba(255,255,255,0.4)"
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry
@@ -245,17 +268,15 @@ export default function SignupScreen() {
                 editable={!busy}
               />
               {emailErr ? (
-                <Text className="text-destructive text-sm mt-1">{emailErr}</Text>
+                <Text style={{ color: '#FF7FAA', fontSize: 13, marginTop: 2 }}>{emailErr}</Text>
               ) : null}
               <Pressable
                 onPress={() => void onEmailSubmit()}
                 disabled={busy}
-                className={`rounded-2xl py-4 items-center mt-1 ${
-                  busy ? 'bg-muted opacity-60' : 'bg-primary active:opacity-80'
-                }`}
+                style={[neonStyles.cta, { backgroundColor: neon.ctaBg }, busy && { opacity: 0.6, shadowOpacity: 0, backgroundColor: 'rgba(255,255,255,0.08)' }]}
                 accessibilityRole="button"
               >
-                <Text className="text-primary-foreground font-black text-base">
+                <Text style={{ color: neon.text, fontWeight: '900', fontSize: 16, letterSpacing: 0.5 }}>
                   {claim.isPending && !complete.isPending
                     ? t('onboarding.signup.email.submitting')
                     : t('onboarding.signup.email.submit')}
@@ -263,19 +284,19 @@ export default function SignupScreen() {
               </Pressable>
 
               {googleAvailable ? (
-                <View className="flex-row items-center gap-3 my-2">
-                  <View className="flex-1 h-px bg-border" />
-                  <Text className="text-muted-foreground text-xs font-bold">
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginVertical: 8 }}>
+                  <View style={{ flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.2)' }} />
+                  <Text style={{ color: neon.muted, fontSize: 12, fontWeight: '700' }}>
                     {t('onboarding.signup.email.divider')}
                   </Text>
-                  <View className="flex-1 h-px bg-border" />
+                  <View style={{ flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.2)' }} />
                 </View>
               ) : null}
             </View>
           ) : null}
 
           {/* OAuth buttons */}
-          <View className="gap-3 mt-2">
+          <View style={{ gap: 12, marginTop: 8 }}>
             {appleAvailable ? (
               <OAuthButton
                 provider="apple"
@@ -292,8 +313,8 @@ export default function SignupScreen() {
             ) : null}
 
             {!appleAvailable && !googleAvailable && !showEmailForm ? (
-              <View className="bg-card border-2 border-border rounded-2xl p-3">
-                <Text className="text-muted-foreground font-medium text-sm leading-snug">
+              <View style={{ backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: neon.border, borderRadius: 16, padding: 12 }}>
+                <Text style={{ color: neon.muted, fontSize: 13, lineHeight: 20 }}>
                   {t('onboarding.signup.no_oauth_hint')}
                 </Text>
               </View>
@@ -302,30 +323,23 @@ export default function SignupScreen() {
 
           <Pressable
             onPress={onLogin}
-            className="py-3 items-center active:opacity-60 mt-2"
+            style={{ paddingVertical: 12, alignItems: 'center', marginTop: 8 }}
+            className="active:opacity-60"
           >
-            <Text className="text-primary font-bold text-sm">
+            <Text style={{ color: neon.primary, fontWeight: '700', fontSize: 14 }}>
               {t('onboarding.signup.login_link')}
             </Text>
           </Pressable>
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {/* Footer skip */}
-      <View className="px-5 pb-4 pt-2">
-        <Pressable
-          onPress={() => void onSkip()}
-          disabled={busy}
-          className="py-3 items-center active:opacity-60"
-        >
-          <Text className="text-muted-foreground font-bold text-sm">
-            {t('onboarding.signup.skip')}
-          </Text>
-        </Pressable>
-        <Text className="text-muted-foreground font-medium text-xs text-center">
+      {/* Footer */}
+      <View style={{ paddingHorizontal: 20, paddingBottom: 16, paddingTop: 8 }}>
+        <Text style={{ color: 'rgba(255,255,255,0.45)', fontSize: 12, textAlign: 'center' }}>
           {t('onboarding.signup.terms')}
         </Text>
       </View>
     </SafeAreaView>
+    </NeonScreen>
   );
 }

@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 
 import { isOnboarded } from '@/lib/onboarding-storage';
 import { isOnboardingV3Enabled } from '@/lib/feature-flags';
+import { AuthService } from '@/lib/auth-service';
 
 /**
  * Root-route — splash + redirect.
@@ -26,9 +27,20 @@ export default function IndexScreen() {
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      const onboarded = await isOnboarded();
+      const [onboarded, token, guest] = await Promise.all([
+        isOnboarded(),
+        AuthService.getAccessToken(),
+        AuthService.isGuestSession(),
+      ]);
       if (cancelled) return;
       const v3Enabled = isOnboardingV3Enabled();
+
+      // Зарегистрированный юзер с токеном — всегда в app, даже если
+      // локальный completed_at сбросился (переустановка, очистка storage).
+      if (token && !guest) {
+        router.replace('/(tabs)');
+        return;
+      }
 
       if (onboarded || !v3Enabled) {
         // Уже прошёл онбординг (или V3 выключен) — пускаем в основной

@@ -1,33 +1,19 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Platform, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Mic, Pause, Play, Square, Trash2 } from 'lucide-react-native';
 import { Audio } from 'expo-av';
-
+import { LinearGradient } from 'expo-linear-gradient';
+import { glass, CTA } from '@/components/sunset';
 import type { PronunciationAudioInput } from '@/lib/ai-api';
 
 const MAX_DURATION_SEC = 60;
-
 type State = 'idle' | 'recording' | 'recorded' | 'denied';
 
-/**
- * VoiceRecorder — обёртка над expo-av Audio.Recording.
- *
- *  - Idle:      кнопка «Начать запись» (просит mic permission при клике).
- *  - Recording: timer + Stop.
- *  - Recorded:  replay (play/pause) + Send + Delete.
- *
- * Reset снаружи делается через `key`-prop (родитель меняет — RN
- * размонтирует и подчистит ресурсы в useEffect cleanup).
- *
- * MAX_DURATION_SEC = 60 — больше не нужно для произношения.
- */
 export function VoiceRecorder({
   loading = false,
   onSubmit,
 }: {
-  /** API-вызов в процессе (lock UI). */
   loading?: boolean;
-  /** Родитель решает, что делать с записью. */
   onSubmit: (input: PronunciationAudioInput, durationSec: number) => void | Promise<void>;
 }) {
   const [state, setState] = useState<State>('idle');
@@ -39,265 +25,140 @@ export function VoiceRecorder({
   const soundRef = useRef<Audio.Sound | null>(null);
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Cleanup на unmount.
   useEffect(() => {
     return () => {
       if (tickRef.current) clearInterval(tickRef.current);
-      // Stop recorder если жив.
-      const r = recRef.current;
-      if (r) {
-        r.stopAndUnloadAsync().catch(() => {});
-        recRef.current = null;
-      }
-      const s = soundRef.current;
-      if (s) {
-        s.unloadAsync().catch(() => {});
-        soundRef.current = null;
-      }
+      recRef.current?.stopAndUnloadAsync().catch(() => {});
+      soundRef.current?.unloadAsync().catch(() => {});
     };
   }, []);
 
   const start = async () => {
     try {
       const perm = await Audio.requestPermissionsAsync();
-      if (!perm.granted) {
-        setState('denied');
-        return;
-      }
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: true,
-        playsInSilentModeIOS: true,
-      });
-
-      const { recording } = await Audio.Recording.createAsync(
-        Audio.RecordingOptionsPresets.HIGH_QUALITY,
-      );
+      if (!perm.granted) { setState('denied'); return; }
+      await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
+      const { recording } = await Audio.Recording.createAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
       recRef.current = recording;
       setSeconds(0);
       setState('recording');
-
       tickRef.current = setInterval(() => {
         setSeconds((s) => {
           const next = s + 1;
-          if (next >= MAX_DURATION_SEC) {
-            // Принудительный stop. setTimeout — чтобы выйти из tick'а.
-            setTimeout(() => stop(), 0);
-          }
+          if (next >= MAX_DURATION_SEC) setTimeout(() => stop(), 0);
           return next;
         });
       }, 1000);
-    } catch (e) {
-      console.error('mic record failed', e);
-      setState('denied');
-    }
+    } catch (e) { console.error('mic record failed', e); setState('denied'); }
   };
 
   const stop = async () => {
-    if (tickRef.current) {
-      clearInterval(tickRef.current);
-      tickRef.current = null;
-    }
+    if (tickRef.current) { clearInterval(tickRef.current); tickRef.current = null; }
     const rec = recRef.current;
     if (!rec) return;
     try {
       await rec.stopAndUnloadAsync();
       const uri = rec.getURI();
       recRef.current = null;
-      // Восстановим audio-mode для playback.
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: false,
-        playsInSilentModeIOS: true,
-      }).catch(() => {});
-      if (!uri) {
-        setState('idle');
-        return;
-      }
+      await Audio.setAudioModeAsync({ allowsRecordingIOS: false, playsInSilentModeIOS: true }).catch(() => {});
+      if (!uri) { setState('idle'); return; }
       const { type, name } = inferAudioMeta(uri);
       setAudio({ uri, type, name });
       setState('recorded');
-    } catch (e) {
-      console.error('mic stop failed', e);
-      setState('idle');
-    }
+    } catch (e) { console.error('mic stop failed', e); setState('idle'); }
   };
 
   const togglePlay = async () => {
     if (!audio) return;
     try {
       if (!soundRef.current) {
-        const { sound } = await Audio.Sound.createAsync(
-          { uri: audio.uri },
-          { shouldPlay: true },
-        );
+        const { sound } = await Audio.Sound.createAsync({ uri: audio.uri }, { shouldPlay: true });
         soundRef.current = sound;
         setPlaying(true);
-        sound.setOnPlaybackStatusUpdate((s) => {
-          if (!s.isLoaded) return;
-          if (s.didJustFinish) setPlaying(false);
-        });
+        sound.setOnPlaybackStatusUpdate((s) => { if (s.isLoaded && s.didJustFinish) setPlaying(false); });
         return;
       }
-      const status = await soundRef.current.getStatusAsync();
-      if (!status.isLoaded) return;
-      if (status.isPlaying) {
-        await soundRef.current.pauseAsync();
-        setPlaying(false);
-      } else {
-        if (
-          status.positionMillis &&
-          status.durationMillis &&
-          status.positionMillis >= status.durationMillis
-        ) {
+      const st = await soundRef.current.getStatusAsync();
+      if (!st.isLoaded) return;
+      if (st.isPlaying) { await soundRef.current.pauseAsync(); setPlaying(false); }
+      else {
+        if (st.positionMillis && st.durationMillis && st.positionMillis >= st.durationMillis)
           await soundRef.current.setPositionAsync(0);
-        }
-        await soundRef.current.playAsync();
-        setPlaying(true);
+        await soundRef.current.playAsync(); setPlaying(true);
       }
-    } catch (e) {
-      console.warn('playback failed', e);
-    }
+    } catch (e) { console.warn('playback failed', e); }
   };
 
   const reset = async () => {
-    setSeconds(0);
-    setAudio(null);
-    setPlaying(false);
-    if (soundRef.current) {
-      try {
-        await soundRef.current.unloadAsync();
-      } catch {
-        // noop
-      }
-      soundRef.current = null;
-    }
+    setSeconds(0); setAudio(null); setPlaying(false);
+    try { await soundRef.current?.unloadAsync(); } catch {}
+    soundRef.current = null;
     setState('idle');
   };
 
-  const submit = async () => {
-    if (!audio) return;
-    await onSubmit(audio, seconds);
-  };
+  const submit = async () => { if (audio) await onSubmit(audio, seconds); };
 
   if (state === 'denied') {
     return (
-      <View
-        className="rounded-3xl p-5 gap-2"
-        style={{
-          borderWidth: 4,
-          borderColor: 'rgba(255,75,75,0.3)',
-          backgroundColor: 'rgba(255,75,75,0.05)',
-        }}
-      >
-        <Text className="text-foreground font-black">
-          Нет доступа к микрофону
-        </Text>
-        <Text className="text-muted-foreground font-medium text-sm">
-          Разрешите доступ в настройках устройства и попробуйте снова.
-        </Text>
-        <Pressable
-          onPress={() => setState('idle')}
-          className="bg-card border-2 border-border rounded-xl px-3 py-2 self-start active:opacity-80"
-        >
-          <Text className="text-foreground font-bold">Попробовать снова</Text>
+      <View style={[s.card, glass]}>
+        <Text style={s.deniedTitle}>Нет доступа к микрофону</Text>
+        <Text style={s.deniedText}>Разрешите доступ в настройках устройства.</Text>
+        <Pressable onPress={() => setState('idle')} style={[s.retryBtn, glass]}>
+          <Text style={s.retryText}>Попробовать снова</Text>
         </Pressable>
       </View>
     );
   }
 
   return (
-    <View className="bg-card rounded-3xl border-4 border-border p-5 gap-3">
+    <View style={[s.card, glass]}>
       {state === 'idle' && (
-        <View className="items-center gap-3 py-4">
-          <Pressable
-            onPress={start}
-            className="bg-primary h-20 w-20 rounded-full items-center justify-center active:opacity-80"
-            style={{
-              shadowColor: '#46a302',
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 1,
-              shadowRadius: 0,
-              elevation: 4,
-            }}
-            accessibilityLabel="Начать запись"
-          >
-            <Mic size={32} color="#1a1a1a" />
+        <View style={s.center}>
+          <Pressable onPress={start} style={s.micWrap}>
+            <LinearGradient colors={CTA} style={s.micBtn}>
+              <Mic size={28} color="#fff" />
+            </LinearGradient>
           </Pressable>
-          <Text className="text-muted-foreground font-medium text-sm text-center">
-            Нажмите и говорите. Максимум {MAX_DURATION_SEC} секунд.
-          </Text>
+          <Text style={s.hint}>Нажмите и говорите. Максимум {MAX_DURATION_SEC} с.</Text>
         </View>
       )}
 
       {state === 'recording' && (
-        <View className="items-center gap-3 py-4">
-          <Pressable
-            onPress={stop}
-            className="bg-destructive h-20 w-20 rounded-full items-center justify-center active:opacity-80"
-            accessibilityLabel="Остановить запись"
-          >
-            <Square size={28} color="#fff" fill="#fff" />
+        <View style={s.center}>
+          <Pressable onPress={stop} style={s.stopWrap}>
+            <View style={s.stopBtn}>
+              <Square size={24} color="#f87171" fill="#f87171" />
+            </View>
           </Pressable>
-          <Text className="text-foreground font-black text-2xl tabular-nums">
+          <Text style={s.timer}>
             {formatSeconds(seconds)}
-            <Text className="text-base text-muted-foreground">
-              {' / '}
-              {formatSeconds(MAX_DURATION_SEC)}
-            </Text>
+            <Text style={s.timerMax}> / {formatSeconds(MAX_DURATION_SEC)}</Text>
           </Text>
-          <Text className="text-destructive font-bold text-xs uppercase tracking-wider">
-            Запись…
-          </Text>
+          <Text style={s.recLabel}>● Запись…</Text>
         </View>
       )}
 
       {state === 'recorded' && audio && (
-        <View className="gap-3">
-          <View className="items-center gap-2">
-            <Pressable
-              onPress={togglePlay}
-              className="bg-primary/15 border-4 border-primary h-16 w-16 rounded-full items-center justify-center active:opacity-80"
-            >
-              {playing ? (
-                <Pause size={24} color="#00FFA3" fill="#00FFA3" />
-              ) : (
-                <Play size={24} color="#00FFA3" fill="#00FFA3" />
-              )}
+        <View style={{ gap: 12 }}>
+          <View style={s.center}>
+            <Pressable onPress={togglePlay} style={[s.playBtn, glass]}>
+              {playing
+                ? <Pause size={22} color="#FFD84A" fill="#FFD84A" />
+                : <Play size={22} color="#FFD84A" fill="#FFD84A" />}
             </Pressable>
-            <Text className="text-muted-foreground font-medium text-xs">
-              Длительность: {formatSeconds(seconds)}
-            </Text>
+            <Text style={s.duration}>Длительность: {formatSeconds(seconds)}</Text>
           </View>
-
-          <View className="flex-row gap-2 justify-center">
-            <Pressable
-              onPress={reset}
-              disabled={loading}
-              className="bg-card border-2 border-border rounded-2xl px-3 py-2 flex-row items-center gap-2 active:opacity-80"
-            >
-              <Trash2 size={14} color="#9ca3af" />
-              <Text className="text-muted-foreground font-bold text-sm">
-                Перезаписать
-              </Text>
+          <View style={s.actionsRow}>
+            <Pressable onPress={reset} disabled={loading} style={[s.rerecBtn, glass]}>
+              <Trash2 size={14} color="rgba(255,255,255,0.6)" />
+              <Text style={s.rerecText}>Перезаписать</Text>
             </Pressable>
-            <Pressable
-              onPress={submit}
-              disabled={loading}
-              className={`rounded-2xl px-4 py-2 flex-row items-center gap-2 ${
-                loading ? 'bg-muted opacity-60' : 'bg-primary active:opacity-80'
-              }`}
-            >
-              {loading ? (
-                <>
-                  <ActivityIndicator size="small" color="#1a1a1a" />
-                  <Text className="text-primary-foreground font-black text-sm">
-                    Проверяем…
-                  </Text>
-                </>
-              ) : (
-                <Text className="text-primary-foreground font-black text-sm">
-                  Проверить произношение
-                </Text>
-              )}
+            <Pressable onPress={submit} disabled={loading} style={s.submitWrap}>
+              <LinearGradient colors={loading ? ['rgba(255,255,255,0.12)', 'rgba(255,255,255,0.12)'] : CTA} style={s.submitBtn}>
+                {loading
+                  ? <ActivityIndicator size="small" color="rgba(255,255,255,0.6)" />
+                  : <Text style={s.submitText}>Проверить →</Text>}
+              </LinearGradient>
             </Pressable>
           </View>
         </View>
@@ -308,23 +169,47 @@ export function VoiceRecorder({
 
 function formatSeconds(s: number): string {
   const m = Math.floor(s / 60);
-  const sec = s % 60;
-  return `${m}:${String(sec).padStart(2, '0')}`;
+  return `${m}:${String(s % 60).padStart(2, '0')}`;
 }
 
 function inferAudioMeta(uri: string): { type: string; name: string } {
-  // expo-av HIGH_QUALITY: iOS → .m4a, Android → .m4a (через AAC).
   const m = uri.match(/\.([a-zA-Z0-9]+)(?:\?.*)?$/);
-  const ext = (m?.[1] ?? (Platform.OS === 'ios' ? 'm4a' : 'm4a')).toLowerCase();
-  const type =
-    ext === 'm4a'
-      ? 'audio/m4a'
-      : ext === 'mp4'
-        ? 'audio/mp4'
-        : ext === 'aac'
-          ? 'audio/aac'
-          : ext === 'wav'
-            ? 'audio/wav'
-            : `audio/${ext}`;
+  const ext = (m?.[1] ?? 'm4a').toLowerCase();
+  const type = ext === 'm4a' ? 'audio/m4a' : ext === 'mp4' ? 'audio/mp4' : ext === 'aac' ? 'audio/aac' : ext === 'wav' ? 'audio/wav' : `audio/${ext}`;
   return { type, name: `recording.${ext}` };
 }
+
+const s = StyleSheet.create({
+  card: { borderRadius: 22, padding: 20, gap: 8 },
+  center: { alignItems: 'center', gap: 12, paddingVertical: 8 },
+
+  micWrap: { borderRadius: 40, overflow: 'hidden' },
+  micBtn: { width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center' },
+  hint: { color: 'rgba(255,255,255,0.55)', fontSize: 13, fontWeight: '500', textAlign: 'center' },
+
+  stopWrap: {},
+  stopBtn: {
+    width: 72, height: 72, borderRadius: 36,
+    alignItems: 'center', justifyContent: 'center',
+    backgroundColor: 'rgba(248,113,113,0.12)',
+    borderWidth: 2, borderColor: 'rgba(248,113,113,0.35)',
+  },
+  timer: { color: '#fff', fontSize: 26, fontWeight: '900' },
+  timerMax: { color: 'rgba(255,255,255,0.45)', fontSize: 16, fontWeight: '600' },
+  recLabel: { color: '#f87171', fontSize: 11, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 1 },
+
+  playBtn: { width: 60, height: 60, borderRadius: 30, alignItems: 'center', justifyContent: 'center' },
+  duration: { color: 'rgba(255,255,255,0.55)', fontSize: 12, fontWeight: '500' },
+
+  actionsRow: { flexDirection: 'row', gap: 10 },
+  rerecBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderRadius: 14, paddingVertical: 11 },
+  rerecText: { color: 'rgba(255,255,255,0.7)', fontSize: 13, fontWeight: '700' },
+  submitWrap: { flex: 1.5, borderRadius: 14, overflow: 'hidden' },
+  submitBtn: { paddingVertical: 11, alignItems: 'center', justifyContent: 'center' },
+  submitText: { color: '#fff', fontSize: 14, fontWeight: '800' },
+
+  deniedTitle: { color: '#fff', fontSize: 15, fontWeight: '800' },
+  deniedText: { color: 'rgba(255,255,255,0.6)', fontSize: 13, fontWeight: '500' },
+  retryBtn: { borderRadius: 12, paddingHorizontal: 14, paddingVertical: 8, alignSelf: 'flex-start', marginTop: 4 },
+  retryText: { color: '#fff', fontSize: 13, fontWeight: '700' },
+});

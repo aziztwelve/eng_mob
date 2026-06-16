@@ -1,55 +1,28 @@
 import React from 'react';
-import { Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+import { glass } from '@/components/sunset';
+import type { AIWritingFeedback, AssessWritingResponse } from '@/types/api';
 
-import type {
-  AIWritingFeedback,
-  AssessWritingResponse,
-} from '@/types/api';
-
-/**
- * AssessmentResult — карточка с overall + 4 score-bars + corrected_text +
- * structured feedback по категориям. Mirror eng_next2.
- */
-export function AssessmentResult({
-  data,
-}: {
-  data: AssessWritingResponse;
-}) {
+export function AssessmentResult({ data }: { data: AssessWritingResponse }) {
   return (
-    <View className="gap-4">
-      <View className="bg-card rounded-3xl border-4 border-border p-5 gap-4">
-        <View className="flex-row items-end justify-between flex-wrap gap-3">
+    <View style={{ gap: 12 }}>
+      {/* Overall */}
+      <View style={[s.card, glass]}>
+        <View style={s.overallRow}>
           <View>
-            <Text className="text-muted-foreground font-bold text-xs uppercase tracking-wider">
-              Общая оценка
-            </Text>
-            <Text
-              className={`font-black text-5xl tabular-nums ${scoreColor(
-                data.overall_score,
-              )}`}
-            >
+            <Text style={s.label}>Общая оценка</Text>
+            <Text style={[s.bigScore, { color: scoreColor(data.overall_score) }]}>
               {data.overall_score}
-              <Text className="text-2xl text-muted-foreground"> /100</Text>
+              <Text style={s.bigScoreDenom}> /100</Text>
             </Text>
           </View>
-          <View
-            className={`rounded-xl px-3 py-1.5 ${scoreBadgeBg(
-              data.overall_score,
-            )}`}
-            style={{
-              borderWidth: 1,
-              borderColor: scoreBorder(data.overall_score),
-            }}
-          >
-            <Text
-              className={`font-bold ${scoreColor(data.overall_score)}`}
-            >
+          <View style={[s.badgeWrap, { backgroundColor: scoreBadgeBg(data.overall_score), borderColor: scoreBorder(data.overall_score) }]}>
+            <Text style={[s.badgeText, { color: scoreColor(data.overall_score) }]}>
               {scoreLabel(data.overall_score)}
             </Text>
           </View>
         </View>
-
-        <View className="flex-row flex-wrap gap-3">
+        <View style={s.barsGrid}>
           <ScoreBar label="Грамматика" value={data.grammar_score} />
           <ScoreBar label="Лексика" value={data.vocabulary_score} />
           <ScoreBar label="Связность" value={data.coherence_score} />
@@ -57,35 +30,22 @@ export function AssessmentResult({
         </View>
       </View>
 
+      {/* Corrected text */}
       {data.corrected_text ? (
-        <View className="bg-card rounded-3xl border-4 border-border p-5 gap-2">
-          <Text className="text-foreground font-black text-lg">
-            Исправленный текст
-          </Text>
-          <View
-            className="rounded-2xl p-3"
-            style={{
-              borderWidth: 2,
-              borderColor: 'rgba(16,185,129,0.2)',
-              backgroundColor: 'rgba(16,185,129,0.05)',
-            }}
-          >
-            <Text className="text-foreground font-medium leading-6">
-              {data.corrected_text}
-            </Text>
+        <View style={[s.card, glass]}>
+          <Text style={s.sectionTitle}>Исправленный текст</Text>
+          <View style={s.correctedBox}>
+            <Text style={s.correctedText}>{data.corrected_text}</Text>
           </View>
         </View>
       ) : null}
 
+      {/* Feedback */}
       {data.feedback && data.feedback.length > 0 ? (
-        <View className="bg-card rounded-3xl border-4 border-border p-5 gap-3">
-          <Text className="text-foreground font-black text-lg">
-            Подробный фидбэк
-          </Text>
-          <View className="gap-2">
-            {data.feedback.map((f, i) => (
-              <FeedbackRow key={i} item={f} />
-            ))}
+        <View style={[s.card, glass]}>
+          <Text style={s.sectionTitle}>Подробный фидбэк</Text>
+          <View style={{ gap: 8 }}>
+            {data.feedback.map((f, i) => <FeedbackRow key={i} item={f} />)}
           </View>
         </View>
       ) : null}
@@ -96,28 +56,13 @@ export function AssessmentResult({
 function ScoreBar({ label, value }: { label: string; value: number }) {
   const pct = Math.max(0, Math.min(100, value));
   return (
-    <View className="gap-1" style={{ width: '47%' }}>
-      <View className="flex-row items-end justify-between">
-        <Text className="text-muted-foreground font-bold text-[10px] uppercase tracking-wider">
-          {label}
-        </Text>
-        <Text
-          className={`font-black text-base tabular-nums ${scoreColor(value)}`}
-        >
-          {value}
-        </Text>
+    <View style={s.barItem}>
+      <View style={s.barHeader}>
+        <Text style={s.barLabel}>{label}</Text>
+        <Text style={[s.barValue, { color: scoreColor(value) }]}>{value}</Text>
       </View>
-      <View
-        className="rounded-full overflow-hidden bg-muted"
-        style={{ height: 6 }}
-      >
-        <View
-          style={{
-            width: `${pct}%`,
-            height: 6,
-            backgroundColor: scoreBarColor(value),
-          }}
-        />
+      <View style={s.barBg}>
+        <View style={[s.barFill, { width: `${pct}%` as any, backgroundColor: scoreBarColor(value) }]} />
       </View>
     </View>
   );
@@ -125,103 +70,53 @@ function ScoreBar({ label, value }: { label: string; value: number }) {
 
 function FeedbackRow({ item }: { item: AIWritingFeedback }) {
   return (
-    <View className="rounded-2xl border-2 border-border p-3 gap-1">
-      <View
-        className={`self-start rounded-lg px-2 py-0.5 ${categoryBg(
-          item.category,
-        )}`}
-      >
-        <Text
-          className={`font-bold text-[10px] uppercase tracking-wider ${categoryColor(
-            item.category,
-          )}`}
-        >
+    <View style={[s.feedbackRow, glass]}>
+      <View style={[s.catBadge, { backgroundColor: categoryBg(item.category) }]}>
+        <Text style={[s.catText, { color: categoryColor(item.category) }]}>
           {categoryLabel(item.category)}
         </Text>
       </View>
-      <Text className="text-foreground font-bold text-sm">{item.issue}</Text>
-      <Text className="text-muted-foreground font-medium text-sm">
-        💡 {item.suggestion}
-      </Text>
+      <Text style={s.feedbackIssue}>{item.issue}</Text>
+      <Text style={s.feedbackSugg}>💡 {item.suggestion}</Text>
     </View>
   );
 }
 
-// === helpers ===
+// helpers
+function scoreColor(v: number) { return v >= 80 ? '#10b981' : v >= 60 ? '#f59e0b' : '#f87171'; }
+function scoreBarColor(v: number) { return v >= 80 ? '#10b981' : v >= 60 ? '#f59e0b' : '#f87171'; }
+function scoreBadgeBg(v: number) { return v >= 80 ? 'rgba(16,185,129,0.12)' : v >= 60 ? 'rgba(245,158,11,0.12)' : 'rgba(248,113,113,0.12)'; }
+function scoreBorder(v: number) { return v >= 80 ? 'rgba(16,185,129,0.3)' : v >= 60 ? 'rgba(245,158,11,0.3)' : 'rgba(248,113,113,0.3)'; }
+function scoreLabel(v: number) { return v >= 90 ? 'Отлично' : v >= 75 ? 'Хорошо' : v >= 60 ? 'Норм' : v >= 40 ? 'Слабо' : 'Плохо'; }
+function categoryLabel(c: string) { return c === 'grammar' ? 'Грамматика' : c === 'vocabulary' ? 'Лексика' : c === 'coherence' ? 'Связность' : c === 'style' ? 'Стиль' : c; }
+function categoryBg(c: string) { return c === 'grammar' ? 'rgba(244,63,94,0.15)' : c === 'vocabulary' ? 'rgba(59,130,246,0.15)' : c === 'coherence' ? 'rgba(139,92,246,0.15)' : c === 'style' ? 'rgba(245,158,11,0.15)' : 'rgba(255,255,255,0.1)'; }
+function categoryColor(c: string) { return c === 'grammar' ? '#f43f5e' : c === 'vocabulary' ? '#3b82f6' : c === 'coherence' ? '#8b5cf6' : c === 'style' ? '#f59e0b' : '#fff'; }
 
-function scoreColor(v: number): string {
-  if (v >= 80) return 'text-emerald-500';
-  if (v >= 60) return 'text-amber-500';
-  return 'text-destructive';
-}
+const s = StyleSheet.create({
+  card: { borderRadius: 22, padding: 16, gap: 12 },
+  label: { color: 'rgba(255,255,255,0.55)', fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.6 },
+  sectionTitle: { color: '#fff', fontSize: 15, fontWeight: '800' },
 
-function scoreBarColor(v: number): string {
-  if (v >= 80) return '#10b981';
-  if (v >= 60) return '#f59e0b';
-  return '#FF4B7E';
-}
+  overallRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 },
+  bigScore: { fontSize: 46, fontWeight: '900', lineHeight: 52 },
+  bigScoreDenom: { fontSize: 20, color: 'rgba(255,255,255,0.4)', fontWeight: '600' },
+  badgeWrap: { borderRadius: 12, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1 },
+  badgeText: { fontSize: 13, fontWeight: '800' },
 
-function scoreBadgeBg(v: number): string {
-  if (v >= 80) return 'bg-emerald-500/15';
-  if (v >= 60) return 'bg-amber-500/15';
-  return 'bg-destructive/15';
-}
+  barsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  barItem: { gap: 4, width: '47%' },
+  barHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  barLabel: { color: 'rgba(255,255,255,0.55)', fontSize: 10, fontWeight: '700', textTransform: 'uppercase' },
+  barValue: { fontSize: 14, fontWeight: '900' },
+  barBg: { height: 5, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.12)', overflow: 'hidden' },
+  barFill: { height: '100%', borderRadius: 4 },
 
-function scoreBorder(v: number): string {
-  if (v >= 80) return 'rgba(16,185,129,0.3)';
-  if (v >= 60) return 'rgba(245,158,11,0.3)';
-  return 'rgba(255,75,75,0.3)';
-}
+  correctedBox: { backgroundColor: 'rgba(16,185,129,0.06)', borderRadius: 14, padding: 12, borderWidth: 1, borderColor: 'rgba(16,185,129,0.2)' },
+  correctedText: { color: '#fff', fontSize: 14, fontWeight: '500', lineHeight: 22 },
 
-function scoreLabel(v: number): string {
-  if (v >= 90) return 'Отлично';
-  if (v >= 75) return 'Хорошо';
-  if (v >= 60) return 'Норм';
-  if (v >= 40) return 'Слабо';
-  return 'Плохо';
-}
-
-function categoryLabel(c: string): string {
-  switch (c) {
-    case 'grammar':
-      return 'Грамматика';
-    case 'vocabulary':
-      return 'Лексика';
-    case 'coherence':
-      return 'Связность';
-    case 'style':
-      return 'Стиль';
-    default:
-      return c;
-  }
-}
-
-function categoryBg(c: string): string {
-  switch (c) {
-    case 'grammar':
-      return 'bg-rose-500/15';
-    case 'vocabulary':
-      return 'bg-blue-500/15';
-    case 'coherence':
-      return 'bg-violet-500/15';
-    case 'style':
-      return 'bg-amber-500/15';
-    default:
-      return 'bg-muted';
-  }
-}
-
-function categoryColor(c: string): string {
-  switch (c) {
-    case 'grammar':
-      return 'text-rose-500';
-    case 'vocabulary':
-      return 'text-blue-500';
-    case 'coherence':
-      return 'text-violet-500';
-    case 'style':
-      return 'text-amber-500';
-    default:
-      return 'text-foreground';
-  }
-}
+  feedbackRow: { borderRadius: 16, padding: 12, gap: 5 },
+  catBadge: { alignSelf: 'flex-start', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
+  catText: { fontSize: 10, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5 },
+  feedbackIssue: { color: '#fff', fontSize: 13, fontWeight: '700' },
+  feedbackSugg: { color: 'rgba(255,255,255,0.6)', fontSize: 12, fontWeight: '500' },
+});

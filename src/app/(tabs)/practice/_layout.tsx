@@ -1,14 +1,1 @@
-import React from 'react';
-import { Stack } from 'expo-router';
-
-export default function PracticeLayout() {
-  return (
-    <Stack
-      screenOptions={{
-        headerStyle: { backgroundColor: '#141A24' },
-        headerTintColor: '#ffffff',
-        headerTitleStyle: { fontWeight: '900' },
-      }}
-    />
-  );
-}
+export { default } from '@/components/sunset';

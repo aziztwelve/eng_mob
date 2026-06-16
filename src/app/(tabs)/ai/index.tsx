@@ -1,128 +1,78 @@
-import React from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
-import { Stack, Link, router, type Href } from 'expo-router';
-import {
-  ArrowLeft,
-  BookOpen,
-  Bot,
-  Drama,
-  GraduationCap,
-  Mic,
-  PenLine,
-  Sparkles,
-} from 'lucide-react-native';
+import React from "react";
+import { Pressable, ScrollView, Text, View, StyleSheet, StatusBar } from "react-native";
+import { Stack, useRouter, type Href } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { glass, SunsetHeader, SunsetSubhead, SunsetOwl, CtaButton, GoArrow } from "@/components/sunset";
 
-import { QuotaWidget } from '@/components/ai/quota-widget';
-import { NEON_GLOW, NEON_TEXT } from '@/constants/neon';
+const FEATURES = [
+  { href: "/ai/chat", emoji: "💬", title: "Свободный чат", desc: "Поговори с AI на изучаемом языке. История сохраняется." },
+  { href: "/ai/roleplay", emoji: "🎭", title: "Roleplay", desc: "Ресторан, аэропорт, работа — выбери сценарий." },
+  { href: "/ai/writing", emoji: "📝", title: "Проверить эссе", desc: "Оценка по 4 параметрам, исправленный текст и фидбэк." },
+  { href: "/ai/pronunciation", emoji: "🗣️", title: "Произношение", desc: "Скажи фразу — AI оценит акцент и подскажет." },
+] as const;
 
-/**
- * /ai — hub-страница AI-фич. 5 карточек + quota widget сверху.
- * Mirror eng_next2/app/ai/page.tsx.
- *
- * Все фичи требуют auth; QuotaWidget сам обрабатывает loading state.
- */
 export default function AIHubScreen() {
-  return (
-    <View className="flex-1 bg-background">
-      <Stack.Screen options={{ title: 'AI помощник' }} />
-      <ScrollView contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 80 }}>
-        <Pressable
-          onPress={() => router.back()}
-          className="flex-row items-center gap-1 self-start active:opacity-60"
-        >
-          <ArrowLeft size={16} color="#9ca3af" />
-          <Text className="text-muted-foreground font-bold">Назад</Text>
-        </Pressable>
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
 
-        <View className="gap-2">
-          <View className="flex-row items-center gap-2">
-            <Bot size={28} color="#00FFA3" />
-            <Text className="text-primary font-black text-3xl" style={NEON_TEXT}>
-              AI помощник
-            </Text>
-          </View>
-          <Text className="text-muted-foreground font-medium">
-            Практикуйте язык в реалистичных сценариях, получайте объяснения
-            ошибок и оценку письма от AI.
-          </Text>
+  return (
+    <View style={{ flex: 1 }}>
+      <Stack.Screen options={{ headerShown: false }} />
+      <StatusBar barStyle="light-content" />
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 100 + insets.bottom }}
+      >
+        <SunsetHeader title="AI помощник" />
+
+        <SunsetSubhead title="Инструменты" />
+
+        <View style={{ gap: 14 }}>
+          {FEATURES.map((f) => (
+            <Pressable key={f.href} onPress={() => router.push(f.href as Href)} style={[s.card, glass]}>
+              <View style={s.thumb}>
+                <Text style={{ fontSize: 30 }}>{f.emoji}</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={s.cardTitle}>{f.title}</Text>
+                <Text style={s.cardDesc}>{f.desc}</Text>
+              </View>
+              <GoArrow />
+            </Pressable>
+          ))}
         </View>
 
-        <QuotaWidget />
-
-        <View className="gap-3">
-          <FeatureCard
-            href="/ai/chat"
-            icon={<Sparkles size={22} color="#00FFA3" />}
-            iconBg="bg-primary/15"
-            title="Свободный чат"
-            description="Поговорите с AI на изучаемом языке. История диалогов сохраняется."
-          />
-          <FeatureCard
-            href="/ai/roleplay"
-            icon={<Drama size={22} color="#f43f5e" />}
-            iconBg="bg-rose-500/15"
-            title="Roleplay"
-            description="Симуляция реальных ситуаций: ресторан, аэропорт, работа — выбирайте сценарий."
-          />
-          <FeatureCard
-            href="/ai/writing"
-            icon={<PenLine size={22} color="#3b82f6" />}
-            iconBg="bg-blue-500/15"
-            title="Проверить эссе"
-            description="Получите оценку по 4 параметрам, исправленный текст и фидбэк."
-          />
-          <FeatureCard
-            href="/ai/tutor"
-            icon={<GraduationCap size={22} color="#f59e0b" />}
-            iconBg="bg-amber-500/15"
-            title="Спросить учителя"
-            description="Однократный Q&A — задайте вопрос про грамматику, лексику или культуру."
-          />
-          <FeatureCard
-            href="/ai/pronunciation"
-            icon={<Mic size={22} color="#10b981" />}
-            iconBg="bg-emerald-500/15"
-            title="Проверить произношение"
-            description="Запишите аудио и получите word-level оценку точности."
-          />
-          <FeatureCard
-            href="/ai/chat"
-            icon={<BookOpen size={22} color="#8b5cf6" />}
-            iconBg="bg-violet-500/15"
-            title="Мои диалоги"
-            description="История всех бесед — продолжайте с того места, где остановились."
-          />
+        {/* Совет дня banner */}
+        <View style={[s.banner, glass]}>
+          <SunsetOwl size={78} />
+          <View style={{ flex: 1 }}>
+            <View style={s.tipPill}>
+              <Text style={s.tipPillText}>🤖 Совет дня</Text>
+            </View>
+            <Text style={s.bannerTitle}>Попробуй Roleplay: кафе</Text>
+            <Text style={s.bannerText}>5 реплик — и закрепишь 8 новых слов.</Text>
+            <View style={{ marginTop: 11 }}>
+              <CtaButton label="Начать 🎭" onPress={() => router.push("/ai/roleplay" as Href)} />
+            </View>
+          </View>
         </View>
       </ScrollView>
     </View>
   );
 }
 
-function FeatureCard({
-  href,
-  icon,
-  iconBg,
-  title,
-  description,
-}: {
-  href: Href;
-  icon: React.ReactNode;
-  iconBg: string;
-  title: string;
-  description: string;
-}) {
-  return (
-    <Link href={href} asChild>
-      <Pressable className="bg-card/70 rounded-3xl border border-border p-4 flex-row items-center gap-3 active:opacity-80" style={NEON_GLOW}>
-        <View className={`${iconBg} rounded-2xl p-2`}>{icon}</View>
-        <View className="flex-1">
-          <Text className="text-foreground font-black text-base">{title}</Text>
-          <Text className="text-muted-foreground font-medium text-sm">
-            {description}
-          </Text>
-        </View>
-        <Text className="text-muted-foreground">→</Text>
-      </Pressable>
-    </Link>
-  );
-}
+const s = StyleSheet.create({
+  card: { flexDirection: "row", alignItems: "center", gap: 14, padding: 14, borderRadius: 24 },
+  thumb: {
+    width: 66, height: 66, borderRadius: 18, alignItems: "center", justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.18)", borderWidth: 1, borderColor: "rgba(255,255,255,0.25)",
+  },
+  cardTitle: { color: "#fff", fontSize: 16, fontWeight: "800" },
+  cardDesc: { color: "rgba(255,255,255,0.78)", fontSize: 13, fontWeight: "600", marginTop: 4, lineHeight: 18 },
+
+  banner: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 22, paddingVertical: 16, paddingHorizontal: 18, borderRadius: 24 },
+  tipPill: { alignSelf: "flex-start", backgroundColor: "rgba(0,0,0,0.22)", borderRadius: 99, paddingHorizontal: 10, paddingVertical: 5, marginBottom: 8 },
+  tipPillText: { color: "#fff", fontWeight: "800", fontSize: 12 },
+  bannerTitle: { color: "#fff", fontSize: 18, fontWeight: "900" },
+  bannerText: { color: "rgba(255,255,255,0.82)", fontSize: 13, fontWeight: "600", marginTop: 5, lineHeight: 18 },
+});

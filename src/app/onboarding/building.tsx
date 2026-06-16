@@ -46,8 +46,8 @@ export default function BuildingScreen() {
   return (
     <OnboardingShell
       trackKey="building"
-      step={12}
-      total={14}
+      step={9}
+      total={12}
       title={t('onboarding.building.title')}
       subtitle={t('onboarding.building.subtitle')}
       onContinue={() => router.push('/onboarding/roadmap')}
@@ -64,22 +64,24 @@ export default function BuildingScreen() {
         <Animated.View style={[barStyle]} className="h-full bg-primary" />
       </View>
 
-      {/* Social proof */}
+      {/* Feature highlights */}
       <View className="flex-row gap-3 mt-3">
         <View className="flex-1 bg-card border-2 border-border rounded-2xl px-4 py-3 items-center">
-          <Text className="text-foreground font-black text-2xl">
-            {t('onboarding.building.stat_a_number')}
+          <Text className="text-2xl">🤖</Text>
+          <Text className="text-foreground font-black text-sm text-center mt-1">
+            {t('onboarding.building.feat_a_title')}
           </Text>
           <Text className="text-muted-foreground font-bold text-xs text-center mt-1">
-            {t('onboarding.building.stat_a_label')}
+            {t('onboarding.building.feat_a_label')}
           </Text>
         </View>
         <View className="flex-1 bg-card border-2 border-border rounded-2xl px-4 py-3 items-center">
-          <Text className="text-foreground font-black text-2xl">
-            {t('onboarding.building.stat_b_number')}
+          <Text className="text-2xl">🔁</Text>
+          <Text className="text-foreground font-black text-sm text-center mt-1">
+            {t('onboarding.building.feat_b_title')}
           </Text>
           <Text className="text-muted-foreground font-bold text-xs text-center mt-1">
-            {t('onboarding.building.stat_b_label')}
+            {t('onboarding.building.feat_b_label')}
           </Text>
         </View>
       </View>

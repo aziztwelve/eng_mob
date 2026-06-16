@@ -18,7 +18,7 @@ export default function CourseDetailScreen() {
   if (isLoading) {
     return (
       <View className="flex-1 bg-background items-center justify-center">
-        <ActivityIndicator size="large" color="#00FFA3" />
+        <ActivityIndicator size="large" color="#FFD84A" />
         <Text className="text-muted-foreground mt-4">Loading course...</Text>
       </View>
     );
@@ -155,7 +155,7 @@ export default function CourseDetailScreen() {
           disabled={enrollMutation.isPending}
           className="bg-primary rounded-3xl py-4 shadow-lg active:scale-95"
           style={{
-            shadowColor: '#00FFA3',
+            shadowColor: '#FFD84A',
             shadowOffset: { width: 0, height: 4 },
             shadowOpacity: 0.3,
             shadowRadius: 8,

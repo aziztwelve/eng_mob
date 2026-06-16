@@ -11,17 +11,13 @@ interface TextStepProps {
 export function TextStep({ content, onComplete }: TextStepProps) {
   const { width } = useWindowDimensions();
 
-  // Auto-complete when component mounts (user has viewed the text)
-  React.useEffect(() => {
-    const timer = setTimeout(() => {
-      onComplete();
-    }, 2000); // Mark as complete after 2 seconds of viewing
-
-    return () => clearTimeout(timer);
-  }, []);
+  // Текстовый/словарный шаг НЕ завершается автоматически — пользователь
+  // читает и сам жмёт «Continue» в нижней навигации. (Раньше тут стоял
+  // setTimeout(onComplete, 2000), из-за чего шаг перелистывался сам.)
+  void onComplete;
 
   return (
-    <ScrollView className="flex-1 bg-background p-4">
+    <ScrollView className="flex-1 p-4">
       <RenderHtml
         contentWidth={width - 32}
         source={{ html: content.body }}
@@ -38,13 +34,13 @@ export function TextStep({ content, onComplete }: TextStepProps) {
           h1: { 
             fontSize: 28, 
             fontWeight: 'bold',
-            color: '#00FFA3',
+            color: '#FFD84A',
             marginBottom: 16,
           },
           h2: { 
             fontSize: 24, 
             fontWeight: 'bold',
-            color: '#00FFA3',
+            color: '#FFD84A',
             marginBottom: 12,
           },
           h3: { 
@@ -55,11 +51,11 @@ export function TextStep({ content, onComplete }: TextStepProps) {
           },
           strong: {
             fontWeight: 'bold',
-            color: '#00FFA3',
+            color: '#FFD84A',
           },
           em: {
             fontStyle: 'italic',
-            color: '#9FB0C8',
+            color: '#8B98B0',
           },
           ul: {
             marginBottom: 12,
@@ -73,10 +69,13 @@ export function TextStep({ content, onComplete }: TextStepProps) {
       
       {/* Reading time indicator */}
       {content.reading_time_minutes > 0 && (
-        <View className="mt-6 p-4 bg-card rounded-2xl border-2 border-border">
+        <View
+          className="mt-6 p-4 rounded-2xl"
+          style={{ backgroundColor: 'rgba(255,255,255,0.12)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.22)' }}
+        >
           <View className="flex-row items-center justify-center">
-            <Text className="text-muted-foreground mr-2">📖</Text>
-            <Text className="text-muted-foreground">
+            <Text className="mr-2" style={{ color: 'rgba(255,255,255,0.75)' }}>📖</Text>
+            <Text style={{ color: 'rgba(255,255,255,0.75)' }}>
               {content.reading_time_minutes} min read
             </Text>
           </View>

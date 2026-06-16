@@ -36,6 +36,13 @@ module.exports = {
         "2xl": "32px",
         "3xl": "48px",
       },
+      fontFamily: {
+        sans:  ['Nunito_400Regular', 'system-ui', 'sans-serif'],
+        semibold: ['Nunito_600SemiBold'],
+        bold:  ['Nunito_700Bold'],
+        extrabold: ['Nunito_800ExtraBold'],
+        black: ['Nunito_900Black'],
+      },
     },
   },
   plugins: [],

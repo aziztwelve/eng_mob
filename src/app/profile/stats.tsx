@@ -1,11 +1,14 @@
 import React, { useMemo } from 'react';
-import { View, Text, ScrollView, Pressable, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, Pressable, ActivityIndicator, StyleSheet } from 'react-native';
 import { Stack } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useUserStats } from '@/hooks/use-user-stats';
 import { useDailyGoal, useUpdateDailyGoal } from '@/hooks/use-daily-goal';
 import { useXPHistoryInfinite } from '@/hooks/use-xp-history';
-import { DailyGoalRing, XPBar } from '@/components/gamification';
+import { DailyGoalRing } from '@/components/gamification';
 import { tsToDate } from '@/lib/api-client';
+import { glass, GOLD, FILL } from '@/components/sunset';
 import type { XPTransaction } from '@/types/api';
 
 const GOAL_PRESETS = [10, 20, 30, 50];
@@ -34,6 +37,7 @@ function reasonLabel(r: XPTransaction['reason']): string {
 }
 
 export default function StatsScreen() {
+  const insets = useSafeAreaInsets();
   const { data: stats } = useUserStats();
   const { data: goal } = useDailyGoal();
   const updateGoal = useUpdateDailyGoal();
@@ -66,15 +70,26 @@ export default function StatsScreen() {
 
   const maxBar = Math.max(10, ...byDay.map((d) => d.xp));
 
+  // Level progress (как в XPBar, но в candy-стиле).
+  const lvl = stats?.level ?? 1;
+  const currentThreshold = (100 * lvl * (lvl - 1)) / 2;
+  const span = Math.max(1, (stats?.next_level_xp ?? 0) - currentThreshold);
+  const into = Math.max(0, (stats?.total_xp ?? 0) - currentThreshold);
+  const lvlPct = Math.min(100, Math.round((into / span) * 100));
+
   return (
-    <View className="flex-1 bg-background">
+    <View style={{ flex: 1 }}>
       <Stack.Screen options={{ title: 'Статистика' }} />
-      <ScrollView contentContainerStyle={{ padding: 16, gap: 16 }}>
-        <View className="bg-card rounded-3xl border-4 border-border p-4 flex-row items-center gap-4">
-          <DailyGoalRing size={100} />
-          <View className="flex-1 gap-3">
-            <Text className="text-foreground font-black text-base">Дневная цель</Text>
-            <View className="flex-row flex-wrap gap-2">
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 40 + insets.bottom }}
+      >
+        {/* Дневная цель */}
+        <View style={[glass, s.card, { flexDirection: 'row', alignItems: 'center', gap: 16 }]}>
+          <DailyGoalRing size={104} />
+          <View style={{ flex: 1, gap: 12 }}>
+            <Text style={s.cardTitle}>Дневная цель</Text>
+            <View style={s.presetRow}>
               {GOAL_PRESETS.map((target) => {
                 const active = goal?.target_xp === target;
                 return (
@@ -82,72 +97,90 @@ export default function StatsScreen() {
                     key={target}
                     onPress={() => updateGoal.mutate(target)}
                     disabled={updateGoal.isPending}
-                    className={`rounded-xl px-3 py-2 border-2 ${active ? 'bg-primary border-primary' : 'bg-card border-border'}`}
                   >
-                    <Text
-                      className={`font-bold text-xs ${active ? 'text-primary-foreground' : 'text-foreground'}`}
-                    >
-                      {target} XP
-                    </Text>
+                    {active ? (
+                      <LinearGradient
+                        colors={GOLD}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={s.preset}
+                      >
+                        <Text style={s.presetTextActive}>{target} XP</Text>
+                      </LinearGradient>
+                    ) : (
+                      <View style={[glass, s.preset]}>
+                        <Text style={s.presetText}>{target} XP</Text>
+                      </View>
+                    )}
                   </Pressable>
                 );
               })}
             </View>
-            <XPBar />
+
+            {/* Level XP bar */}
+            <View style={{ gap: 5 }}>
+              <View style={s.lvlRow}>
+                <Text style={s.lvlText}>Lv {lvl}</Text>
+                <Text style={s.lvlSub}>{into} / {span} XP</Text>
+              </View>
+              <View style={s.lvlTrack}>
+                <LinearGradient
+                  colors={GOLD}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={[s.lvlFill, { width: `${lvlPct}%` }]}
+                />
+              </View>
+            </View>
           </View>
         </View>
 
-        <View className="bg-card rounded-3xl border-4 border-border p-4 gap-3">
-          <Text className="text-foreground font-black text-lg">XP за 14 дней</Text>
-          <View className="flex-row items-end justify-between gap-1" style={{ height: 100 }}>
+        {/* XP за 14 дней */}
+        <View style={[glass, s.card, { gap: 14 }]}>
+          <Text style={s.cardTitleLg}>XP за 14 дней</Text>
+          <View style={s.chartRow}>
             {byDay.map((d) => {
-              const pct = (d.xp / maxBar) * 100;
+              const pct = Math.max((d.xp / maxBar) * 100, 2);
               const day = new Date(d.date).getDate();
               return (
-                <View key={d.date} className="flex-1 items-center">
-                  <View
-                    className={`w-full rounded-t-md ${d.xp === 0 ? 'bg-muted' : 'bg-amber-400'}`}
-                    style={{ height: `${Math.max(pct, 1)}%` }}
-                  />
-                  <Text className="text-muted-foreground text-[10px] font-bold mt-0.5 tabular-nums">
-                    {day}
-                  </Text>
+                <View key={d.date} style={s.barCol}>
+                  <View style={s.barTrack}>
+                    {d.xp === 0 ? (
+                      <View style={[s.barEmpty, { height: `${pct}%` }]} />
+                    ) : (
+                      <LinearGradient
+                        colors={FILL}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 0, y: 1 }}
+                        style={[s.bar, { height: `${pct}%` }]}
+                      />
+                    )}
+                  </View>
+                  <Text style={s.barDay}>{day}</Text>
                 </View>
               );
             })}
           </View>
-          <View className="flex-row justify-between">
-            <Text className="text-muted-foreground text-xs font-medium">
-              Total: {stats?.total_xp ?? 0} XP
-            </Text>
-            <Text className="text-muted-foreground text-xs font-medium">
-              Weekly: {stats?.weekly_xp ?? 0} XP
-            </Text>
+          <View style={s.totalsRow}>
+            <Text style={s.totalText}>Total: {stats?.total_xp ?? 0} XP</Text>
+            <Text style={s.totalText}>Weekly: {stats?.weekly_xp ?? 0} XP</Text>
           </View>
         </View>
 
-        <View className="bg-card rounded-3xl border-4 border-border p-4 gap-3">
-          <Text className="text-foreground font-black text-lg">XP история</Text>
+        {/* XP история */}
+        <View style={[glass, s.card, { gap: 8 }]}>
+          <Text style={[s.cardTitleLg, { marginBottom: 4 }]}>XP история</Text>
           {transactions.length === 0 && !xp.isLoading ? (
-            <Text className="text-muted-foreground font-medium">
-              Пока нет транзакций.
-            </Text>
+            <Text style={s.empty}>Пока нет транзакций.</Text>
           ) : (
             transactions.map((tx) => {
               const d = tsToDate(tx.created_at);
               return (
-                <View
-                  key={tx.id}
-                  className="flex-row items-center justify-between py-2 border-b border-border/40"
-                >
-                  <Text className="text-foreground font-bold">⚡ {reasonLabel(tx.reason)}</Text>
-                  <View className="flex-row gap-3">
-                    <Text className="text-muted-foreground text-xs tabular-nums">
-                      {d ? d.toLocaleDateString() : '—'}
-                    </Text>
-                    <Text className="text-amber-600 font-black tabular-nums">
-                      +{tx.amount}
-                    </Text>
+                <View key={tx.id} style={s.txRow}>
+                  <Text style={s.txLabel}>⚡ {reasonLabel(tx.reason)}</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                    <Text style={s.txDate}>{d ? d.toLocaleDateString() : '—'}</Text>
+                    <Text style={s.txAmount}>+{tx.amount}</Text>
                   </View>
                 </View>
               );
@@ -158,12 +191,12 @@ export default function StatsScreen() {
             <Pressable
               onPress={() => xp.fetchNextPage()}
               disabled={xp.isFetchingNextPage}
-              className="bg-muted rounded-xl py-3 items-center"
+              style={[glass, s.loadMore]}
             >
               {xp.isFetchingNextPage ? (
-                <ActivityIndicator color="#22c55e" />
+                <ActivityIndicator color="#fff" />
               ) : (
-                <Text className="text-foreground font-bold">Загрузить ещё</Text>
+                <Text style={s.loadMoreText}>Загрузить ещё</Text>
               )}
             </Pressable>
           )}
@@ -172,3 +205,42 @@ export default function StatsScreen() {
     </View>
   );
 }
+
+const s = StyleSheet.create({
+  card: { borderRadius: 24, padding: 16 },
+  cardTitle: { color: '#fff', fontWeight: '900', fontSize: 15 },
+  cardTitleLg: { color: '#fff', fontWeight: '900', fontSize: 18 },
+
+  presetRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  preset: { borderRadius: 12, paddingHorizontal: 12, paddingVertical: 7 },
+  presetText: { color: '#fff', fontWeight: '800', fontSize: 12 },
+  presetTextActive: { color: '#5a3b00', fontWeight: '900', fontSize: 12 },
+
+  lvlRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  lvlText: { color: '#fff', fontWeight: '800', fontSize: 12 },
+  lvlSub: { color: 'rgba(255,255,255,0.75)', fontWeight: '700', fontSize: 12 },
+  lvlTrack: { height: 10, borderRadius: 6, backgroundColor: 'rgba(255,255,255,0.18)', overflow: 'hidden' },
+  lvlFill: { height: '100%', borderRadius: 6 },
+
+  chartRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: 4, height: 110 },
+  barCol: { flex: 1, alignItems: 'center', height: '100%', justifyContent: 'flex-end' },
+  barTrack: { width: '100%', height: 90, justifyContent: 'flex-end' },
+  bar: { width: '100%', borderRadius: 5, minHeight: 3 },
+  barEmpty: { width: '100%', borderRadius: 5, minHeight: 3, backgroundColor: 'rgba(255,255,255,0.16)' },
+  barDay: { color: 'rgba(255,255,255,0.7)', fontSize: 10, fontWeight: '800', marginTop: 4 },
+
+  totalsRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  totalText: { color: 'rgba(255,255,255,0.8)', fontSize: 12, fontWeight: '700' },
+
+  empty: { color: 'rgba(255,255,255,0.75)', fontWeight: '600' },
+  txRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.12)',
+  },
+  txLabel: { color: '#fff', fontWeight: '800', fontSize: 14 },
+  txDate: { color: 'rgba(255,255,255,0.7)', fontSize: 12 },
+  txAmount: { color: '#FFD84A', fontWeight: '900', fontSize: 14 },
+
+  loadMore: { borderRadius: 14, paddingVertical: 13, alignItems: 'center', marginTop: 8 },
+  loadMoreText: { color: '#fff', fontWeight: '800', fontSize: 14 },
+});

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, Pressable, ScrollView } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { FeedbackBar, type FeedbackState } from './FeedbackBar';
 import { parseStepContent, type StepComponentProps } from './step-types';
 
@@ -16,6 +17,7 @@ interface QuizContentNew {
 }
 
 export function QuizInteractiveStep({ step, onSubmit, onContinue, isLast }: StepComponentProps) {
+  const { t } = useTranslation();
   const content = parseStepContent<QuizContentNew>(step);
   const [picked, setPicked] = useState<number | null>(null);
   const [state, setState] = useState<FeedbackState>({ kind: 'idle' });
@@ -57,9 +59,9 @@ export function QuizInteractiveStep({ step, onSubmit, onContinue, isLast }: Step
   return (
     <ScrollView className="flex-1 px-4 pt-4" contentContainerClassName="pb-4">
       {content.instruction && (
-        <Text className="text-muted-foreground text-sm font-bold mb-3">{content.instruction}</Text>
+        <Text className="text-muted-foreground text-sm font-bold mb-3">{t('lesson.instruction.quiz')}</Text>
       )}
-      <View className="bg-primary/10 rounded-2xl border-2 border-primary/20 p-4 mb-5">
+      <View className="bg-[rgba(255,255,255,0.10)] rounded-2xl border border-[rgba(255,255,255,0.22)] p-4 mb-5">
         <Text className="text-foreground text-lg font-black">{content.question}</Text>
       </View>
 
@@ -80,8 +82,8 @@ export function QuizInteractiveStep({ step, onSubmit, onContinue, isLast }: Step
                   : showWrong
                     ? 'border-red-500 bg-red-500/10'
                     : isPicked
-                      ? 'border-primary bg-primary/10'
-                      : 'border-border bg-card'
+                      ? 'border-[#FFDF5E] bg-[rgba(255,223,94,0.18)]'
+                      : 'border-[rgba(255,255,255,0.22)] bg-[rgba(255,255,255,0.12)]'
               }`}
             >
               <Text className="font-bold text-foreground">{opt.text}</Text>

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, Pressable, TextInput, ScrollView } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { FeedbackBar, type FeedbackState } from './FeedbackBar';
 import { parseStepContent, type StepComponentProps } from './step-types';
 import type { FillBlankContent } from '@/types/api';
@@ -9,6 +10,7 @@ import type { FillBlankContent } from '@/types/api';
  * (autosubmit), иначе input.
  */
 export function FillBlankStep({ step, onSubmit, onContinue, isLast }: StepComponentProps) {
+  const { t } = useTranslation();
   const content = parseStepContent<FillBlankContent>(step);
   const [value, setValue] = useState('');
   const [state, setState] = useState<FeedbackState>({ kind: 'idle' });
@@ -45,18 +47,17 @@ export function FillBlankStep({ step, onSubmit, onContinue, isLast }: StepCompon
   const tplParts = content.sentence_template.split('___');
 
   return (
-    <ScrollView className="flex-1 px-4 pt-4" contentContainerClassName="pb-4">
-      {content.instruction && (
-        <Text className="text-foreground font-bold text-base mb-4">{content.instruction}</Text>
-      )}
+    <View className="flex-1">
+    <ScrollView className="flex-1 px-4 pt-4" contentContainerClassName="pb-4" keyboardShouldPersistTaps="handled">
+      <Text className="text-foreground font-bold text-base mb-4">{t('lesson.instruction.fill_blank')}</Text>
 
-      <View className="bg-primary/10 rounded-2xl border-2 border-primary/20 p-5 mb-5">
+      <View className="bg-[rgba(255,255,255,0.10)] rounded-2xl border border-[rgba(255,255,255,0.22)] p-5 mb-5">
         <View className="flex-row flex-wrap items-baseline">
           {tplParts.map((part, i) => (
             <React.Fragment key={i}>
               <Text className="text-foreground text-lg font-black">{part}</Text>
               {i < tplParts.length - 1 && (
-                <View className="mx-1 px-3 py-1 border-b-4 border-primary min-w-[80px]">
+                <View className="mx-1 px-3 py-1 border-b-4 border-[#FFDF5E] min-w-[80px]">
                   <Text className="text-foreground text-lg font-black text-center">
                     {value || '___'}
                   </Text>
@@ -66,7 +67,7 @@ export function FillBlankStep({ step, onSubmit, onContinue, isLast }: StepCompon
           ))}
         </View>
         {content.translation_hint && (
-          <Text className="text-sm text-muted-foreground font-medium mt-3">
+          <Text className="text-sm font-medium mt-3" style={{ color: 'rgba(255,255,255,0.75)' }}>
             {content.translation_hint}
           </Text>
         )}
@@ -84,8 +85,8 @@ export function FillBlankStep({ step, onSubmit, onContinue, isLast }: StepCompon
               }}
               className={`px-4 py-3 rounded-2xl border-2 ${
                 value === opt
-                  ? 'border-primary bg-primary/10'
-                  : 'border-border bg-card'
+                  ? 'border-[#FFDF5E] bg-[rgba(255,223,94,0.18)]'
+                  : 'border-[rgba(255,255,255,0.22)] bg-[rgba(255,255,255,0.12)]'
               } ${locked ? 'opacity-70' : ''}`}
             >
               <Text className="font-bold text-foreground">{opt}</Text>
@@ -97,19 +98,22 @@ export function FillBlankStep({ step, onSubmit, onContinue, isLast }: StepCompon
           value={value}
           editable={!locked}
           onChangeText={setValue}
-          placeholder="Введите ответ..."
-          placeholderTextColor="#9ca3af"
-          className="border-2 border-border rounded-2xl px-4 py-3 text-foreground font-bold mb-4"
+          placeholder={t('lesson.answer_placeholder')}
+          placeholderTextColor="rgba(255,255,255,0.5)"
+          className="border-2 border-[rgba(255,255,255,0.22)] bg-[rgba(255,255,255,0.10)] rounded-2xl px-4 py-3 text-foreground font-bold mb-4"
         />
       )}
 
-      <FeedbackBar
-        state={state}
-        canSubmit={value.trim().length > 0}
-        onSubmit={() => handleSubmit(value)}
-        onContinue={onContinue}
-        isLast={isLast}
-      />
     </ScrollView>
+      <View className="px-4 pb-3 pt-2">
+        <FeedbackBar
+          state={state}
+          canSubmit={value.trim().length > 0}
+          onSubmit={() => handleSubmit(value)}
+          onContinue={onContinue}
+          isLast={isLast}
+        />
+      </View>
+    </View>
   );
 }
