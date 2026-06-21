@@ -2,7 +2,11 @@ import React from 'react';
 import { View, Text, ScrollView, Pressable, ActivityIndicator, Image, StyleSheet } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useTrack } from '@/hooks/use-tracks';
+import { Lock, Check } from 'lucide-react-native';
+import Toast from 'react-native-toast-message';
+import { useTranslation } from 'react-i18next';
+import { useTrack, useTrackProgress } from '@/hooks/use-tracks';
+import { useCompletedLessons } from '@/lib/lesson-progress';
 
 const CTA = ['#A8243F', '#CC5A1F'] as const;
 const GOLD = ['#FFDF5E', '#FFB338'] as const;
@@ -19,7 +23,10 @@ const TYPE_EMOJI: Record<string, string> = {
 export default function TrackDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { t } = useTranslation();
   const { data: track, isLoading, error } = useTrack(id, true);
+  const { data: localCompleted } = useCompletedLessons();
+  const { data: serverCompleted } = useTrackProgress(id);
 
   if (isLoading) {
     return (
@@ -47,6 +54,18 @@ export default function TrackDetailsScreen() {
 
   const emoji = TYPE_EMOJI[track.track_type as string] ?? '✨';
   const lessons = track.lessons ?? [];
+  // Источник правды для замков: серверный прогресс (кросс-девайс) ∪ локальный
+  // (мгновенно отражает только что пройденный урок до синка с сервером).
+  const completed = new Set<string>([
+    ...(localCompleted ? [...localCompleted] : []),
+    ...(serverCompleted ? [...serverCompleted] : []),
+  ]);
+  const isCompleted = (i: number) => {
+    const lid = lessons[i]?.id;
+    return !!lid && completed.has(lid);
+  };
+  // Урок доступен, если он первый, уже пройден, или пройден предыдущий.
+  const isUnlocked = (i: number) => i === 0 || isCompleted(i) || isCompleted(i - 1);
 
   return (
     <View style={{ flex: 1 }}>
@@ -70,26 +89,49 @@ export default function TrackDetailsScreen() {
         <View style={{ gap: 12 }}>
           <Text style={s.section}>Уроки {lessons.length ? `· ${lessons.length}` : ''}</Text>
           {lessons.length > 0 ? (
-            lessons.map((lesson, idx) => (
-              <Pressable
-                key={lesson.id}
-                onPress={() => router.push(`/learn/${lesson.id}`)}
-                style={[s.lesson, glass]}
-              >
-                <View style={s.num}>
-                  <Text style={s.numText}>{idx + 1}</Text>
-                </View>
-                <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text style={s.lessonTitle} numberOfLines={2}>{lesson.title}</Text>
-                  {!!lesson.description && (
-                    <Text style={s.lessonDesc} numberOfLines={2}>{lesson.description}</Text>
+            lessons.map((lesson, idx) => {
+              const done = isCompleted(idx);
+              const unlocked = isUnlocked(idx);
+              const onPress = () => {
+                if (!unlocked) {
+                  Toast.show({ type: 'info', text1: t('lesson.locked') });
+                  return;
+                }
+                router.push(`/learn/${lesson.id}`);
+              };
+              return (
+                <Pressable
+                  key={lesson.id}
+                  onPress={onPress}
+                  style={[s.lesson, glass, !unlocked && s.lessonLocked]}
+                >
+                  <View style={[s.num, done && s.numDone, !unlocked && s.numLocked]}>
+                    {done ? (
+                      <Check size={18} color="#0E2A14" strokeWidth={3} />
+                    ) : !unlocked ? (
+                      <Lock size={16} color="rgba(255,255,255,0.7)" />
+                    ) : (
+                      <Text style={s.numText}>{idx + 1}</Text>
+                    )}
+                  </View>
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Text style={[s.lessonTitle, !unlocked && s.lockedText]} numberOfLines={2}>{lesson.title}</Text>
+                    {!!lesson.description && (
+                      <Text style={[s.lessonDesc, !unlocked && s.lockedText]} numberOfLines={2}>{lesson.description}</Text>
+                    )}
+                  </View>
+                  {unlocked ? (
+                    <LinearGradient colors={done ? GOLD : CTA} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.go}>
+                      <Text style={[s.goText, done && { color: '#3D0A1A' }]}>{done ? '↻' : '›'}</Text>
+                    </LinearGradient>
+                  ) : (
+                    <View style={s.goLocked}>
+                      <Lock size={16} color="rgba(255,255,255,0.55)" />
+                    </View>
                   )}
-                </View>
-                <LinearGradient colors={CTA} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.go}>
-                  <Text style={s.goText}>›</Text>
-                </LinearGradient>
-              </Pressable>
-            ))
+                </Pressable>
+              );
+            })
           ) : (
             <View style={[s.emptyCard, glass]}>
               <Text style={{ fontSize: 36 }}>🦉</Text>
@@ -132,4 +174,13 @@ const s = StyleSheet.create({
 
   emptyCard: { borderRadius: 20, padding: 28, alignItems: 'center', gap: 10 },
   emptyText: { color: 'rgba(255,255,255,0.85)', fontWeight: '700', fontSize: 14 },
+
+  lessonLocked: { opacity: 0.55 },
+  numDone: { backgroundColor: '#7CE2A0', borderColor: '#7CE2A0' },
+  numLocked: { backgroundColor: 'rgba(255,255,255,0.10)', borderColor: 'rgba(255,255,255,0.22)' },
+  lockedText: { color: 'rgba(255,255,255,0.6)' },
+  goLocked: {
+    width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.10)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.22)',
+  },
 });

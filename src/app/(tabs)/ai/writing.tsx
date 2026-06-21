@@ -56,14 +56,14 @@ export default function WritingScreen() {
       <StatusBar barStyle="light-content" />
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 100 + insets.bottom }}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 6, paddingBottom: 78 + insets.bottom }}
       >
         <SunsetHeader title="Проверить эссе" />
 
         <QuotaWidget compact />
 
         {mut.data ? (
-          <View style={{ gap: 14, marginTop: 18 }}>
+          <View style={{ gap: 12, marginTop: 12 }}>
             <AssessmentResult data={mut.data} />
             <Pressable onPress={handleReset} style={[s.resetBtn, glass]}>
               <RotateCcw size={15} color="rgba(255,255,255,0.7)" />
@@ -71,7 +71,7 @@ export default function WritingScreen() {
             </Pressable>
           </View>
         ) : (
-          <View style={{ gap: 14, marginTop: 18 }}>
+          <View style={{ gap: 12, marginTop: 12 }}>
             {/* Настройки */}
             <View style={[s.card, glass]}>
               <Text style={s.label}>Язык</Text>
@@ -113,7 +113,7 @@ export default function WritingScreen() {
                 placeholderTextColor="rgba(255,255,255,0.35)"
                 multiline
                 textAlignVertical="top"
-                style={[s.input, { minHeight: 140 }]}
+                style={[s.input, { minHeight: 120 }]}
               />
               <Text style={s.wordCount}>
                 {wordCount} слов{tooShort ? ` — минимум ${MIN_WORDS}` : ''}
@@ -137,7 +137,7 @@ export default function WritingScreen() {
 }
 
 const s = StyleSheet.create({
-  card: { borderRadius: 22, padding: 16, gap: 8 },
+  card: { borderRadius: 20, padding: 13, gap: 8 },
   label: { color: 'rgba(255,255,255,0.6)', fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.8 },
 
   pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 2 },

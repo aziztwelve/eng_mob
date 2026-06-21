@@ -76,7 +76,7 @@ export default function RoleplayScreen() {
       <StatusBar barStyle="light-content" />
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 100 + insets.bottom }}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 6, paddingBottom: 78 + insets.bottom }}
       >
         <SunsetHeader title="Roleplay" />
 
@@ -128,7 +128,7 @@ export default function RoleplayScreen() {
             <Text style={s.emptyText}>Попробуйте другие фильтры или сбросьте их.</Text>
           </View>
         ) : (
-          <View style={{ gap: 12 }}>
+          <View style={{ gap: 10 }}>
             {scenarios.map((sc) => (
               <ScenarioCard
                 key={sc.id}
@@ -185,7 +185,7 @@ const s = StyleSheet.create({
   },
   warnText: { color: '#f59e0b', fontSize: 13, fontWeight: '600' },
 
-  filterCard: { borderRadius: 22, padding: 16, marginTop: 18 },
+  filterCard: { borderRadius: 20, padding: 13, marginTop: 12 },
   filterLabel: { color: 'rgba(255,255,255,0.6)', fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 8 },
   pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
 
@@ -196,7 +196,7 @@ const s = StyleSheet.create({
   pillTextActive: { color: '#fff' },
   soonText: { color: 'rgba(255,255,255,0.5)', fontSize: 9, fontWeight: '800', textTransform: 'uppercase' },
 
-  emptyCard: { borderRadius: 22, padding: 40, alignItems: 'center' },
+  emptyCard: { borderRadius: 20, padding: 32, alignItems: 'center' },
   emptyTitle: { color: '#fff', fontSize: 18, fontWeight: '800', marginBottom: 4 },
   emptyText: { color: 'rgba(255,255,255,0.6)', fontSize: 14, fontWeight: '500', textAlign: 'center' },
 });

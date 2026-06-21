@@ -1,117 +1,108 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { AlertCircle, Bot, ChevronDown, Languages, Pause, Play, Square, User as UserIcon, Volume2 } from 'lucide-react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { AlertCircle, Bot, ChevronDown, Languages, Play, Square, User as UserIcon } from 'lucide-react-native';
 import Markdown from 'react-native-markdown-display';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Audio } from 'expo-av';
-import * as Speech from 'expo-speech';
+import Toast from 'react-native-toast-message';
 import { glass, CTA } from '@/components/sunset';
+import { getChatTTSUri } from '@/lib/tts';
 
 import type { AIMessage } from '@/types/api';
 
-// ── TTS кнопка — объявляем ДО ChatMessage (React Compiler) ──────────────────
+// ── TTS кнопка «Прослушать» — объявляем ДО ChatMessage (React Compiler) ─────
 //
-// Логика:
-//  1. Если message.audio_url задан и не фейковый (example.com) → expo-av
-//  2. Иначе → expo-speech (системный TTS как fallback)
+// Жёсткая привязка к Google Cloud TTS: реплика всегда синтезируется на
+// бэкенде через POST /ai/tts (Google), кэшируется и проигрывается expo-av.
+// Никакого системного голоса (expo-speech) и OpenAI audio_url — только Google.
 
-const FAKE_HOST_RE = /example\.com/i;
-
-function isFakeUrl(url?: string | null): boolean {
-  return !url || FAKE_HOST_RE.test(url);
-}
-
-function SpeechButton({ text, audioUrl }: { text: string; audioUrl?: string | null }) {
-  const [playing, setSpeaking] = useState(false);
+function SpeechButton({
+  text,
+  language,
+}: {
+  text: string;
+  language?: string;
+}) {
+  const [playing, setPlaying] = useState(false);
+  const [loading, setLoading] = useState(false);
   const soundRef = useRef<Audio.Sound | null>(null);
-  const useAV = !isFakeUrl(audioUrl);
 
   // Cleanup при unmount
   useEffect(() => {
     return () => {
-      if (useAV) {
-        soundRef.current?.unloadAsync().catch(() => {});
-      } else {
-        Speech.stop().catch(() => {});
-      }
+      soundRef.current?.unloadAsync().catch(() => {});
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const toggle = async () => {
-    if (useAV) {
-      await toggleAV();
-    } else {
-      await toggleSpeech();
-    }
-  };
-
-  // --- expo-av (реальный MP3 с MinIO/OpenAI TTS) ---
-  const toggleAV = async () => {
-    try {
-      if (!soundRef.current) {
-        const { sound } = await Audio.Sound.createAsync(
-          { uri: audioUrl! },
-          { shouldPlay: true },
-        );
-        soundRef.current = sound;
-        setSpeaking(true);
-        sound.setOnPlaybackStatusUpdate((st) => {
-          if (st.isLoaded && (st.didJustFinish || !st.isPlaying)) {
-            setSpeaking(false);
-          }
-        });
-        return;
-      }
-      const st = await soundRef.current.getStatusAsync();
-      if (!st.isLoaded) return;
-      if (st.isPlaying) {
-        await soundRef.current.pauseAsync();
-        setSpeaking(false);
-      } else {
-        if (st.positionMillis && st.durationMillis && st.positionMillis >= st.durationMillis) {
-          await soundRef.current.setPositionAsync(0);
-        }
-        await soundRef.current.playAsync();
-        setSpeaking(true);
-      }
-    } catch (e) {
-      console.warn('[TTS] expo-av failed, fallback to speech', e);
-      // Fallback на системный TTS
-      await toggleSpeech();
-    }
-  };
-
-  // --- expo-speech (системный TTS, fallback) ---
-  const toggleSpeech = async () => {
-    if (playing) {
-      await Speech.stop();
-      setSpeaking(false);
+    if (loading) return;
+    // Sound уже создан → play/pause/restart.
+    if (soundRef.current) {
+      await toggleExisting();
       return;
     }
-    const clean = text
-      .replace(/[*_`#~>]/g, '')
-      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-      .trim();
-    if (!clean) return;
-    setSpeaking(true);
-    Speech.speak(clean, {
-      rate: 0.92,
-      pitch: 1.0,
-      onDone: () => setSpeaking(false),
-      onStopped: () => setSpeaking(false),
-      onError: () => setSpeaking(false),
+    // Первый запуск: синтез через Google TTS → проигрывание.
+    setLoading(true);
+    try {
+      const uri = await getChatTTSUri(text, language ?? 'en');
+      await playUri(uri);
+    } catch (e) {
+      console.warn('[TTS] google tts failed', e);
+      Toast.show({
+        type: 'error',
+        text1: 'Не удалось озвучить',
+        text2: e instanceof Error ? e.message : undefined,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // --- expo-av: первый запуск URI (локальный mp3 или storage URL) ---
+  const playUri = async (uri: string) => {
+    await Audio.setAudioModeAsync({ playsInSilentModeIOS: true }).catch(() => {});
+    const { sound } = await Audio.Sound.createAsync({ uri }, { shouldPlay: true });
+    soundRef.current = sound;
+    setPlaying(true);
+    sound.setOnPlaybackStatusUpdate((st) => {
+      if (st.isLoaded && (st.didJustFinish || !st.isPlaying)) {
+        setPlaying(false);
+      }
     });
   };
 
+  // --- expo-av: повторное нажатие (pause / resume / restart) ---
+  const toggleExisting = async () => {
+    try {
+      const st = await soundRef.current!.getStatusAsync();
+      if (!st.isLoaded) return;
+      if (st.isPlaying) {
+        await soundRef.current!.pauseAsync();
+        setPlaying(false);
+      } else {
+        if (st.positionMillis && st.durationMillis && st.positionMillis >= st.durationMillis) {
+          await soundRef.current!.setPositionAsync(0);
+        }
+        await soundRef.current!.playAsync();
+        setPlaying(true);
+      }
+    } catch (e) {
+      console.warn('[TTS] expo-av toggle failed', e);
+    }
+  };
+
   return (
-    <Pressable onPress={toggle} style={[s.audioBtn, glass]}>
-      {playing
-        ? <Square size={12} color="#FFD84A" fill="#FFD84A" />
-        : useAV
-          ? <Play size={13} color="rgba(255,255,255,0.7)" />
-          : <Volume2 size={13} color="rgba(255,255,255,0.7)" />}
-      <Text style={s.audioBtnText}>{playing ? 'Стоп' : 'Прослушать'}</Text>
+    <Pressable onPress={toggle} disabled={loading} style={[s.audioBtn, glass]}>
+      {loading ? (
+        <ActivityIndicator size="small" color="#FFD84A" />
+      ) : playing ? (
+        <Square size={12} color="#FFD84A" fill="#FFD84A" />
+      ) : (
+        <Play size={13} color="rgba(255,255,255,0.7)" />
+      )}
+      <Text style={s.audioBtnText}>
+        {loading ? 'Озвучка…' : playing ? 'Стоп' : 'Прослушать'}
+      </Text>
     </Pressable>
   );
 }
@@ -191,7 +182,7 @@ function roleKind(role: unknown): RoleKind {
   return 'other';
 }
 
-export function ChatMessage({ message }: { message: AIMessage }) {
+export function ChatMessage({ message, language }: { message: AIMessage; language?: string }) {
   const kind = roleKind(message.role);
   const isUser = kind === 'user';
   const isSystem = kind === 'system';
@@ -221,7 +212,7 @@ export function ChatMessage({ message }: { message: AIMessage }) {
         )}
 
         {!isUser && message.content ? (
-          <SpeechButton text={message.content} audioUrl={message.audio_url} />
+          <SpeechButton text={message.content} language={language} />
         ) : null}
         {!isUser && message.corrections && message.corrections.length > 0 && (
           <CorrectionsList corrections={message.corrections} />

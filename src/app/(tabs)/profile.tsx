@@ -106,17 +106,17 @@ export default function ProfileScreen() {
       <StatusBar barStyle="light-content" />
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 100 + insets.bottom }}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 6, paddingBottom: 78 + insets.bottom }}
       >
         <SunsetHeader title="Профиль" />
 
         {/* Identity card */}
-        <View style={[glass, { borderRadius: 24, padding: 18, flexDirection: 'row', alignItems: 'center', gap: 16, marginTop: 18 }]}>
-          <LinearGradient colors={GOLD} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ width: 76, height: 76, borderRadius: 26, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ fontSize: 38 }}>🦉</Text>
+        <View style={[glass, { borderRadius: 20, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 12 }]}>
+          <LinearGradient colors={GOLD} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ width: 64, height: 64, borderRadius: 22, alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ fontSize: 32 }}>🦉</Text>
           </LinearGradient>
           <View style={{ flex: 1 }}>
-            <Text style={{ color: '#fff', fontWeight: '900', fontSize: 21 }}>
+            <Text style={{ color: '#fff', fontWeight: '900', fontSize: 19 }}>
               {displayName}
             </Text>
             <Text style={{ color: 'rgba(255,255,255,0.78)', fontSize: 13, fontWeight: '600', marginTop: 3 }}>
@@ -126,8 +126,8 @@ export default function ProfileScreen() {
         </View>
 
         {/* Daily goal card */}
-        <View style={[glass, { borderRadius: 24, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 16, marginTop: 14 }]}>
-          <DailyGoalRing size={120} />
+        <View style={[glass, { borderRadius: 20, padding: 13, flexDirection: 'row', alignItems: 'center', gap: 14, marginTop: 12 }]}>
+          <DailyGoalRing size={100} />
           <View style={{ flex: 1 }}>
             <Text style={{ color: '#fff', fontWeight: '900', fontSize: 16 }}>
               {goalDone ? 'Цель дня выполнена! 🎉' : 'Цель дня почти готова!'}
@@ -165,15 +165,15 @@ export default function ProfileScreen() {
         </ScrollView>
 
         {/* Menu */}
-        <View style={{ gap: 12, marginTop: 22 }}>
+        <View style={{ gap: 10, marginTop: 14 }}>
           {MENU.map((item) => (
             <Pressable
               key={item.href}
               onPress={() => router.push(item.href as any)}
-              style={[glass, { flexDirection: 'row', alignItems: 'center', padding: 14, gap: 14, borderRadius: 20 }]}
+              style={[glass, { flexDirection: 'row', alignItems: 'center', padding: 11, gap: 12, borderRadius: 18 }]}
             >
               <View style={{
-                width: 48, height: 48, borderRadius: 16,
+                width: 44, height: 44, borderRadius: 14,
                 backgroundColor: 'rgba(255,255,255,0.18)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)',
                 alignItems: 'center', justifyContent: 'center',
               }}>
@@ -190,8 +190,8 @@ export default function ProfileScreen() {
           onPress={() => logout.mutate()}
           disabled={logout.isPending}
           style={[glass, {
-            borderRadius: 16, paddingVertical: 14, alignItems: 'center',
-            borderColor: 'rgba(255,111,160,0.4)', marginTop: 16,
+            borderRadius: 16, paddingVertical: 13, alignItems: 'center',
+            borderColor: 'rgba(255,111,160,0.4)', marginTop: 12,
           }]}
         >
           <Text style={{ color: '#FF6FA0', fontWeight: '900', fontSize: 15 }}>

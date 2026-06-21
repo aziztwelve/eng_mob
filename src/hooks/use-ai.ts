@@ -134,7 +134,20 @@ export function useAskTutor() {
   });
 }
 
-/** Pronunciation check (multipart). */
+/**
+ * STT — распознавание голоса в текст для ввода в чат (Google STT).
+ * Не трогает квоту (это вспомогательный ввод, а не AI-ответ).
+ */
+export function useTranscribeAudio() {
+  return useMutation({
+    mutationFn: (input: {
+      audio: PronunciationAudioInput;
+      language?: string;
+      encoding?: string;
+      sample_rate?: number;
+    }) => AIApi.transcribeAudio(input),
+  });
+}
 export function useCheckPronunciation() {
   const qc = useQueryClient();
   return useMutation({

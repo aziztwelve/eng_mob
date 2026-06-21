@@ -40,7 +40,7 @@ export default function SocialScreen() {
     <View style={{ flex: 1 }}>
       <Stack.Screen options={{ headerShown: false }} />
       <StatusBar barStyle="light-content" />
-      <View style={{ paddingHorizontal: 20, paddingTop: 8 }}>
+      <View style={{ paddingHorizontal: 20, paddingTop: 6 }}>
         <SunsetHeader title="Лиги" />
         <SunsetTabs
           tabs={[
@@ -80,13 +80,13 @@ function LeaguesView() {
   const PROMO_RANK = 10; // top 10 promote
 
   return (
-    <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 110 }}>
+    <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 84 }}>
       {/* League hero */}
       <View style={[glass, {
-        borderRadius: 24, padding: 22, alignItems: 'center', marginBottom: 16,
+        borderRadius: 20, padding: 16, alignItems: 'center', marginBottom: 12,
       }]}>
-        <Text style={{ fontSize: 54 }}>🥇</Text>
-        <Text style={{ color: '#fff', fontWeight: '900', fontSize: 22, marginTop: 4 }}>
+        <Text style={{ fontSize: 44 }}>🥇</Text>
+        <Text style={{ color: '#fff', fontWeight: '900', fontSize: 20, marginTop: 4 }}>
           {league?.name ?? 'Золотая лига'}
         </Text>
         {daysLeft !== null && (
@@ -165,7 +165,7 @@ function FriendsView() {
   const list = friends.data?.friends ?? [];
 
   return (
-    <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 110 }}>
+    <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 84 }}>
       <View style={{ flexDirection: 'row', gap: 10, marginBottom: 16 }}>
         <Pressable
           onPress={() => router.push('/friends/search')}
@@ -215,7 +215,7 @@ function LeaderboardView() {
   const entries = lb.data?.entries ?? [];
 
   return (
-    <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 110 }}>
+    <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 84 }}>
       <Text style={{ color: 'rgba(255,255,255,0.75)', fontSize: 14, fontWeight: '600', marginBottom: 14 }}>
         Друзья по XP за эту неделю
       </Text>

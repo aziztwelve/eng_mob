@@ -11,6 +11,7 @@ import { useStepSubmit } from '@/hooks/use-step-submit';
 import { useLessonGamificationFx } from '@/hooks/use-gamification-fx';
 import { fx } from '@/lib/fx';
 import { NeonScreen, neon } from '@/components/neon-screen';
+import { useMarkLessonCompleted } from '@/lib/lesson-progress';
 import {
   TextContent,
   QuizContent,
@@ -52,6 +53,7 @@ export default function LessonPlayerScreen() {
   const completeStepMutation = useCompleteStep();
   const submitStepMutation = useStepSubmit();
   const fireGamificationFx = useLessonGamificationFx();
+  const markLessonCompleted = useMarkLessonCompleted();
 
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [startTime] = useState(Date.now());
@@ -118,6 +120,8 @@ export default function LessonPlayerScreen() {
   // Переход дальше / завершение урока.
   const advance = () => {
     if (isLastStep) {
+      // Фиксируем прохождение урока (для последовательной разблокировки в треке).
+      void markLessonCompleted(lessonId);
       router.back();
     } else {
       setCurrentStepIndex((prev) => prev + 1);

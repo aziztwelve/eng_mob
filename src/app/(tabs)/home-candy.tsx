@@ -54,7 +54,7 @@ export default function SunsetLavaHome() {
         {/* Brand */}
         <View style={s.brandRow}>
           <View style={{ flex: 1 }}>
-            <Text style={s.brand}>Fluent</Text>
+            <Text style={s.brand}>LingoIQ</Text>
             <Text style={s.hello}>Привет, Камол 👋 Сегодня цель — 20 XP</Text>
           </View>
           <View style={s.todayMini}>
@@ -79,7 +79,7 @@ export default function SunsetLavaHome() {
             </LinearGradient>
           </Pressable>
           <View style={s.owlWrap}>
-            <Svg width={84} height={88} viewBox="0 0 90 95">
+            <Svg width={72} height={76} viewBox="0 0 90 95">
               <Path d="M18 31C15 19 20 11 20 11c8 5 12 11 14 16h22c2-5 6-11 14-16 0 0 5 8 2 20 7 8 11 19 11 31 0 21-17 31-38 31S7 83 7 62c0-12 4-23 11-31Z" fill="#8a542d" />
               <Ellipse cx={45} cy={62} rx={27} ry={30} fill="#c98e61" />
               <Circle cx={33} cy={40} r={16} fill="#f5e6d2" />
@@ -150,68 +150,68 @@ export default function SunsetLavaHome() {
 
 const s = StyleSheet.create({
   root: { flex: 1 },
-  scroll: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 20 },
+  scroll: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 88 },
 
-  statsRow: { flexDirection: "row", gap: 8, marginTop: 12 },
-  stat: { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 16, backgroundColor: "rgba(255,255,255,0.15)", borderWidth: 1, borderColor: "rgba(255,255,255,0.26)" },
-  statText: { color: "#fff", fontWeight: "700", fontSize: 14 },
+  statsRow: { flexDirection: "row", gap: 8, marginTop: 8 },
+  stat: { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 11, paddingVertical: 6, borderRadius: 14, backgroundColor: "rgba(255,255,255,0.15)", borderWidth: 1, borderColor: "rgba(255,255,255,0.26)" },
+  statText: { color: "#fff", fontWeight: "700", fontSize: 13 },
   statLvl: { marginLeft: "auto", borderWidth: 0 },
-  lvlText: { color: "#5a3b00", fontWeight: "800", fontSize: 14 },
+  lvlText: { color: "#5a3b00", fontWeight: "800", fontSize: 13 },
 
-  brandRow: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", marginTop: 20 },
-  brand: { color: "#fff", fontSize: 30, fontWeight: "800", letterSpacing: -0.5 },
-  hello: { color: "rgba(255,255,255,0.88)", fontSize: 14, marginTop: 6, lineHeight: 20, maxWidth: 230 },
-  todayMini: { alignItems: "center", gap: 2, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 16, backgroundColor: "rgba(255,255,255,0.15)", borderWidth: 1, borderColor: "rgba(255,255,255,0.26)" },
+  brandRow: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", marginTop: 14 },
+  brand: { color: "#fff", fontSize: 25, fontWeight: "800", letterSpacing: -0.5 },
+  hello: { color: "rgba(255,255,255,0.88)", fontSize: 13, marginTop: 4, lineHeight: 18, maxWidth: 230 },
+  todayMini: { alignItems: "center", gap: 2, paddingHorizontal: 11, paddingVertical: 7, borderRadius: 14, backgroundColor: "rgba(255,255,255,0.15)", borderWidth: 1, borderColor: "rgba(255,255,255,0.26)" },
   todayLabel: { color: "rgba(255,255,255,0.85)", fontSize: 11, fontWeight: "600" },
-  todayValue: { color: "#FFD84A", fontSize: 16, fontWeight: "800" },
+  todayValue: { color: "#FFD84A", fontSize: 15, fontWeight: "800" },
 
-  heroCard: { backgroundColor: "#FFF6F4", borderRadius: 26, padding: 20, overflow: "hidden", marginTop: 22 },
+  heroCard: { backgroundColor: "#FFF6F4", borderRadius: 22, padding: 16, overflow: "hidden", marginTop: 14 },
   heroTop: { flexDirection: "row", gap: 8 },
   pill: { backgroundColor: "#FCE1D0", paddingHorizontal: 11, paddingVertical: 6, borderRadius: 14 },
   pillText: { color: "#B03A3A", fontWeight: "700", fontSize: 12 },
   xpBadge: { paddingHorizontal: 11, paddingVertical: 6, borderRadius: 14 },
   xpText: { color: "#5a3b00", fontWeight: "800", fontSize: 12 },
-  heroTitle: { color: "#2B1422", fontSize: 21, fontWeight: "800", marginTop: 16, maxWidth: "74%" },
-  heroDesc: { color: "#6b4b56", fontSize: 14, marginTop: 6, lineHeight: 20, maxWidth: "70%" },
-  cta: { marginTop: 18, alignSelf: "flex-start", paddingHorizontal: 30, paddingVertical: 13, borderRadius: 18 },
+  heroTitle: { color: "#2B1422", fontSize: 19, fontWeight: "800", marginTop: 12, maxWidth: "74%" },
+  heroDesc: { color: "#6b4b56", fontSize: 13, marginTop: 4, lineHeight: 18, maxWidth: "70%" },
+  cta: { marginTop: 14, alignSelf: "flex-start", paddingHorizontal: 26, paddingVertical: 11, borderRadius: 16 },
   ctaText: { color: "#fff", fontWeight: "800", fontSize: 15, letterSpacing: 0.5 },
   owlWrap: { position: "absolute", right: 14, bottom: 10 },
 
-  section: { marginTop: 26 },
-  secHead: { flexDirection: "row", alignItems: "center", gap: 9, marginBottom: 14 },
-  secIcon: { fontSize: 18 },
-  secTitle: { color: "#fff", fontSize: 18, fontWeight: "800" },
+  section: { marginTop: 16 },
+  secHead: { flexDirection: "row", alignItems: "center", gap: 9, marginBottom: 10 },
+  secIcon: { fontSize: 17 },
+  secTitle: { color: "#fff", fontSize: 17, fontWeight: "800" },
   secActionWrap: { marginLeft: "auto" },
   secAction: { color: "#fff", fontSize: 13, fontWeight: "700", opacity: 0.92 },
 
-  quickGrid: { flexDirection: "row", gap: 12 },
-  quickCard: { flex: 1, backgroundColor: "rgba(255,255,255,0.14)", borderWidth: 1, borderColor: "rgba(255,255,255,0.24)", borderRadius: 22, padding: 16 },
-  quickBadge: { position: "absolute", top: 13, right: 13, backgroundColor: "rgba(255,223,94,0.9)", paddingHorizontal: 9, paddingVertical: 3, borderRadius: 11 },
+  quickGrid: { flexDirection: "row", gap: 10 },
+  quickCard: { flex: 1, backgroundColor: "rgba(255,255,255,0.14)", borderWidth: 1, borderColor: "rgba(255,255,255,0.24)", borderRadius: 18, padding: 13 },
+  quickBadge: { position: "absolute", top: 12, right: 12, backgroundColor: "rgba(255,223,94,0.9)", paddingHorizontal: 9, paddingVertical: 3, borderRadius: 11 },
   quickBadgeText: { color: "#5a3b00", fontWeight: "800", fontSize: 12 },
-  quickIcon: { fontSize: 28 },
-  quickTitle: { color: "#fff", fontWeight: "700", fontSize: 16, marginTop: 10 },
-  quickSub: { color: "rgba(255,255,255,0.78)", fontSize: 12, marginTop: 4, lineHeight: 16 },
+  quickIcon: { fontSize: 24 },
+  quickTitle: { color: "#fff", fontWeight: "700", fontSize: 15, marginTop: 8 },
+  quickSub: { color: "rgba(255,255,255,0.78)", fontSize: 12, marginTop: 3, lineHeight: 16 },
 
-  memStrip: { flexDirection: "row", gap: 12 },
-  reviewCard: { backgroundColor: "rgba(255,255,255,0.14)", borderWidth: 1, borderColor: "rgba(255,255,255,0.24)", borderRadius: 22, padding: 16 },
+  memStrip: { flexDirection: "row", gap: 10 },
+  reviewCard: { backgroundColor: "rgba(255,255,255,0.14)", borderWidth: 1, borderColor: "rgba(255,255,255,0.24)", borderRadius: 18, padding: 13 },
   reviewTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   reviewTitle: { color: "#fff", fontWeight: "700", fontSize: 15 },
   reviewCount: { backgroundColor: "rgba(255,255,255,0.22)", paddingHorizontal: 10, paddingVertical: 3, borderRadius: 11 },
   reviewCountText: { color: "#fff", fontWeight: "800", fontSize: 13 },
-  reviewText: { color: "rgba(255,255,255,0.8)", fontSize: 12, marginTop: 8, lineHeight: 17 },
-  smallBtn: { marginTop: 12, alignSelf: "flex-start", paddingHorizontal: 16, paddingVertical: 9, borderRadius: 13 },
+  reviewText: { color: "rgba(255,255,255,0.8)", fontSize: 12, marginTop: 7, lineHeight: 17 },
+  smallBtn: { marginTop: 10, alignSelf: "flex-start", paddingHorizontal: 16, paddingVertical: 9, borderRadius: 13 },
   smallBtnText: { color: "#fff", fontWeight: "700", fontSize: 12 },
-  streakCard: { backgroundColor: "rgba(255,255,255,0.14)", borderWidth: 1, borderColor: "rgba(255,255,255,0.24)", borderRadius: 22, padding: 16, justifyContent: "center", alignItems: "center" },
-  streakNum: { color: "#fff", fontSize: 26, fontWeight: "800" },
+  streakCard: { backgroundColor: "rgba(255,255,255,0.14)", borderWidth: 1, borderColor: "rgba(255,255,255,0.24)", borderRadius: 18, padding: 13, justifyContent: "center", alignItems: "center" },
+  streakNum: { color: "#fff", fontSize: 22, fontWeight: "800" },
   streakLabel: { color: "rgba(255,255,255,0.85)", fontSize: 12, marginTop: 2 },
-  streakSub: { color: "rgba(255,255,255,0.7)", fontSize: 11, marginTop: 8, lineHeight: 15, textAlign: "center" },
+  streakSub: { color: "rgba(255,255,255,0.7)", fontSize: 11, marginTop: 7, lineHeight: 15, textAlign: "center" },
 
-  track: { flexDirection: "row", alignItems: "center", gap: 14, backgroundColor: "rgba(255,255,255,0.14)", borderWidth: 1, borderColor: "rgba(255,255,255,0.24)", borderRadius: 22, paddingHorizontal: 16, paddingVertical: 14, marginBottom: 12 },
-  trackIcoWrap: { width: 48, height: 48, borderRadius: 15, backgroundColor: "rgba(255,255,255,0.16)", alignItems: "center", justifyContent: "center" },
-  trackIco: { fontSize: 24 },
+  track: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: "rgba(255,255,255,0.14)", borderWidth: 1, borderColor: "rgba(255,255,255,0.24)", borderRadius: 18, paddingHorizontal: 13, paddingVertical: 11, marginBottom: 10 },
+  trackIcoWrap: { width: 44, height: 44, borderRadius: 14, backgroundColor: "rgba(255,255,255,0.16)", alignItems: "center", justifyContent: "center" },
+  trackIco: { fontSize: 22 },
   trackMain: { flex: 1 },
   trackTitle: { color: "#fff", fontWeight: "700", fontSize: 15 },
-  trackProgressBg: { height: 8, borderRadius: 6, backgroundColor: "rgba(255,255,255,0.2)", marginTop: 9, overflow: "hidden" },
+  trackProgressBg: { height: 7, borderRadius: 6, backgroundColor: "rgba(255,255,255,0.2)", marginTop: 7, overflow: "hidden" },
   trackProgressFill: { height: "100%", borderRadius: 6 },
   trackPct: { color: "#fff", fontWeight: "800", fontSize: 15, minWidth: 42, textAlign: "right" },
 });

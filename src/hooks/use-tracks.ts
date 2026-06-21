@@ -20,3 +20,18 @@ export function useTrack(idOrCode: string, includeLessons = true) {
     staleTime: 5 * 60 * 1000,
   });
 }
+
+/**
+ * Прогресс прохождения уроков трека текущего юзера (серверный источник
+ * правды для замков — кросс-девайс). Возвращает Set завершённых lesson_id.
+ */
+export function useTrackProgress(idOrCode: string) {
+  return useQuery({
+    queryKey: ['trackProgress', idOrCode],
+    queryFn: () => TracksApi.progress(idOrCode),
+    enabled: !!idOrCode,
+    staleTime: 30 * 1000,
+    select: (data) =>
+      new Set(data.lessons.filter((l) => l.completed).map((l) => l.lesson_id)),
+  });
+}

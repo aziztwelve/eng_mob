@@ -324,6 +324,19 @@ export interface TTSCacheEntry {
   created_at?: ProtoTimestamp | string;
 }
 
+/**
+ * Ответ POST /ai/tts (on-demand озвучка). Gateway отдаёт proto через
+ * gin c.JSON — ключи в snake_case (json-теги protoc-gen-go). Для path A
+ * (Google) audio_content заполнен (base64 mp3), audio_url пустой.
+ */
+export interface SynthesizeTTSResponse {
+  audio_url?: string;
+  duration_ms?: number;
+  cost_usd?: number;
+  audio_content?: string; // base64-encoded mp3 (path A)
+  mime_type?: string;     // напр. "audio/mpeg"
+}
+
 // ============================================
 // PHASE 2 — Step submit (step-validation-service)
 // ============================================
@@ -414,6 +427,19 @@ export interface TrackFilters {
   search?: string;
   limit?: number;
   offset?: number;
+}
+
+export interface TrackLessonProgress {
+  lesson_id: string;
+  completed: boolean;
+  progress_percentage: number;
+}
+
+export interface TrackProgressResponse {
+  track_id: string;
+  lessons: TrackLessonProgress[];
+  completed_count: number;
+  total: number;
 }
 
 export interface StepWithVideo {
@@ -1413,6 +1439,15 @@ export interface CheckPronunciationResponse {
   word_scores: AIWordScore[];
   feedback: string;
   audio_url?: string;
+}
+
+// --- STT (голосовой ввод в чат: audio → text, Google STT) ---
+
+export interface TranscribeAudioResponse {
+  /** Распознанный текст. */
+  text: string;
+  /** 0.0..1.0 (сейчас не используется в UI). */
+  confidence: number;
 }
 
 // --- Tutor ---

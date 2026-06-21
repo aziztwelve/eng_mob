@@ -165,7 +165,7 @@ export default function HomeScreen() {
 
           <View style={styles.brandRow}>
             <View style={styles.brandCopy}>
-              <Text style={styles.brandText}>Fluent</Text>
+              <Text style={styles.brandText}>LingoIQ</Text>
               <Text style={styles.greeting}>
                 Привет, Камол 👋 Сегодня цель — 20 XP
               </Text>

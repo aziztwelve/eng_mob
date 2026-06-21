@@ -18,6 +18,8 @@ import type {
   SendMessageResponse,
   StartConversationRequest,
   StartConversationResponse,
+  SynthesizeTTSResponse,
+  TranscribeAudioResponse,
 } from '@/types/api';
 
 /**
@@ -156,8 +158,65 @@ export const AIApi = {
     return (await res.json()) as CheckPronunciationResponse;
   },
 
+  // === STT (голосовой ввод в чат, multipart) ===
+  /**
+   * Распознаёт запись голоса в текст через Google STT (gateway
+   * `POST /ai/stt`). Без оценки произношения — просто audio → text для
+   * заполнения поля ввода в чате. Тот же multipart-флоу, что и
+   * checkPronunciation (RN: file uri; web: реальный Blob).
+   */
+  async transcribeAudio(input: {
+    audio: PronunciationAudioInput;
+    language?: string;
+    /** Google STT encoding (LINEAR16 | AMR_WB | OGG_OPUS | ...). Пусто → вывод из mime. */
+    encoding?: string;
+    sample_rate?: number;
+  }): Promise<TranscribeAudioResponse> {
+    const fd = new FormData();
+    if (Platform.OS === 'web') {
+      const blobResp = await fetch(input.audio.uri);
+      const blob = await blobResp.blob();
+      fd.append('audio', blob, input.audio.name);
+    } else {
+      fd.append('audio', {
+        uri: input.audio.uri,
+        type: input.audio.type,
+        name: input.audio.name,
+      } as unknown as Blob);
+    }
+    if (input.language) fd.append('language', input.language);
+    if (input.encoding) fd.append('encoding', input.encoding);
+    if (input.sample_rate) fd.append('sample_rate', String(input.sample_rate));
+
+    const headers: Record<string, string> = {};
+    const token = await AuthService.getAccessToken();
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const res = await fetch(`${API_BASE_URL}/ai/stt`, {
+      method: 'POST',
+      headers,
+      body: fd,
+    });
+
+    if (!res.ok) {
+      if (res.status === 401) {
+        await handleUnauthorized();
+      }
+      const text = await safeText(res);
+      throw {
+        message: text || `HTTP ${res.status}`,
+        statusCode: res.status,
+      };
+    }
+    return (await res.json()) as TranscribeAudioResponse;
+  },
+
   // === Quota ===
   getQuota: () => ApiClient.get<AIQuotaStatus>('/ai/quota'),
+
+  // === TTS (on-demand озвучка слов) ===
+  synthesizeTTS: (req: { text: string; language?: string; voice?: string }) =>
+    ApiClient.post<SynthesizeTTSResponse>('/ai/tts', req),
 };
 
 async function safeText(res: Response): Promise<string> {

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Keyboard,
@@ -12,20 +12,163 @@ import {
   View,
 } from 'react-native';
 import { Stack, useLocalSearchParams, router } from 'expo-router';
-import { ArrowLeft } from 'lucide-react-native';
+import { ArrowLeft, Mic, Square, X } from 'lucide-react-native';
+import { Audio } from 'expo-av';
+import Toast from 'react-native-toast-message';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 
 import { ChatInput } from '@/components/ai/chat-input';
 import { ChatMessage } from '@/components/ai/chat-message';
 import { hasQuotaLeft } from '@/components/ai/quota-widget';
-import { useAIConversation, useAIQuota, useSendMessage } from '@/hooks/use-ai';
+import { useAIConversation, useAIQuota, useSendMessage, useTranscribeAudio } from '@/hooks/use-ai';
+import { getChatTTSUri } from '@/lib/tts';
 import { glass, CTA } from '@/components/sunset';
 import { LinearGradient } from 'expo-linear-gradient';
 
+/* STT — формат записи под Google STT (как в chat-input/ai-hub). */
+const STT_SR = 16000;
+const STT_REC_OPTS: Audio.RecordingOptions = {
+  isMeteringEnabled: false,
+  android: { extension: '.amr', outputFormat: Audio.AndroidOutputFormat.AMR_WB, audioEncoder: Audio.AndroidAudioEncoder.AMR_WB, sampleRate: STT_SR, numberOfChannels: 1, bitRate: 23850 },
+  ios: { extension: '.wav', outputFormat: Audio.IOSOutputFormat.LINEARPCM, audioQuality: Audio.IOSAudioQuality.HIGH, sampleRate: STT_SR, numberOfChannels: 1, bitRate: 256000, linearPCMBitDepth: 16, linearPCMIsBigEndian: false, linearPCMIsFloat: false },
+  web: { mimeType: 'audio/webm', bitsPerSecond: 128000 },
+};
+function sttMeta(): { encoding: string; sampleRate: number; type: string; name: string } {
+  if (Platform.OS === 'ios') return { encoding: 'LINEAR16', sampleRate: STT_SR, type: 'audio/wav', name: 'rec.wav' };
+  if (Platform.OS === 'web') return { encoding: 'WEBM_OPUS', sampleRate: 48000, type: 'audio/webm', name: 'rec.webm' };
+  return { encoding: 'AMR_WB', sampleRate: STT_SR, type: 'audio/amr-wb', name: 'rec.amr' };
+}
+
+type VoicePhase = 'recording' | 'processing' | 'speaking';
+
+/**
+ * VoiceConsole — hands-free голосовой диалог: запись → авто-отправка →
+ * ответ AI → авто-озвучка (Google TTS) → снова запись. Цикл до закрытия.
+ */
+function VoiceConsole({
+  language,
+  send,
+  onClose,
+}: {
+  language?: string;
+  send: (text: string) => Promise<string>;
+  onClose: () => void;
+}) {
+  const [phase, setPhase] = useState<VoicePhase>('recording');
+  const recRef = useRef<Audio.Recording | null>(null);
+  const soundRef = useRef<Audio.Sound | null>(null);
+  const activeRef = useRef(true);
+  const transcribeMut = useTranscribeAudio();
+
+  const beginRecording = useCallback(async () => {
+    if (!activeRef.current) return;
+    try {
+      const perm = await Audio.requestPermissionsAsync();
+      if (!perm.granted) { Toast.show({ type: 'error', text1: 'Нет доступа к микрофону' }); onClose(); return; }
+      await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
+      const { recording } = await Audio.Recording.createAsync(STT_REC_OPTS);
+      if (!activeRef.current) { try { await recording.stopAndUnloadAsync(); } catch {} return; }
+      recRef.current = recording;
+      setPhase('recording');
+    } catch (e) { console.error('voice rec failed', e); Toast.show({ type: 'error', text1: 'Не удалось начать запись' }); onClose(); }
+  }, [onClose]);
+
+  const playReply = useCallback(async (reply: string) => {
+    if (!reply.trim()) { void beginRecording(); return; }
+    try {
+      setPhase('speaking');
+      const uri = await getChatTTSUri(reply, language ?? 'en');
+      if (!activeRef.current) return;
+      const { sound } = await Audio.Sound.createAsync({ uri }, { shouldPlay: true });
+      soundRef.current = sound;
+      sound.setOnPlaybackStatusUpdate((st) => {
+        if (st.isLoaded && st.didJustFinish) {
+          sound.unloadAsync().catch(() => {});
+          if (soundRef.current === sound) soundRef.current = null;
+          if (activeRef.current) void beginRecording();
+        }
+      });
+    } catch (e) {
+      console.warn('voice tts failed', e);
+      if (activeRef.current) void beginRecording();
+    }
+  }, [beginRecording, language]);
+
+  const stopAndSend = useCallback(async () => {
+    const rec = recRef.current;
+    recRef.current = null;
+    if (!rec) return;
+    setPhase('processing');
+    try {
+      await rec.stopAndUnloadAsync();
+      const uri = rec.getURI();
+      await Audio.setAudioModeAsync({ allowsRecordingIOS: false, playsInSilentModeIOS: true }).catch(() => {});
+      if (!uri) { void beginRecording(); return; }
+      const meta = sttMeta();
+      const out = await transcribeMut.mutateAsync({ audio: { uri, type: meta.type, name: meta.name }, language: language ?? 'en', encoding: meta.encoding, sample_rate: meta.sampleRate });
+      const text = out.text?.trim();
+      if (!text) { Toast.show({ type: 'info', text1: 'Речь не распознана' }); void beginRecording(); return; }
+      const reply = await send(text);
+      if (!activeRef.current) return;
+      await playReply(reply);
+    } catch (e) {
+      console.error('voice turn failed', e);
+      Toast.show({ type: 'error', text1: 'Ошибка', text2: e instanceof Error ? e.message : undefined });
+      if (activeRef.current) void beginRecording();
+    }
+  }, [beginRecording, playReply, send, transcribeMut, language]);
+
+  useEffect(() => {
+    activeRef.current = true;
+    void beginRecording();
+    return () => {
+      activeRef.current = false;
+      recRef.current?.stopAndUnloadAsync().catch(() => {});
+      recRef.current = null;
+      soundRef.current?.unloadAsync().catch(() => {});
+      soundRef.current = null;
+      Audio.setAudioModeAsync({ allowsRecordingIOS: false, playsInSilentModeIOS: true }).catch(() => {});
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const label = phase === 'recording' ? 'Слушаю… нажмите, чтобы отправить' : phase === 'processing' ? 'Обрабатываю…' : 'AI отвечает 🔊';
+
+  return (
+    <View style={vs.wrap}>
+      <Pressable onPress={onClose} style={vs.close} hitSlop={8}>
+        <X size={18} color="rgba(255,255,255,0.7)" />
+      </Pressable>
+      <Pressable onPress={stopAndSend} disabled={phase !== 'recording'} style={vs.btnWrap}>
+        {phase === 'recording' ? (
+          <View style={[vs.btn, vs.btnRec]}><Square size={22} color="#fff" fill="#fff" /></View>
+        ) : phase === 'speaking' ? (
+          <View style={[vs.btn, vs.btnSpeak]}><Text style={{ fontSize: 22 }}>🔊</Text></View>
+        ) : (
+          <View style={[vs.btn, vs.btnProc]}><ActivityIndicator color="#fff" /></View>
+        )}
+      </Pressable>
+      <Text style={vs.label} numberOfLines={2}>{label}</Text>
+    </View>
+  );
+}
+
+const vs = StyleSheet.create({
+  wrap: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 6, paddingHorizontal: 4 },
+  close: { padding: 8, borderRadius: 12 },
+  btnWrap: {},
+  btn: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
+  btnRec: { backgroundColor: 'rgba(248,113,113,0.92)' },
+  btnSpeak: { backgroundColor: 'rgba(124,92,255,0.75)' },
+  btnProc: { backgroundColor: 'rgba(255,255,255,0.2)' },
+  label: { flex: 1, color: '#fff', fontSize: 14, fontWeight: '700' },
+});
+
 export default function ChatConversationScreen() {
-  const params = useLocalSearchParams<{ id: string }>();
+  const params = useLocalSearchParams<{ id: string; draft?: string }>();
   const id = params.id;
+  const draft = typeof params.draft === 'string' ? params.draft : undefined;
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
 
@@ -60,6 +203,27 @@ export default function ChatConversationScreen() {
       console.error('send message failed', e);
     }
   };
+
+  // Голосовой режим: отправляет сообщение и возвращает текст ответа AI
+  // (для авто-озвучки в VoiceConsole).
+  const [voiceMode, setVoiceMode] = useState(false);
+  const sendForVoice = async (text: string): Promise<string> => {
+    const resp = await sendMut.mutateAsync({ content: text, want_audio: false });
+    return resp.assistant_message?.content ?? '';
+  };
+
+  // Автоотправка первого сообщения (draft из AI-хаба) — один раз, когда
+  // конверсация загружена и ещё пустая.
+  const draftSentRef = useRef(false);
+  useEffect(() => {
+    if (draftSentRef.current) return;
+    if (!draft || !conversation) return;
+    if (messages.length > 0) return;
+    if (sendMut.isPending) return;
+    draftSentRef.current = true;
+    void handleSend(draft, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft, conversation, messages.length]);
 
   const isRoleplay = conversation?.scenario.startsWith('roleplay_') ?? false;
   const isTutor = conversation?.scenario === 'tutor_qa';
@@ -127,7 +291,7 @@ export default function ChatConversationScreen() {
             <Text style={s.emptyText}>Напишите первое сообщение, чтобы начать.</Text>
           </View>
         ) : (
-          messages.map((m) => <ChatMessage key={m.id} message={m} />)
+          messages.map((m) => <ChatMessage key={m.id} message={m} language={conversation?.target_language} />)
         )}
 
         {sendMut.isPending && (
@@ -155,11 +319,35 @@ export default function ChatConversationScreen() {
             <Text style={s.limitText}>Лимит чатов исчерпан. Сбрасывается завтра.</Text>
           </View>
         )}
-        <ChatInput
-          onSend={handleSend}
-          loading={sendMut.isPending}
-          placeholder={isRoleplay ? 'Отвечайте по сценарию…' : 'Напишите сообщение…'}
-        />
+        {voiceMode ? (
+          <View style={[s.voiceWrap, glass]}>
+            <VoiceConsole
+              language={conversation?.target_language}
+              send={sendForVoice}
+              onClose={() => setVoiceMode(false)}
+            />
+          </View>
+        ) : (
+          <View style={s.inputRow}>
+            <View style={{ flex: 1 }}>
+              <ChatInput
+                onSend={handleSend}
+                loading={sendMut.isPending}
+                language={conversation?.target_language}
+                showMic={false}
+                placeholder={isRoleplay ? 'Отвечайте по сценарию…' : 'Напишите сообщение…'}
+              />
+            </View>
+            <Pressable
+              onPress={() => canChat && setVoiceMode(true)}
+              disabled={!canChat}
+              style={[s.voiceBtn, !canChat && s.voiceBtnDisabled]}
+              accessibilityLabel="Голосовой диалог"
+            >
+              <Mic size={20} color={canChat ? '#fff' : 'rgba(255,255,255,0.4)'} />
+            </Pressable>
+          </View>
+        )}
       </View>
     </View>
   );
@@ -257,4 +445,11 @@ const s = StyleSheet.create({
     backgroundColor: 'rgba(245,158,11,0.08)', borderWidth: 1, borderColor: 'rgba(245,158,11,0.25)',
   },
   limitText: { color: '#f59e0b', fontSize: 12, fontWeight: '600' },
+  inputRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
+  voiceBtn: {
+    width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: 'rgba(124,92,255,0.85)',
+  },
+  voiceBtnDisabled: { backgroundColor: 'rgba(255,255,255,0.12)' },
+  voiceWrap: { borderRadius: 22, paddingHorizontal: 6, paddingVertical: 4 },
 });

@@ -138,7 +138,7 @@ export default function LessonsScreen() {
       <StatusBar barStyle="light-content" />
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[s.scroll, { paddingBottom: 100 + insets.bottom }]}
+        contentContainerStyle={[s.scroll, { paddingBottom: 78 + insets.bottom }]}
       >
         {/* top: stats + avatar */}
         <View style={s.top}>
@@ -265,7 +265,7 @@ function MyTracks() {
   }
 
   return (
-    <View style={{ gap: 14 }}>
+    <View style={{ gap: 10 }}>
       {tracks.map((t) => (
         <Pressable key={t.id} onPress={() => router.push(`/tracks/${t.id}` as never)} style={[trk.card, glass]}>
           <View style={trk.thumb}>
@@ -291,16 +291,16 @@ function MyTracks() {
 }
 
 const trk = StyleSheet.create({
-  card: { flexDirection: "row", alignItems: "center", gap: 14, padding: 14, borderRadius: 24 },
+  card: { flexDirection: "row", alignItems: "center", gap: 12, padding: 11, borderRadius: 20 },
   thumb: {
-    width: 60, height: 60, borderRadius: 16, alignItems: "center", justifyContent: "center",
+    width: 52, height: 52, borderRadius: 14, alignItems: "center", justifyContent: "center",
     backgroundColor: "rgba(255,255,255,0.18)", borderWidth: 1, borderColor: "rgba(255,255,255,0.25)",
   },
-  title: { color: "#fff", fontSize: 16, fontWeight: "800", lineHeight: 20 },
-  desc: { color: "rgba(255,255,255,0.82)", fontSize: 12, fontWeight: "600", marginTop: 4 },
-  go: { width: 42, height: 42, borderRadius: 21, alignItems: "center", justifyContent: "center" },
+  title: { color: "#fff", fontSize: 15, fontWeight: "800", lineHeight: 19 },
+  desc: { color: "rgba(255,255,255,0.82)", fontSize: 12, fontWeight: "600", marginTop: 3 },
+  go: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
   goText: { color: "#fff", fontSize: 22, fontWeight: "900", marginTop: -2 },
-  empty: { alignItems: "center", gap: 10, paddingVertical: 28, borderRadius: 24 },
+  empty: { alignItems: "center", gap: 10, paddingVertical: 24, borderRadius: 20 },
   emptyText: { color: "rgba(255,255,255,0.85)", fontSize: 14, fontWeight: "700" },
 });
 
@@ -450,70 +450,70 @@ const s = StyleSheet.create({
   scroll: { paddingHorizontal: 20, paddingTop: 8 },
 
   /* top */
-  top: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 8 },
+  top: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 4 },
   stats: { flexDirection: "row", gap: 8, flex: 1 },
-  stat: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 16 },
-  statText: { color: "#fff", fontWeight: "800", fontSize: 14 },
+  stat: { paddingHorizontal: 11, paddingVertical: 6, borderRadius: 14 },
+  statText: { color: "#fff", fontWeight: "800", fontSize: 13 },
   avatar: {
-    width: 46, height: 46, borderRadius: 23, backgroundColor: "#FFD16A",
+    width: 42, height: 42, borderRadius: 21, backgroundColor: "#FFD16A",
     borderWidth: 2, borderColor: "rgba(255,255,255,0.7)",
     alignItems: "center", justifyContent: "center",
   },
-  crown: { position: "absolute", top: -9, right: -6, fontSize: 15, transform: [{ rotate: "18deg" }] },
+  crown: { position: "absolute", top: -9, right: -6, fontSize: 14, transform: [{ rotate: "18deg" }] },
 
   /* title + search */
-  titleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 20 },
-  title: { color: "#fff", fontSize: 30, fontWeight: "900" },
-  search: { flexDirection: "row", alignItems: "center", gap: 7, paddingHorizontal: 15, paddingVertical: 9, borderRadius: 18 },
+  titleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 12 },
+  title: { color: "#fff", fontSize: 25, fontWeight: "900" },
+  search: { flexDirection: "row", alignItems: "center", gap: 7, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 16 },
   searchText: { color: "#fff", fontSize: 14, fontWeight: "700" },
 
   /* tabs */
-  tabs: { flexDirection: "row", gap: 10, marginTop: 18 },
-  tab: { paddingHorizontal: 18, paddingVertical: 9, borderRadius: 16 },
+  tabs: { flexDirection: "row", gap: 10, marginTop: 12 },
+  tab: { paddingHorizontal: 16, paddingVertical: 7, borderRadius: 14 },
   tabActive: { borderWidth: 0, shadowColor: "#A8243F", shadowOpacity: 0.4, shadowRadius: 12, shadowOffset: { width: 0, height: 8 }, elevation: 4 },
-  tabText: { fontSize: 14, fontWeight: "800", color: "rgba(255,255,255,0.8)" },
+  tabText: { fontSize: 13, fontWeight: "800", color: "rgba(255,255,255,0.8)" },
   tabTextActive: { color: "#fff" },
 
   /* subhead */
-  subhead: { flexDirection: "row", alignItems: "center", marginTop: 22, marginBottom: 14 },
-  subheadTitle: { color: "#fff", fontSize: 18, fontWeight: "800" },
-  subheadUnderline: { width: 38, height: 3, borderRadius: 2, marginTop: 6 },
+  subhead: { flexDirection: "row", alignItems: "center", marginTop: 14, marginBottom: 10 },
+  subheadTitle: { color: "#fff", fontSize: 17, fontWeight: "800" },
+  subheadUnderline: { width: 36, height: 3, borderRadius: 2, marginTop: 5 },
   subheadLink: { color: "#fff", fontSize: 13, fontWeight: "700", opacity: 0.92 },
 
   /* tracks */
-  tracks: { gap: 14 },
-  track: { flexDirection: "row", alignItems: "center", gap: 14, padding: 14, borderRadius: 24 },
+  tracks: { gap: 10 },
+  track: { flexDirection: "row", alignItems: "center", gap: 12, padding: 11, borderRadius: 20 },
   trackLocked: { opacity: 0.7 },
   thumb: {
-    width: 66, height: 66, borderRadius: 18, alignItems: "center", justifyContent: "center",
+    width: 56, height: 56, borderRadius: 16, alignItems: "center", justifyContent: "center",
     backgroundColor: "rgba(255,255,255,0.18)", borderWidth: 1, borderColor: "rgba(255,255,255,0.25)",
   },
   trackMain: { flex: 1, minWidth: 0 },
   badge: { alignSelf: "flex-start", borderRadius: 10, paddingHorizontal: 9, paddingVertical: 3, backgroundColor: "#FFCB45" },
   badgeText: { fontSize: 11, fontWeight: "800", color: "#5a3b00" },
-  trackTitle: { color: "#fff", fontSize: 16, fontWeight: "800", marginTop: 6, lineHeight: 19 },
-  trackLvl: { color: "rgba(255,255,255,0.85)", fontSize: 12, fontWeight: "700", marginTop: 5 },
-  trackFoot: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 9 },
-  pbar: { flex: 1, height: 8, borderRadius: 6, backgroundColor: "rgba(255,255,255,0.2)", overflow: "hidden" },
+  trackTitle: { color: "#fff", fontSize: 15, fontWeight: "800", marginTop: 5, lineHeight: 18 },
+  trackLvl: { color: "rgba(255,255,255,0.85)", fontSize: 12, fontWeight: "700", marginTop: 4 },
+  trackFoot: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 7 },
+  pbar: { flex: 1, height: 7, borderRadius: 6, backgroundColor: "rgba(255,255,255,0.2)", overflow: "hidden" },
   pbarFill: { height: "100%", borderRadius: 6 },
   pct: { color: "#fff", fontSize: 13, fontWeight: "800", minWidth: 38, textAlign: "right" },
-  lockText: { color: "rgba(255,255,255,0.8)", fontSize: 12, fontWeight: "700", marginTop: 8 },
+  lockText: { color: "rgba(255,255,255,0.8)", fontSize: 12, fontWeight: "700", marginTop: 7 },
 
-  goWrap: { borderRadius: 21 },
-  go: { width: 42, height: 42, borderRadius: 21, alignItems: "center", justifyContent: "center" },
+  goWrap: { borderRadius: 20 },
+  go: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
   goText: { color: "#fff", fontSize: 22, fontWeight: "900", marginTop: -2 },
   goLock: { backgroundColor: "rgba(255,255,255,0.16)" },
 
   /* banner */
-  banner: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 20, paddingVertical: 16, paddingHorizontal: 18, borderRadius: 24 },
+  banner: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 14, paddingVertical: 13, paddingHorizontal: 16, borderRadius: 20 },
   bannerMain: { flex: 1 },
-  bannerTitle: { color: "#fff", fontSize: 18, fontWeight: "900" },
-  bannerText: { color: "rgba(255,255,255,0.82)", fontSize: 13, fontWeight: "600", marginTop: 5, lineHeight: 18 },
-  remind: { alignSelf: "flex-start", marginTop: 11, flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 9, borderRadius: 16 },
+  bannerTitle: { color: "#fff", fontSize: 17, fontWeight: "900" },
+  bannerText: { color: "rgba(255,255,255,0.82)", fontSize: 12, fontWeight: "600", marginTop: 4, lineHeight: 17 },
+  remind: { alignSelf: "flex-start", marginTop: 9, flexDirection: "row", alignItems: "center", paddingHorizontal: 14, paddingVertical: 8, borderRadius: 14 },
   remindText: { color: "#fff", fontWeight: "800", fontSize: 13 },
 
   /* empty */
-  empty: { alignItems: "center", justifyContent: "center", paddingVertical: 70, gap: 12 },
-  emptyEmoji: { fontSize: 54 },
+  empty: { alignItems: "center", justifyContent: "center", paddingVertical: 56, gap: 10 },
+  emptyEmoji: { fontSize: 48 },
   emptyText: { color: "rgba(255,255,255,0.85)", fontSize: 15, fontWeight: "700" },
 });

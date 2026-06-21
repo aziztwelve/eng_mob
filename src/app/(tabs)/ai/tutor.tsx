@@ -49,14 +49,14 @@ export default function TutorScreen() {
       <StatusBar barStyle="light-content" />
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 100 + insets.bottom }}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 6, paddingBottom: 78 + insets.bottom }}
       >
         <SunsetHeader title="Спросить учителя" />
 
         <QuotaWidget compact />
 
         {mut.data ? (
-          <View style={{ gap: 12, marginTop: 18 }}>
+          <View style={{ gap: 12, marginTop: 12 }}>
             {/* Вопрос + ответ */}
             <View style={[s.card, glass]}>
               <Text style={s.label}>Вопрос</Text>
@@ -72,7 +72,7 @@ export default function TutorScreen() {
             </Pressable>
           </View>
         ) : (
-          <View style={{ gap: 14, marginTop: 18 }}>
+          <View style={{ gap: 12, marginTop: 12 }}>
             {/* Языки */}
             <View style={[s.card, glass]}>
               <Text style={s.label}>Язык изучения</Text>
@@ -91,7 +91,7 @@ export default function TutorScreen() {
                 placeholderTextColor="rgba(255,255,255,0.35)"
                 multiline
                 textAlignVertical="top"
-                style={[s.input, { minHeight: 100 }]}
+                style={[s.input, { minHeight: 90 }]}
               />
             </View>
 
@@ -112,7 +112,7 @@ export default function TutorScreen() {
 }
 
 const s = StyleSheet.create({
-  card: { borderRadius: 22, padding: 16, gap: 8 },
+  card: { borderRadius: 20, padding: 13, gap: 8 },
   label: { color: 'rgba(255,255,255,0.6)', fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.8 },
   questionText: { color: '#fff', fontSize: 15, fontWeight: '600', lineHeight: 22 },
   divider: { height: 1, backgroundColor: 'rgba(255,255,255,0.12)', marginVertical: 4 },

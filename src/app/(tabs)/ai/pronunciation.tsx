@@ -49,14 +49,14 @@ export default function PronunciationScreen() {
       <StatusBar barStyle="light-content" />
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 100 + insets.bottom }}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 6, paddingBottom: 78 + insets.bottom }}
       >
         <SunsetHeader title="Произношение" />
 
         <QuotaWidget compact />
 
         {/* Ввод фразы */}
-        <View style={[s.card, glass, { marginTop: 18 }]}>
+        <View style={[s.card, glass, { marginTop: 12 }]}>
           <Text style={s.label}>Фраза для произношения</Text>
           <TextInput
             value={target}
@@ -171,7 +171,7 @@ function WordScoreBadge({ item }: { item: AIWordScore }) {
 }
 
 const s = StyleSheet.create({
-  card: { borderRadius: 22, padding: 16, gap: 8 },
+  card: { borderRadius: 20, padding: 13, gap: 8 },
   label: { color: 'rgba(255,255,255,0.6)', fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.8 },
   input: {
     borderWidth: 1,
@@ -186,14 +186,14 @@ const s = StyleSheet.create({
   },
   limitText: { color: '#f87171', fontSize: 13, fontWeight: '600', marginTop: 4 },
 
-  hintCard: { borderRadius: 22, padding: 32, alignItems: 'center' },
+  hintCard: { borderRadius: 20, padding: 28, alignItems: 'center' },
   hintText: { color: 'rgba(255,255,255,0.6)', fontSize: 14, fontWeight: '500', textAlign: 'center' },
 
   errCard: { marginTop: 12, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 10, backgroundColor: 'rgba(248,113,113,0.08)', borderWidth: 1, borderColor: 'rgba(248,113,113,0.25)' },
   errText: { color: '#f87171', fontSize: 13, fontWeight: '600' },
 
   scoreRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 },
-  scoreBig: { fontSize: 48, fontWeight: '900', lineHeight: 54 },
+  scoreBig: { fontSize: 40, fontWeight: '900', lineHeight: 46 },
   scoreDenom: { fontSize: 22, color: 'rgba(255,255,255,0.5)', fontWeight: '700' },
   badgeRow: { flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 6, borderWidth: 1 },
   badgeText: { fontSize: 13, fontWeight: '700' },

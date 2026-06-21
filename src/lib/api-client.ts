@@ -47,6 +47,7 @@ import {
   TTSCacheEntry,
   TrackFilters,
   TrackWithLessons,
+  TrackProgressResponse,
   UpdatePreferencesRequest,
   UpdatePreferencesResponse,
   UserAchievementsResponse,
@@ -298,6 +299,10 @@ export const TracksApi = {
     ApiClient.get<TrackWithLessons>(
       `/tracks/${idOrCode}${includeLessons ? '?include_lessons=true' : ''}`
     ),
+
+  /** Прогресс прохождения уроков трека текущего юзера (для замков). */
+  progress: (idOrCode: string) =>
+    ApiClient.get<TrackProgressResponse>(`/progress/tracks/${idOrCode}`),
 };
 
 /**

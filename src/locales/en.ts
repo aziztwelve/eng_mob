@@ -14,7 +14,7 @@ const en = {
     },
 
     welcome: {
-      brand: 'Fluent',
+      brand: 'LingoIQ',
       greeting_title: 'Hi! Ready to start?',
       greeting_subtitle: 'Learn languages with Lumi.',
       features: {
@@ -35,7 +35,7 @@ const en = {
       terms_modal_title: 'Terms of Service',
       terms_modal_body:
         'Last updated: January 1, 2026.\n\n' +
-        '1. Acceptance\nBy using the Fluent application (the "Service"), you confirm that you have read, understood, and agree to these Terms. If you do not agree, please stop using the Service.\n\n' +
+        '1. Acceptance\nBy using the LingoIQ application (the "Service"), you confirm that you have read, understood, and agree to these Terms. If you do not agree, please stop using the Service.\n\n' +
         '2. Eligibility\nThe Service is available to users aged 13 and over. Users under 18 must have permission from a legal guardian.\n\n' +
         '3. Account\nYou may use the Service as a guest or create an account via email or OAuth (Google/Apple). You are responsible for keeping your password safe and for all activity on your account. Notify us of any unauthorized access.\n\n' +
         '4. License\nWe grant you a limited, non-exclusive, non-transferable license to use the Service for personal, non-commercial language learning.\n\n' +
@@ -472,6 +472,7 @@ const en = {
     answer_placeholder: 'Type your answer…',
     listening_placeholder: 'Type what you hear…',
     word_bank_hint: 'Tap or drag the words here',
+    locked: 'Complete the previous lesson first',
   },
 } as const;
 

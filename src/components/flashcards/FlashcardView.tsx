@@ -11,6 +11,7 @@ import { Check, X, Undo2, SkipForward, Volume2 } from 'lucide-react-native';
 
 import { fx } from '@/lib/fx';
 import { getFxPreferences } from '@/lib/fx-prefs';
+import { playWordTTS } from '@/lib/tts';
 
 export interface FlashcardViewProps {
   word: string;
@@ -42,34 +43,45 @@ export function FlashcardView({
   canUndo = false,
 }: FlashcardViewProps) {
   const [isFlipped, setIsFlipped] = useState(false);
+  const [ttsBusy, setTtsBusy] = useState(false);
   const rotation = useSharedValue(0);
   const ttsPlayedRef = useRef(false);
   const soundRef = useRef<Audio.Sound | null>(null);
 
   const playTTS = useCallback(async () => {
-    if (!audioUrl) return;
+    if (ttsBusy || !word) return;
+    // Реальный URL (MinIO) — путь B; плейсхолдеры example.com игнорируем.
+    const realUrl = audioUrl && !audioUrl.includes('example.com') ? audioUrl : null;
+    setTtsBusy(true);
     try {
-      if (soundRef.current) {
-        await soundRef.current.unloadAsync();
-        soundRef.current = null;
+      if (realUrl) {
+        if (soundRef.current) {
+          await soundRef.current.unloadAsync();
+          soundRef.current = null;
+        }
+        const { sound } = await Audio.Sound.createAsync(
+          { uri: realUrl },
+          { shouldPlay: true, volume: 0.9 },
+        );
+        soundRef.current = sound;
+      } else {
+        // Путь A: on-demand синтез слова через Google TTS + локальный кэш.
+        await playWordTTS(word, ttsLanguage || 'en');
       }
-      const { sound } = await Audio.Sound.createAsync(
-        { uri: audioUrl },
-        { shouldPlay: true, volume: 0.9 },
-      );
-      soundRef.current = sound;
     } catch {
-      /* noop */
+      /* noop — озвучка не критична */
+    } finally {
+      setTtsBusy(false);
     }
-  }, [audioUrl]);
+  }, [audioUrl, word, ttsLanguage, ttsBusy]);
 
   useEffect(() => {
-    if (isFlipped && audioUrl && !ttsPlayedRef.current && getFxPreferences().sounds) {
+    if (isFlipped && !ttsPlayedRef.current && word && getFxPreferences().sounds) {
       ttsPlayedRef.current = true;
       const timer = setTimeout(playTTS, 200);
       return () => clearTimeout(timer);
     }
-  }, [isFlipped, audioUrl, playTTS]);
+  }, [isFlipped, word, playTTS]);
 
   useEffect(() => {
     return () => {
@@ -120,10 +132,24 @@ export function FlashcardView({
         ) : (
           <View className="w-10" />
         )}
-        {onSkip && (
+
+        {/* Озвучка слова (on-demand TTS). Вне flip-Pressable, чтобы тап не
+            переворачивал карточку. */}
+        <Pressable
+          onPress={playTTS}
+          disabled={ttsBusy}
+          hitSlop={8}
+          className="p-2 active:opacity-60 flex-row items-center"
+        >
+          <Volume2 size={26} color={ttsBusy ? '#D8B7BF' : '#A8243F'} />
+        </Pressable>
+
+        {onSkip ? (
           <Pressable onPress={onSkip} className="p-2 active:opacity-60">
             <SkipForward size={24} color="#999" />
           </Pressable>
+        ) : (
+          <View className="w-10" />
         )}
       </View>
 
@@ -151,11 +177,9 @@ export function FlashcardView({
               <Text className="text-[#2B1422] font-black text-3xl text-center">
                 {translation}
               </Text>
-              {audioUrl && (
-                <Pressable onPress={playTTS} className="p-1 active:opacity-60">
-                  <Volume2 size={22} color="#A8243F" />
-                </Pressable>
-              )}
+              <Pressable onPress={playTTS} disabled={ttsBusy} hitSlop={8} className="p-1 active:opacity-60">
+                <Volume2 size={22} color={ttsBusy ? '#D8B7BF' : '#A8243F'} />
+              </Pressable>
             </View>
             {transcription ? (
               <Text className="text-[#A8243F] text-base text-center mb-2 font-semibold">

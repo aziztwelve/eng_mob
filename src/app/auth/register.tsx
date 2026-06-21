@@ -53,7 +53,7 @@ export default function RegisterScreen() {
                 <Text style={{ fontSize: 36 }}>🍬</Text>
               </View>
               <Text style={{ fontSize: 32, fontWeight: '900', color: '#FFDF5E', letterSpacing: -0.5 }}>
-                Fluent
+                LingoIQ
               </Text>
               <Text style={{ fontSize: 20, fontWeight: '700', color: '#fff', marginTop: 4 }}>
                 {t('auth.register.title')}
