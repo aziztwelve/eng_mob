@@ -7,6 +7,7 @@ import { Plus, Search, Play } from 'lucide-react-native';
 import { useFlashcards, useFlashcardStats, useSeedStarter } from '@/hooks/use-flashcards';
 import { AddFlashcardSheet } from '@/components/flashcards/AddFlashcardSheet';
 import { SuggestionsWidget } from '@/components/flashcards/SuggestionsWidget';
+import { GoalRing } from '@/components/flashcards/GoalRing';
 import type { Flashcard } from '@/types/api';
 
 const CTA = ['#A8243F', '#CC5A1F'] as const;
@@ -29,6 +30,8 @@ export default function FlashcardsHubScreen() {
   const seedStarter = useSeedStarter();
 
   const todayDue = stats.data?.today_due ?? 0;
+  const todayCompleted = stats.data?.today_completed ?? 0;
+  const todayGoal = todayCompleted + todayDue;
   const learning = stats.data?.learning_count ?? 0;
   const mastered = stats.data?.mastered_count ?? 0;
   const total = stats.data?.total_count ?? 0;
@@ -66,12 +69,14 @@ export default function FlashcardsHubScreen() {
           />
         ) : (
           <>
-            {/* Stats */}
-            <View style={[st.card, { flexDirection: 'row', flexWrap: 'wrap', padding: 8 }]}>
-              <StatTile label="На сегодня" value={todayDue} color="#FFD84A" />
-              <StatTile label="Учу" value={learning} color="#FF9E6E" />
-              <StatTile label="Выучено" value={mastered} color="#2EECC8" />
-              <StatTile label="Всего" value={total} color="#fff" />
+            {/* Stats: кольцо дневной цели + компактные счётчики */}
+            <View style={[st.card, { flexDirection: 'row', alignItems: 'center', padding: 16, gap: 18 }]}>
+              <GoalRing completed={todayCompleted} total={todayGoal} />
+              <View style={{ flex: 1, gap: 12 }}>
+                <MiniStat label="Учу" value={learning} color="#FF9E6E" />
+                <MiniStat label="Выучено" value={mastered} color="#2EECC8" />
+                <MiniStat label="Всего" value={total} color="#fff" />
+              </View>
             </View>
 
             {/* CTA */}
@@ -125,11 +130,11 @@ export default function FlashcardsHubScreen() {
   );
 }
 
-function StatTile({ label, value, color }: { label: string; value: number; color: string }) {
+function MiniStat({ label, value, color }: { label: string; value: number; color: string }) {
   return (
-    <View style={{ width: '50%', padding: 10, gap: 3 }}>
-      <Text style={st.tileLabel}>{label.toUpperCase()}</Text>
-      <Text style={[st.tileValue, { color }]}>{value}</Text>
+    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+      <Text style={st.miniLabel}>{label.toUpperCase()}</Text>
+      <Text style={[st.miniValue, { color }]}>{value}</Text>
     </View>
   );
 }
@@ -195,8 +200,8 @@ const st = StyleSheet.create({
 
   card: { ...glass, borderRadius: 20 },
 
-  tileLabel: { color: 'rgba(255,255,255,0.7)', fontSize: 11, fontWeight: '800' },
-  tileValue: { fontSize: 26, fontWeight: '900' },
+  miniLabel: { color: 'rgba(255,255,255,0.7)', fontSize: 12, fontWeight: '800' },
+  miniValue: { fontSize: 22, fontWeight: '900' },
 
   ctaWrap: { borderRadius: 18, overflow: 'hidden', shadowColor: '#A8243F', shadowOpacity: 0.45, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 4 },
   cta: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 18, paddingHorizontal: 20 },

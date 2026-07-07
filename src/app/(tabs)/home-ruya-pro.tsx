@@ -372,7 +372,7 @@ export default function HomeRuyaPro() {
           <View style={s.bubble}>
             <Text style={s.bubbleTitle}>Привет! 👋</Text>
             <Text style={s.bubbleText}>
-              Давай учить языки{"\n"}вместе с <Text style={s.bubbleAccent}>Ruya</Text>!
+              Давай учить языки{"\n"}вместе с <Text style={s.bubbleAccent}>LingoIQ</Text>!
             </Text>
             <View style={s.bubbleTail} />
           </View>

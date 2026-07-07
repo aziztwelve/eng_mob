@@ -154,6 +154,7 @@ export default function FlashcardSessionScreen() {
           transcription={currentCard.transcription}
           audioUrl={currentCard.audio_url}
           ttsLanguage={currentCard.language}
+          stackCount={Math.max(0, queue.length - index - 1)}
           onRemember={() => handleAnswer(true)}
           onForgot={() => handleAnswer(false)}
           onSkip={handleSkip}

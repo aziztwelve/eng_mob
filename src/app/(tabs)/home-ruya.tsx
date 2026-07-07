@@ -27,7 +27,7 @@ export default function HomeScreen() {
 
         <View style={s.hero}>
           <Text style={s.heroTitle}>Привет! 👋</Text>
-          <Text style={s.heroText}>Давай учить языки вместе с Ruya!</Text>
+          <Text style={s.heroText}>Давай учить языки вместе с LingoIQ!</Text>
         </View>
 
         <View style={s.goalCard}>

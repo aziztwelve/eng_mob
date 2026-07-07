@@ -11,6 +11,22 @@ import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import Svg, { Path, Circle, Ellipse } from "react-native-svg";
 
+import { useUserStats } from "@/hooks/use-user-stats";
+import { useHearts } from "@/hooks/use-hearts";
+import { useDailyGoal } from "@/hooks/use-daily-goal";
+import { useSrsStats } from "@/hooks/use-srs";
+import { useCurrentUser } from "@/hooks/use-auth";
+import { useTracks, useTrack, useTrackProgress } from "@/hooks/use-tracks";
+import type { Track } from "@/types/api";
+
+// Косметика: реальные треки приходят с backend (название + прогресс),
+// а emoji/градиент подставляем по индексу, чтобы сохранить «candy»-вид.
+const TRACK_SKINS: { icon: string; colors: [string, string] }[] = [
+  { icon: "🗣️", colors: ["#FFF066", "#FFD84A"] },
+  { icon: "✈️", colors: ["#FF9E6E", "#F25B6E"] },
+  { icon: "☕", colors: ["#FFC7A0", "#FF9E6E"] },
+];
+
 function SectionHead({ icon, title, action }: { icon: string; title: string; action?: string }) {
   return (
     <View style={s.secHead}>
@@ -36,18 +52,59 @@ function TrackItem({ icon, title, pct, colors }: { icon: string; title: string; 
   );
 }
 
+// Реальный прогресс трека: completed lesson ids (Set) / общее число уроков.
+function TrackRow({ track, icon, colors }: { track: Track; icon: string; colors: [string, string] }) {
+  const { data: completed } = useTrackProgress(track.id);
+  const { data: full } = useTrack(track.id, true);
+  const total = full?.lessons?.length ?? 0;
+  const done = completed?.size ?? 0;
+  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+  return <TrackItem icon={icon} title={track.title} pct={pct} colors={colors} />;
+}
+
 export default function SunsetLavaHome() {
+  const { data: stats } = useUserStats();
+  const { data: hearts } = useHearts();
+  const { data: dailyGoal } = useDailyGoal();
+  const { data: srs } = useSrsStats();
+  const { data: user } = useCurrentUser();
+  const { data: tracksResp } = useTracks({ limit: 3 });
+
+  // Геймификация
+  const streak = stats?.current_streak ?? 0;
+  const heartsCount = hearts?.unlimited ? "∞" : (hearts?.hearts ?? stats?.hearts ?? 0);
+  const xp = stats?.total_xp ?? 0;
+  const level = stats?.level ?? 1;
+
+  // Дневная цель
+  const goalXp = dailyGoal?.target_xp ?? 20;
+  const earned = dailyGoal?.today?.xp_earned ?? 0;
+  const goalForToday = dailyGoal?.today?.goal ?? goalXp;
+  const planPct = goalForToday > 0 ? Math.min(100, Math.round((earned / goalForToday) * 100)) : 0;
+  const remainingXp = Math.max(0, goalForToday - earned);
+
+  // SRS / память
+  const dueNow = srs?.due_now ?? 0;
+  // mastered может отсутствовать в JSON (proto omitempty при значении 0) —
+  // подставляем 0, иначе деление даёт NaN ("NaN%").
+  const memoryPct = srs && srs.total_items > 0 ? Math.round(((srs.mastered ?? 0) / srs.total_items) * 100) : 0;
+
+  // Имя
+  const name = user?.name || user?.username || "друг";
+
+  const tracks = tracksResp?.tracks ?? [];
+
   return (
     <LinearGradient colors={["#2E0A4A", "#6A1252", "#A8243F", "#C9521F"]} locations={[0, 0.38, 0.7, 0.96]} style={s.root}>
       <StatusBar barStyle="light-content" />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.scroll}>
         {/* Stats */}
         <View style={s.statsRow}>
-          <View style={s.stat}><Text style={s.statText}>🔥 7</Text></View>
-          <View style={s.stat}><Text style={s.statText}>♥ 5</Text></View>
-          <View style={s.stat}><Text style={s.statText}>💎 320</Text></View>
+          <View style={s.stat}><Text style={s.statText}>🔥 {streak}</Text></View>
+          <View style={s.stat}><Text style={s.statText}>♥ {heartsCount}</Text></View>
+          <View style={s.stat}><Text style={s.statText}>💎 {xp}</Text></View>
           <LinearGradient colors={["#FFDF5E", "#FFB338"]} style={[s.stat, s.statLvl]}>
-            <Text style={s.lvlText}>✦ LV 1</Text>
+            <Text style={s.lvlText}>✦ LV {level}</Text>
           </LinearGradient>
         </View>
 
@@ -55,11 +112,11 @@ export default function SunsetLavaHome() {
         <View style={s.brandRow}>
           <View style={{ flex: 1 }}>
             <Text style={s.brand}>LingoIQ</Text>
-            <Text style={s.hello}>Привет, Камол 👋 Сегодня цель — 20 XP</Text>
+            <Text style={s.hello}>Привет, {name} 👋 Сегодня цель — {goalXp} XP</Text>
           </View>
           <View style={s.todayMini}>
             <Text style={s.todayLabel}>План</Text>
-            <Text style={s.todayValue}>38%</Text>
+            <Text style={s.todayValue}>{planPct}%</Text>
           </View>
         </View>
 
@@ -68,10 +125,10 @@ export default function SunsetLavaHome() {
           <View style={s.heroTop}>
             <View style={s.pill}><Text style={s.pillText}>🧠 Память растёт</Text></View>
             <LinearGradient colors={["#FFDF5E", "#FFB338"]} style={s.xpBadge}>
-              <Text style={s.xpText}>+20 XP</Text>
+              <Text style={s.xpText}>+{goalXp} XP</Text>
             </LinearGradient>
           </View>
-          <Text style={s.heroTitle}>Сегодня: повторить 18 карт</Text>
+          <Text style={s.heroTitle}>Сегодня: повторить {dueNow} карт</Text>
           <Text style={s.heroDesc}>Сначала флешкарты, потом короткий трек на 5 минут.</Text>
           <Pressable onPress={() => router.push('/flashcards' as any)}>
             <LinearGradient colors={["#A8243F", "#CC5A1F"]} style={s.cta}>
@@ -98,13 +155,13 @@ export default function SunsetLavaHome() {
           <SectionHead icon="⚡" title="Быстрый старт" />
           <View style={s.quickGrid}>
             <Pressable style={s.quickCard} onPress={() => router.push('/flashcards' as any)}>
-              <View style={s.quickBadge}><Text style={s.quickBadgeText}>18</Text></View>
+              <View style={s.quickBadge}><Text style={s.quickBadgeText}>{dueNow}</Text></View>
               <Text style={s.quickIcon}>🃏</Text>
               <Text style={s.quickTitle}>Флешкарты</Text>
               <Text style={s.quickSub}>Повтори слова, которые скоро забудутся</Text>
             </Pressable>
             <View style={s.quickCard}>
-              <View style={s.quickBadge}><Text style={s.quickBadgeText}>82%</Text></View>
+              <View style={s.quickBadge}><Text style={s.quickBadgeText}>{memoryPct}%</Text></View>
               <Text style={s.quickIcon}>🧠</Text>
               <Text style={s.quickTitle}>Память</Text>
               <Text style={s.quickSub}>Сильные и слабые слова за неделю</Text>
@@ -119,7 +176,7 @@ export default function SunsetLavaHome() {
             <View style={[s.reviewCard, { flex: 1.5 }]}>
               <View style={s.reviewTop}>
                 <Text style={s.reviewTitle}>К повтору</Text>
-                <View style={s.reviewCount}><Text style={s.reviewCountText}>18</Text></View>
+                <View style={s.reviewCount}><Text style={s.reviewCountText}>{dueNow}</Text></View>
               </View>
               <Text style={s.reviewText}>Новые слова из последних уроков. Лучше пройти сейчас.</Text>
               <Pressable onPress={() => router.push('/flashcards' as any)}>
@@ -129,9 +186,9 @@ export default function SunsetLavaHome() {
               </Pressable>
             </View>
             <View style={[s.streakCard, { flex: 1 }]}>
-              <Text style={s.streakNum}>7🔥</Text>
+              <Text style={s.streakNum}>{streak}🔥</Text>
               <Text style={s.streakLabel}>дней серия</Text>
-              <Text style={s.streakSub}>Осталось 8 XP до цели дня</Text>
+              <Text style={s.streakSub}>Осталось {remainingXp} XP до цели дня</Text>
             </View>
           </View>
         </View>
@@ -139,9 +196,10 @@ export default function SunsetLavaHome() {
         {/* Треки */}
         <View style={s.section}>
           <SectionHead icon="🧭" title="Треки" action="Все →" />
-          <TrackItem icon="🗣️" title="Разговор" pct={64} colors={["#FFF066", "#FFD84A"]} />
-          <TrackItem icon="✈️" title="Путешествие" pct={38} colors={["#FF9E6E", "#F25B6E"]} />
-          <TrackItem icon="☕" title="Кафе" pct={22} colors={["#FFC7A0", "#FF9E6E"]} />
+          {tracks.map((track, i) => {
+            const skin = TRACK_SKINS[i % TRACK_SKINS.length];
+            return <TrackRow key={track.id} track={track} icon={skin.icon} colors={skin.colors} />;
+          })}
         </View>
       </ScrollView>
     </LinearGradient>

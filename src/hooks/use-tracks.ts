@@ -1,6 +1,16 @@
 import { useQuery } from '@tanstack/react-query';
-import { TracksApi } from '@/lib/api-client';
+import { TracksApi, MyTracksApi } from '@/lib/api-client';
 import type { TrackFilters } from '@/types/api';
+
+/** Персональный план треков юзера (Phase 8). Бэкенд лениво генерирует план
+ *  по профилю (level + language + goal), если его ещё нет. */
+export function useMyTracks() {
+  return useQuery({
+    queryKey: ['my-tracks'],
+    queryFn: () => MyTracksApi.list(),
+    staleTime: 60 * 1000,
+  });
+}
 
 /** Список публикованных треков с фильтрами. */
 export function useTracks(filters?: TrackFilters) {

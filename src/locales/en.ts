@@ -46,7 +46,7 @@ const en = {
         '9. Disclaimer\nThe Service is provided "as is" without express or implied warranties. We do not guarantee that learning outcomes will meet your expectations.\n\n' +
         '10. Limitation of liability\nTo the maximum extent permitted by law, we are not liable for indirect, incidental, or punitive damages arising from your use of the Service.\n\n' +
         '11. Changes\nWe may update these Terms. We will notify you of material changes through the app. Continued use means you accept the updated Terms.\n\n' +
-        '12. Contact\nQuestions: support@fluent.app',
+        '12. Contact\nQuestions: support@lingoiq.online',
       privacy_modal_title: 'Privacy Policy',
       privacy_modal_body:
         'Last updated: January 1, 2026.\n\n' +
@@ -54,12 +54,12 @@ const en = {
         '2. How we use it\n• To provide and improve the Service (sync progress, personalized recommendations).\n• To run AI features (we forward request content to our AI providers — e.g. OpenAI).\n• To send push notifications for reminders, streaks, and achievements.\n• Security and abuse prevention.\n• Aggregated analytics to improve the product.\n\n' +
         '3. Sharing with third parties\nWe share data only with processors required to run the Service: cloud hosting, analytics (anonymized), AI API providers, push services (Expo/FCM/APNs), App Store / Google Play (for billing). We do not sell your data.\n\n' +
         '4. Data retention\nWe keep data while your account is active. After account deletion, learning data is removed within 30 days; anonymized analytics may be kept longer.\n\n' +
-        '5. Your rights\nYou can: request a copy of your data, correct inaccuracies, delete your account, withdraw push notification consent, export your progress. Contact privacy@fluent.app.\n\n' +
+        '5. Your rights\nYou can: request a copy of your data, correct inaccuracies, delete your account, withdraw push notification consent, export your progress. Contact privacy@lingoiq.online.\n\n' +
         '6. Children\nThe Service is not intended for children under 13. We do not knowingly collect their data. Parents who discover such data — please contact us for removal.\n\n' +
         '7. Security\nWe use encryption (HTTPS/TLS) in transit and standard back-end security practices. However, no system can guarantee 100% security.\n\n' +
         '8. International transfers\nOur servers may be located in different countries. By using the Service you consent to data transfers to those jurisdictions with appropriate safeguards.\n\n' +
         '9. Changes\nWe will notify you of material changes through the app or by email.\n\n' +
-        '10. Contact\nPrivacy questions: privacy@fluent.app',
+        '10. Contact\nPrivacy questions: privacy@lingoiq.online',
     },
 
     goal: {

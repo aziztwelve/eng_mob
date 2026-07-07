@@ -14,8 +14,9 @@ import Svg, { Path, Circle, Ellipse, Line } from "react-native-svg";
 import { ActivityIndicator } from "react-native";
 
 import { useFlashcards, useFlashcardStats, useSeedStarter } from "@/hooks/use-flashcards";
-import { useTracks } from "@/hooks/use-tracks";
-import { useOnboardingState } from "@/hooks/use-onboarding";
+import { useMyTracks, useTrack } from "@/hooks/use-tracks";
+import { useUserStats } from "@/hooks/use-user-stats";
+import { useHearts } from "@/hooks/use-hearts";
 import type { Flashcard, Track } from "@/types/api";
 
 /* ------------------------------------------------------------------ */
@@ -25,7 +26,6 @@ const GRAD = ["#2E0A4A", "#6A1252", "#A8243F", "#C9521F"] as const;
 const GRAD_LOC = [0, 0.38, 0.7, 0.96] as const;
 const CTA = ["#A8243F", "#CC5A1F"] as const;
 const GOLD = ["#FFDF5E", "#FFB338"] as const;
-const FILL = ["#FFF066", "#FFD84A"] as const;
 
 const glass = {
   backgroundColor: "rgba(255,255,255,0.14)",
@@ -36,23 +36,6 @@ const glass = {
 /* ------------------------------------------------------------------ */
 /* Data                                                                */
 /* ------------------------------------------------------------------ */
-type TrackRow = {
-  emoji: string;
-  badge: string;
-  title: string;
-  level?: number;
-  pct?: number;
-  locked?: boolean;
-};
-
-const TRACKS: TrackRow[] = [
-  { emoji: "✈️", badge: "Популярный", title: "Английский для путешествий", level: 3, pct: 80 },
-  { emoji: "💼", badge: "Практичный", title: "Английский для работы", level: 2, pct: 50 },
-  { emoji: "💬", badge: "Разговорный", title: "Разговорный английский", level: 1, pct: 30 },
-  { emoji: "🎓", badge: "Экзамены", title: "IELTS", level: 1, pct: 20 },
-  { emoji: "📈", badge: "Бизнес", title: "Бизнес английский", locked: true },
-];
-
 const TABS = ["Треки", "Курсы", "Мои слова"] as const;
 type TabName = (typeof TABS)[number];
 
@@ -84,46 +67,6 @@ function Owl() {
   );
 }
 
-function TrackCard({ track, onPress }: { track: TrackRow; onPress: () => void }) {
-  return (
-    <View style={[s.track, glass, track.locked && s.trackLocked]}>
-      <View style={s.thumb}>
-        <Text style={{ fontSize: 32 }}>{track.emoji}</Text>
-      </View>
-      <View style={s.trackMain}>
-        <View style={s.badge}>
-          <Text style={s.badgeText}>{track.badge}</Text>
-        </View>
-        <Text style={s.trackTitle}>{track.title}</Text>
-        {track.locked ? (
-          <Text style={s.lockText}>🔒 Заблокировано</Text>
-        ) : (
-          <>
-            <Text style={s.trackLvl}>👑 Уровень {track.level}</Text>
-            <View style={s.trackFoot}>
-              <View style={s.pbar}>
-                <LinearGradient colors={FILL} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={[s.pbarFill, { width: `${track.pct ?? 0}%` }]} />
-              </View>
-              <Text style={s.pct}>{track.pct}%</Text>
-            </View>
-          </>
-        )}
-      </View>
-      {track.locked ? (
-        <View style={[s.go, s.goLock]}>
-          <Text style={{ fontSize: 16 }}>🔒</Text>
-        </View>
-      ) : (
-        <Pressable onPress={onPress} style={s.goWrap}>
-          <LinearGradient colors={CTA} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.go}>
-            <Text style={s.goText}>›</Text>
-          </LinearGradient>
-        </Pressable>
-      )}
-    </View>
-  );
-}
-
 /* ------------------------------------------------------------------ */
 /* Screen                                                              */
 /* ------------------------------------------------------------------ */
@@ -131,6 +74,13 @@ export default function LessonsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<TabName>("Треки");
+
+  // Геймификация: реальные данные с бэкенда (как на главной).
+  const { data: stats } = useUserStats();
+  const { data: hearts } = useHearts();
+  const streak = stats?.current_streak ?? 0;
+  const heartsCount = hearts?.unlimited ? "∞" : (hearts?.hearts ?? stats?.hearts ?? 0);
+  const xp = stats?.total_xp ?? 0;
 
   return (
     <LinearGradient colors={GRAD} locations={GRAD_LOC} style={s.root}>
@@ -143,9 +93,9 @@ export default function LessonsScreen() {
         {/* top: stats + avatar */}
         <View style={s.top}>
           <View style={s.stats}>
-            <View style={[s.stat, glass]}><Text style={s.statText}>🔥 7</Text></View>
-            <View style={[s.stat, glass]}><Text style={s.statText}>♥ 5</Text></View>
-            <View style={[s.stat, glass]}><Text style={s.statText}>💎 320</Text></View>
+            <View style={[s.stat, glass]}><Text style={s.statText}>🔥 {streak}</Text></View>
+            <View style={[s.stat, glass]}><Text style={s.statText}>♥ {heartsCount}</Text></View>
+            <View style={[s.stat, glass]}><Text style={s.statText}>💎 {xp}</Text></View>
           </View>
           <View style={s.avatar}>
             <Text style={{ fontSize: 24 }}>🧒</Text>
@@ -203,7 +153,7 @@ export default function LessonsScreen() {
               <Owl />
               <View style={s.bannerMain}>
                 <Text style={s.bannerTitle}>Продолжай учиться!</Text>
-                <Text style={s.bannerText}>Учись каждый день и достигай своих целей вместе с Ruya!</Text>
+                <Text style={s.bannerText}>Учись каждый день и достигай своих целей вместе с LingoIQ!</Text>
                 <Pressable>
                   <LinearGradient colors={CTA} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.remind}>
                     <Text style={s.remindText}>Напоминание 🔔</Text>
@@ -229,28 +179,10 @@ export default function LessonsScreen() {
 /* «Мои треки» — треки из БД под уровень аккаунта (без бейджей уровня) */
 /* ------------------------------------------------------------------ */
 function MyTracks() {
-  const router = useRouter();
-  const onboarding = useOnboardingState();
-  const level = String(onboarding.data?.level ?? "").toLowerCase();
-  const goal = String(onboarding.data?.goal ?? "").toLowerCase();
-  const { data, isLoading } = useTracks({ limit: 50 });
-
-  const all: Track[] = data?.tracks ?? [];
-  // По уровню аккаунта (case-insensitive). Если уровень не задан — все.
-  let tracks = level ? all.filter((t) => String(t.level ?? "").toLowerCase() === level) : all;
-  // По цели (мягко): если есть треки, релевантные цели, оставляем их;
-  // иначе показываем все треки уровня (у seed-треков нет поля цели).
-  if (goal) {
-    const byGoal = tracks.filter((t) =>
-      `${t.title ?? ""} ${t.description ?? ""} ${t.code ?? ""} ${t.track_type ?? ""}`
-        .toLowerCase()
-        .includes(goal),
-    );
-    if (byGoal.length > 0) tracks = byGoal;
-  }
-
-  const emojiFor = (tt: string) =>
-    tt === "daily" ? "🗓️" : tt === "stories" ? "📖" : tt === "podcast" ? "🎧" : tt === "thematic" ? "🎯" : "✨";
+  // Персональный план юзера (Phase 8): бэкенд подбирает треки по level+goal
+  // и лениво генерирует план. Показываем уроки активного трека напрямую.
+  const { data, isLoading } = useMyTracks();
+  const tracks = data?.tracks ?? [];
 
   if (isLoading) {
     return <ActivityIndicator color="#FFD84A" style={{ marginVertical: 24 }} />;
@@ -259,25 +191,54 @@ function MyTracks() {
     return (
       <View style={[trk.empty, glass]}>
         <Text style={{ fontSize: 40 }}>🧭</Text>
-        <Text style={trk.emptyText}>Пока нет треков для твоего уровня</Text>
+        <Text style={trk.emptyText}>Пока нет треков для твоего уровня и цели</Text>
+      </View>
+    );
+  }
+
+  // 1 активный трек за раз (иначе первый по порядку плана).
+  const active = tracks.find((t) => t.status === "active") ?? tracks[0];
+  return <TrackLessons track={active} />;
+}
+
+/* ------------------------------------------------------------------ */
+/* Уроки трека — рендерим напрямую внутри «Мои треки».                 */
+/* ------------------------------------------------------------------ */
+function TrackLessons({ track }: { track: Track }) {
+  const router = useRouter();
+  const { data: full, isLoading } = useTrack(track.id, true);
+  const lessons = full?.lessons ?? [];
+
+  if (isLoading) {
+    return <ActivityIndicator color="#FFD84A" style={{ marginVertical: 24 }} />;
+  }
+  if (lessons.length === 0) {
+    return (
+      <View style={[trk.empty, glass]}>
+        <Text style={{ fontSize: 40 }}>🦉</Text>
+        <Text style={trk.emptyText}>Уроки скоро появятся</Text>
       </View>
     );
   }
 
   return (
     <View style={{ gap: 10 }}>
-      {tracks.map((t) => (
-        <Pressable key={t.id} onPress={() => router.push(`/tracks/${t.id}` as never)} style={[trk.card, glass]}>
+      {lessons.map((lesson, idx) => (
+        <Pressable
+          key={lesson.id}
+          onPress={() => router.push(`/learn/${lesson.id}` as never)}
+          style={[trk.card, glass]}
+        >
           <View style={trk.thumb}>
-            <Text style={{ fontSize: 30 }}>{emojiFor(String(t.track_type))}</Text>
+            <Text style={trk.thumbNum}>{idx + 1}</Text>
           </View>
           <View style={{ flex: 1, minWidth: 0 }}>
             <Text style={trk.title} numberOfLines={2}>
-              {t.title}
+              {lesson.title}
             </Text>
-            {t.description ? (
+            {lesson.description ? (
               <Text style={trk.desc} numberOfLines={2}>
-                {t.description}
+                {lesson.description}
               </Text>
             ) : null}
           </View>
@@ -296,6 +257,7 @@ const trk = StyleSheet.create({
     width: 52, height: 52, borderRadius: 14, alignItems: "center", justifyContent: "center",
     backgroundColor: "rgba(255,255,255,0.18)", borderWidth: 1, borderColor: "rgba(255,255,255,0.25)",
   },
+  thumbNum: { color: "#FFD84A", fontSize: 18, fontWeight: "900" },
   title: { color: "#fff", fontSize: 15, fontWeight: "800", lineHeight: 19 },
   desc: { color: "rgba(255,255,255,0.82)", fontSize: 12, fontWeight: "600", marginTop: 3 },
   go: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },

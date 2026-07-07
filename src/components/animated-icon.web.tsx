@@ -97,8 +97,8 @@ const styles = StyleSheet.create({
   },
   image: {
     position: 'absolute',
-    width: 76,
-    height: 71,
+    width: 112,
+    height: 112,
   },
   background: {
     width: 128,

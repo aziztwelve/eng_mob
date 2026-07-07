@@ -411,6 +411,20 @@ export interface Track {
   updated_at?: string;
 }
 
+/** Статус трека в персональном плане пользователя (Phase 8). */
+export type UserTrackStatus = 'active' | 'locked' | 'completed';
+
+/** Элемент персонального плана: трек + статус/порядок/источник. */
+export interface MyTrack extends Track {
+  order_index: number;
+  status: UserTrackStatus | string;
+  source: string;
+}
+
+export interface MyTracksResponse {
+  tracks: MyTrack[];
+}
+
 export interface TrackWithLessons extends Track {
   lessons?: LessonDetails[];
 }
@@ -424,6 +438,9 @@ export interface TrackFilters {
   language?: string;
   level?: string;
   track_type?: TrackType | string;
+  /** Цели пользователя (motivation). Трек подходит, если его motivation пуст
+   *  (универсальный) ИЛИ пересекается с этими целями. */
+  motivation?: string[];
   search?: string;
   limit?: number;
   offset?: number;

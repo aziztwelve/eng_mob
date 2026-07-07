@@ -105,7 +105,7 @@ export function DailyLessonCard({ track, lesson, isLoading }: Props) {
         {/* Description — max 64% width to leave room for mascot */}
         <Text style={{ 
           color: '#DCE8F4', 
-          fontWeight: '650', 
+          fontWeight: '600', 
           fontSize: 18,
           lineHeight: 24,
           maxWidth: '64%' 

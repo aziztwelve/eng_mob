@@ -21,6 +21,7 @@ import {
   ListNotificationsResponse,
   ListPendingRequestsResponse,
   ListTracksResponse,
+  MyTracksResponse,
   MarkReadResponse,
   MistakeFilter,
   NotificationsReadFilter,
@@ -59,7 +60,7 @@ import {
 } from '@/types/api';
 import { Platform } from 'react-native';
 
-import { AuthService } from './auth-service';
+import { AuthService, ensureGuestSession } from './auth-service';
 
 /**
  * Resolve base URL with platform-aware host rewrite.
@@ -149,8 +150,11 @@ export class ApiClient {
       ...(options.headers as Record<string, string>),
     };
 
-    // Add Authorization header if token exists
-    const token = await AuthService.getAccessToken();
+    // Add Authorization header. For protected routes, bootstrap a guest session
+    // lazily so first app-open requests do not leave without a bearer token.
+    const token =
+      (await AuthService.getAccessToken()) ||
+      (!isAuthEndpoint(endpoint) ? await ensureGuestSession() : null);
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
@@ -279,6 +283,9 @@ const buildTracksQuery = (filters?: TrackFilters) => {
   if (filters?.language) params.append('language', filters.language);
   if (filters?.level) params.append('level', filters.level);
   if (filters?.track_type) params.append('track_type', String(filters.track_type));
+  if (filters?.motivation?.length) {
+    filters.motivation.forEach((m) => m && params.append('motivation', m));
+  }
   if (filters?.search) params.append('search', filters.search);
   if (filters?.limit !== undefined) params.append('limit', String(filters.limit));
   if (filters?.offset !== undefined) params.append('offset', String(filters.offset));
@@ -303,6 +310,20 @@ export const TracksApi = {
   /** Прогресс прохождения уроков трека текущего юзера (для замков). */
   progress: (idOrCode: string) =>
     ApiClient.get<TrackProgressResponse>(`/progress/tracks/${idOrCode}`),
+};
+
+/**
+ * Персональный план треков (Phase 8).
+ *   GET    /me/tracks         — план текущего юзера (ленивая генерация на бэке)
+ *   POST   /me/tracks/:id     — добавить трек вручную
+ *   DELETE /me/tracks/:id     — убрать трек
+ */
+export const MyTracksApi = {
+  list: () => ApiClient.get<MyTracksResponse>(`/me/tracks`),
+  add: (trackId: string) =>
+    ApiClient.post<{ success: boolean }>(`/me/tracks/${trackId}`, {}),
+  remove: (trackId: string) =>
+    ApiClient.delete<{ success: boolean }>(`/me/tracks/${trackId}`),
 };
 
 /**

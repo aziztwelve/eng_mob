@@ -234,7 +234,7 @@ export default function AIHubScreen() {
         <View style={s.headerRow}>
           <View style={{ flex: 1, paddingRight: 8 }}>
             <Text style={s.title}>AI-помощник</Text>
-            <Text style={s.subtitle}>Привет! Я Ruya, твой помощник на пути к знаниям 🚀</Text>
+            <Text style={s.subtitle}>Привет! Я LingoIQ, твой помощник на пути к знаниям 🚀</Text>
           </View>
           <View style={s.owlWrap}>
             <View style={s.owlGlow} />
