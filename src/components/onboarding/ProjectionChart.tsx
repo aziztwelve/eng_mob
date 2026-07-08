@@ -10,9 +10,9 @@ import Animated, {
 import { useTranslation } from 'react-i18next';
 
 /**
- * <ProjectionChart> — bar chart "Lumi vs другие методы".
+ * <ProjectionChart> — bar chart "LingoIQ vs другие методы".
  *
- * 4 timepoint'а × 2 столбца (Lumi vs Other). Грубая визуализация прогресса:
+ * 4 timepoint'а × 2 столбца (LingoIQ vs Other). Грубая визуализация прогресса:
  *   start: 5% / 5%
  *   2 нед: 35% / 12%
  *   1 мес: 60% / 22%
@@ -27,28 +27,28 @@ const MAX_BAR_HEIGHT = 140;
 
 interface BarPairProps {
   label: string;
-  lumi: number;
+  lingoiq: number;
   other: number;
   delay: number;
 }
 
-function BarPair({ label, lumi, other, delay }: BarPairProps) {
-  const lumiProgress = useSharedValue(0);
+function BarPair({ label, lingoiq, other, delay }: BarPairProps) {
+  const lingoiqProgress = useSharedValue(0);
   const otherProgress = useSharedValue(0);
 
   useEffect(() => {
-    lumiProgress.value = withDelay(
+    lingoiqProgress.value = withDelay(
       delay,
-      withTiming(lumi, { duration: 700, easing: Easing.out(Easing.cubic) }),
+      withTiming(lingoiq, { duration: 700, easing: Easing.out(Easing.cubic) }),
     );
     otherProgress.value = withDelay(
       delay + 80,
       withTiming(other, { duration: 700, easing: Easing.out(Easing.cubic) }),
     );
-  }, [lumiProgress, otherProgress, lumi, other, delay]);
+  }, [lingoiqProgress, otherProgress, lingoiq, other, delay]);
 
-  const lumiStyle = useAnimatedStyle(() => ({
-    height: lumiProgress.value * MAX_BAR_HEIGHT,
+  const lingoiqStyle = useAnimatedStyle(() => ({
+    height: lingoiqProgress.value * MAX_BAR_HEIGHT,
   }));
   const otherStyle = useAnimatedStyle(() => ({
     height: otherProgress.value * MAX_BAR_HEIGHT,
@@ -61,7 +61,7 @@ function BarPair({ label, lumi, other, delay }: BarPairProps) {
         style={{ height: MAX_BAR_HEIGHT }}
       >
         <Animated.View
-          style={[lumiStyle, { width: 22 }]}
+          style={[lingoiqStyle, { width: 22 }]}
           className="rounded-t-lg bg-primary"
         />
         <Animated.View
@@ -80,10 +80,10 @@ export function ProjectionChart() {
   const { t } = useTranslation();
   const POINTS = useMemo(
     () => [
-      { label: t('onboarding.projection_chart.label_start'), lumi: 0.05, other: 0.05 },
-      { label: t('onboarding.projection_chart.label_2w'),    lumi: 0.35, other: 0.12 },
-      { label: t('onboarding.projection_chart.label_1m'),    lumi: 0.60, other: 0.22 },
-      { label: t('onboarding.projection_chart.label_3m'),    lumi: 0.95, other: 0.35 },
+      { label: t('onboarding.projection_chart.label_start'), lingoiq: 0.05, other: 0.05 },
+      { label: t('onboarding.projection_chart.label_2w'),    lingoiq: 0.35, other: 0.12 },
+      { label: t('onboarding.projection_chart.label_1m'),    lingoiq: 0.60, other: 0.22 },
+      { label: t('onboarding.projection_chart.label_3m'),    lingoiq: 0.95, other: 0.35 },
     ],
     [t],
   );
@@ -93,7 +93,7 @@ export function ProjectionChart() {
       <View className="flex-row items-center justify-center gap-5">
         <View className="flex-row items-center gap-2">
           <View className="w-3 h-3 rounded-full bg-primary" />
-          <Text className="text-foreground font-bold text-sm">{t('onboarding.projection_chart.legend_lumi')}</Text>
+          <Text className="text-foreground font-bold text-sm">{t('onboarding.projection_chart.legend_lingoiq')}</Text>
         </View>
         <View className="flex-row items-center gap-2">
           <View className="w-3 h-3 rounded-full bg-muted" />
@@ -109,7 +109,7 @@ export function ProjectionChart() {
           <BarPair
             key={p.label}
             label={p.label}
-            lumi={p.lumi}
+            lingoiq={p.lingoiq}
             other={p.other}
             delay={120 + i * 100}
           />

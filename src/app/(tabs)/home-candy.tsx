@@ -9,8 +9,8 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import Svg, { Path, Circle, Ellipse } from "react-native-svg";
 
+import { LearningStartIllustration } from "@/components/LearningStartIllustration";
 import { useUserStats } from "@/hooks/use-user-stats";
 import { useHearts } from "@/hooks/use-hearts";
 import { useDailyGoal } from "@/hooks/use-daily-goal";
@@ -135,18 +135,8 @@ export default function SunsetLavaHome() {
               <Text style={s.ctaText}>НАЧАТЬ</Text>
             </LinearGradient>
           </Pressable>
-          <View style={s.owlWrap}>
-            <Svg width={72} height={76} viewBox="0 0 90 95">
-              <Path d="M18 31C15 19 20 11 20 11c8 5 12 11 14 16h22c2-5 6-11 14-16 0 0 5 8 2 20 7 8 11 19 11 31 0 21-17 31-38 31S7 83 7 62c0-12 4-23 11-31Z" fill="#8a542d" />
-              <Ellipse cx={45} cy={62} rx={27} ry={30} fill="#c98e61" />
-              <Circle cx={33} cy={40} r={16} fill="#f5e6d2" />
-              <Circle cx={57} cy={40} r={16} fill="#f5e6d2" />
-              <Circle cx={33} cy={40} r={9} fill="#33221a" />
-              <Circle cx={57} cy={40} r={9} fill="#33221a" />
-              <Circle cx={36} cy={37} r={3} fill="white" />
-              <Circle cx={60} cy={37} r={3} fill="white" />
-              <Path d="M38 52h14L45 62 38 52Z" fill="#ff9c00" />
-            </Svg>
+          <View style={s.heroArtWrap}>
+            <LearningStartIllustration width={104} height={104} />
           </View>
         </View>
 
@@ -233,7 +223,7 @@ const s = StyleSheet.create({
   heroDesc: { color: "#6b4b56", fontSize: 13, marginTop: 4, lineHeight: 18, maxWidth: "70%" },
   cta: { marginTop: 14, alignSelf: "flex-start", paddingHorizontal: 26, paddingVertical: 11, borderRadius: 16 },
   ctaText: { color: "#fff", fontWeight: "800", fontSize: 15, letterSpacing: 0.5 },
-  owlWrap: { position: "absolute", right: 14, bottom: 10 },
+  heroArtWrap: { position: "absolute", right: 2, bottom: 0 },
 
   section: { marginTop: 16 },
   secHead: { flexDirection: "row", alignItems: "center", gap: 9, marginBottom: 10 },

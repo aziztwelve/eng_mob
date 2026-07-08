@@ -1,5 +1,5 @@
 /**
- * mascot-manifest — реестр поз mascot'а Lumi.
+ * mascot-manifest — реестр поз брендового mascot'а.
  *
  * Паттерн как у `lottie-manifest.ts` / `sound-manifest.ts`: ассеты
  * перечислены явно. Финальные PNG — Sprint 0 deliverable (см.
@@ -24,10 +24,10 @@ export const MASCOT_PNG: Record<MascotPose, unknown | null> = {
   cheering: null,
   thumbs_up: null,
   wink: null,
-  // idle:      require('@/../assets/mascot/lumi-idle.png'),
-  // cheering:  require('@/../assets/mascot/lumi-cheering.png'),
-  // thumbs_up: require('@/../assets/mascot/lumi-thumbs_up.png'),
-  // wink:      require('@/../assets/mascot/lumi-wink.png'),
+  // idle:      require('@/../assets/mascot/mascot-idle.png'),
+  // cheering:  require('@/../assets/mascot/mascot-cheering.png'),
+  // thumbs_up: require('@/../assets/mascot/mascot-thumbs_up.png'),
+  // wink:      require('@/../assets/mascot/mascot-wink.png'),
 };
 
 /** Эмодзи-fallback (если ни PNG ни SVG не доступны). */
@@ -43,7 +43,7 @@ export function hasMascotPng(pose: MascotPose): boolean {
 }
 
 // ---------------------------------------------------------------------------
-// SVG inline XML (placeholders) — копия assets/mascot/lumi-<pose>.svg.
+// SVG inline XML (placeholders) — копия assets/mascot/mascot-<pose>.svg.
 // Если меняешь файлы там — синхронизируй и тут (или дождись финальных PNG).
 // ---------------------------------------------------------------------------
 

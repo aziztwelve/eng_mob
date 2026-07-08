@@ -13,7 +13,7 @@ import { projectionCopyForGoal } from '@/lib/onboarding-copy';
 /**
  * Projection interstitial — после emotional-reaction → reaction-4 → projection.
  *
- * Bar chart "Lumi vs other methods" + персонализированный timeline под goal
+ * Bar chart "LingoIQ vs other methods" + персонализированный timeline под goal
  * (work / travel / exam / ...).
  *
  * См. spec §1 (interstitial-projection), §3.7.

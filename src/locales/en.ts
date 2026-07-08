@@ -16,7 +16,7 @@ const en = {
     welcome: {
       brand: 'LingoIQ',
       greeting_title: 'Hi! Ready to start?',
-      greeting_subtitle: 'Learn languages with Lumi.',
+      greeting_subtitle: 'Learn languages easily, every day.',
       features: {
         speaking: 'Speaking',
         writing: 'Writing',
@@ -27,7 +27,7 @@ const en = {
       cta: 'Start learning',
       cta_submitting: 'Saving…',
       signin_link: 'I already have an account. Sign in →',
-      tagline: 'Learn English in just 5 minutes a day with Lumi.',
+      tagline: 'Learn English in just 5 minutes a day.',
       legal_prefix: 'By continuing, you agree to the',
       legal_and: 'and',
       terms_link: 'Terms of Service',
@@ -206,7 +206,7 @@ const en = {
     },
 
     projection_chart: {
-      legend_lumi: 'Lumi',
+      legend_lingoiq: 'LingoIQ',
       legend_other: 'Other methods',
       label_start: 'Start',
       label_2w: '2 wks',

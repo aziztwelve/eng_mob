@@ -21,7 +21,7 @@ export default function IndexScreen() {
       <View className="items-center mb-12">
         <Text className="text-6xl mb-4">🌍</Text>
         <Text className="text-5xl font-black text-primary mb-2">
-          LingoLearn
+          LingoIQ
         </Text>
         <Text className="text-xl text-muted-foreground text-center">
           Master languages through interactive lessons

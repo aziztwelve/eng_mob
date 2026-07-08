@@ -16,7 +16,7 @@ const kk = {
     welcome: {
       brand: 'LingoIQ',
       greeting_title: 'Сәлем! Бастайық па?',
-      greeting_subtitle: 'Lumi-мен бірге тіл үйренеміз.',
+      greeting_subtitle: 'Тілді күн сайын оңай үйренеміз.',
       features: {
         speaking: 'Сөйлеу',
         writing: 'Жазу',
@@ -27,7 +27,7 @@ const kk = {
       cta: 'Бастау',
       cta_submitting: 'Сақтаудамыз…',
       signin_link: 'Менің аккаунтым бар. Кіру →',
-      tagline: 'Күніне 5 минут — Lumi-мен ағылшын тілін оңай үйрен.',
+      tagline: 'Күніне 5 минут — ағылшын тілін оңай үйрен.',
       legal_prefix: 'Жалғастыра отырып, сіз қабылдайсыз',
       legal_and: 'және',
       terms_link: 'Қолдану шарттары',
@@ -206,7 +206,7 @@ const kk = {
     },
 
     projection_chart: {
-      legend_lumi: 'Lumi',
+      legend_lingoiq: 'LingoIQ',
       legend_other: 'Басқа әдістер',
       label_start: 'Бастау',
       label_2w: '2 апта',

@@ -12,8 +12,8 @@ import {
 } from '@/theme/Theme';
 
 /**
- * FluentBottomTabs — кастомный нижний таб-бар в стиле Fluent
- * (Duolingo + Memrise): glassmorphism-подложка, скруглённый верх,
+ * FluentBottomTabs — кастомный нижний таб-бар в стиле Fluent:
+ * glassmorphism-подложка, скруглённый верх,
  * золотой акцент активного пункта, lucide-иконки.
  *
  * Подключается как `tabBar` к expo-router <Tabs> (получает

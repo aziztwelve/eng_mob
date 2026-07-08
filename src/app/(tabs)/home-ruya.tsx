@@ -18,7 +18,7 @@ export default function HomeScreen() {
     <View style={s.container}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.scroll}>
         <View style={s.header}>
-          <Text style={s.logo}>ruya</Text>
+          <Text style={s.logo}>LingoIQ</Text>
           <View style={s.stats}>
             <Text style={s.statText}>🔥 7</Text>
             <Text style={s.statText}>💎 230</Text>

@@ -97,7 +97,7 @@ export const PROJECTION_TEMPLATES: Record<GoalKey, ProjectionCopy> = {
   },
   fun: {
     title: 'Учиться — может быть кайфом.',
-    subtitle: 'Lumi сделает занятия лёгкими и живыми.',
+    subtitle: 'LingoIQ сделает занятия лёгкими и живыми.',
     timeline: [
       'Через 2 недели: занятия становятся привычкой.',
       'Через месяц: понимаешь больше и удивляешь себя.',

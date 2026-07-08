@@ -332,7 +332,7 @@ export default function HomeRuyaPro() {
         {/* ---------- Header ---------- */}
         <View style={s.header}>
           <View style={s.logoWrap}>
-            <Text style={s.logo}>ruya</Text>
+            <Text style={s.logo}>LingoIQ</Text>
             <View style={s.logoDot} />
           </View>
 

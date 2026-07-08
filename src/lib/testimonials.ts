@@ -130,9 +130,9 @@ export const TESTIMONIALS: Testimonial[] = [
       kk: 'Берлинге көштім',
     },
     quote: {
-      ru: 'Переезд в Германию был как прыжок. Lumi помог не утонуть в первые недели — теперь спокойно решаю банк, аренду и работу на немецком.',
-      en: 'Moving to Germany felt like a leap. Lumi kept me afloat in the first weeks — now I handle bank, rent and work in German calmly.',
-      kk: 'Германияға көшу — секіру сияқты болды. Lumi алғашқы апталарда қолдады — қазір банк, пәтер, жұмыс — бәрі немісше.',
+      ru: 'Переезд в Германию был как прыжок. LingoIQ помог не утонуть в первые недели — теперь спокойно решаю банк, аренду и работу на немецком.',
+      en: 'Moving to Germany felt like a leap. LingoIQ kept me afloat in the first weeks — now I handle bank, rent and work in German calmly.',
+      kk: 'Германияға көшу — секіру сияқты болды. LingoIQ алғашқы апталарда қолдады — қазір банк, пәтер, жұмыс — бәрі немісше.',
     },
   },
   {

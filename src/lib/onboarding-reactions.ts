@@ -6,7 +6,7 @@
  *
  * После каждого «эмоционального» шага (speaking_situation / past_blocker /
  * future_regret / emotional_reaction / reminder_slot) показываем интерстициал
- * с маскотом Lumi и короткой персонализированной фразой. Mapping —
+ * с брендовым маскотом и короткой персонализированной фразой. Mapping —
  * client-side, backend ничего не отдаёт.
  *
  * Структура:
@@ -71,7 +71,7 @@ export const REACTIONS: Record<ReactionStep, Record<string, Reaction>> = {
       pose: 'wink',
     },
     no_support: {
-      text: 'Lumi всегда рядом — напомнит, объяснит, поддержит. И сообщество учеников тоже здесь.',
+      text: 'LingoIQ всегда рядом — напомнит, объяснит, поддержит. И сообщество учеников тоже здесь.',
       pose: 'thumbs_up',
     },
   },
@@ -101,7 +101,7 @@ export const REACTIONS: Record<ReactionStep, Record<string, Reaction>> = {
       pose: 'cheering',
     },
     upset: {
-      text: 'Бывает. Lumi не оставит наедине с разочарованием — разложим сложное на простые шаги.',
+      text: 'Бывает. LingoIQ не оставит наедине с разочарованием — разложим сложное на простые шаги.',
       pose: 'wink',
     },
     burnout: {

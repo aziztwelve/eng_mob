@@ -11,7 +11,7 @@ import {
 } from '@/lib/mascot-manifest';
 
 /**
- * <Mascot> — рендерит маскота Lumi в одной из 4 поз.
+ * <Mascot> — рендерит брендового маскота в одной из 4 поз.
  *
  * Стратегия (см. mascot-manifest.ts):
  *   1. Если зарегистрирован финальный PNG — рендерим <Image>.
@@ -40,7 +40,7 @@ export function Mascot({ pose = 'idle', size = 160, className }: MascotProps) {
           source={MASCOT_PNG[pose] as ImageSourcePropType}
           style={{ width: size, height: size }}
           resizeMode="contain"
-          accessibilityLabel={`Lumi mascot — ${pose}`}
+          accessibilityLabel={`LingoIQ mascot — ${pose}`}
         />
       </View>
     );
@@ -65,7 +65,7 @@ export function Mascot({ pose = 'idle', size = 160, className }: MascotProps) {
       className={className}
       style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}
     >
-      <Text style={{ fontSize: size * 0.6 }} accessibilityLabel={`Lumi mascot — ${pose}`}>
+      <Text style={{ fontSize: size * 0.6 }} accessibilityLabel={`LingoIQ mascot — ${pose}`}>
         {MASCOT_EMOJI[pose]}
       </Text>
     </View>

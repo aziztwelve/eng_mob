@@ -28,7 +28,7 @@ export default function IndexScreen() {
       {/* Logo/Brand */}
       <View style={styles.header}>
         <Text style={styles.emoji}>🌍</Text>
-        <Text style={styles.title}>LingoLearn</Text>
+        <Text style={styles.title}>LingoIQ</Text>
         <Text style={styles.subtitle}>
           Master languages through interactive lessons
         </Text>

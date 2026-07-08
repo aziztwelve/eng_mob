@@ -18,8 +18,8 @@ const ru = {
     welcome: {
       brand: 'LingoIQ',
       greeting_title: 'Привет! Готов начать?',
-      greeting_subtitle: 'Учим язык вместе с Lumi.',
-      tagline: 'Учим английский легко — 5 минут в день вместе с Lumi.',
+      greeting_subtitle: 'Учим язык легко и каждый день.',
+      tagline: 'Учим английский легко — 5 минут в день.',
       features: {
         speaking: 'Speaking',
         writing: 'Writing',
@@ -208,7 +208,7 @@ const ru = {
     },
 
     projection_chart: {
-      legend_lumi: 'Lumi',
+      legend_lingoiq: 'LingoIQ',
       legend_other: 'Другие методы',
       label_start: 'Старт',
       label_2w: '2 нед',

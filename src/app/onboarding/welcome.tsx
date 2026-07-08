@@ -6,7 +6,7 @@ import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { X } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 
-import { Mascot } from '@/components/onboarding/Mascot';
+import { LearningStartIllustration } from '@/components/LearningStartIllustration';
 import { NeonScreen, neon, neonStyles } from '@/components/neon-screen';
 import { usePatchOnboardingV3 } from '@/hooks/use-onboarding';
 import { analytics } from '@/lib/analytics';
@@ -84,7 +84,7 @@ export default function WelcomeScreen() {
         contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingTop: 24 }}
       >
         <Animated.View entering={FadeIn.duration(280)} className="items-center mt-4">
-          <Mascot pose="wink" size={160} />
+          <LearningStartIllustration width={170} height={170} />
         </Animated.View>
 
         <Animated.Text

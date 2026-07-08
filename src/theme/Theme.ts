@@ -8,8 +8,8 @@ import {
 } from 'lucide-react-native';
 
 /**
- * Fluent — единый источник правды по цветам/размерам для нижнего меню
- * (стиль Duolingo + Memrise). Используется FluentBottomTabs.
+ * Fluent — единый источник правды по цветам/размерам для нижнего меню.
+ * Используется FluentBottomTabs.
  */
 export const FluentTheme = {
   colors: {
