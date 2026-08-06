@@ -154,7 +154,10 @@ export type StepType =
   | 'listening'
   | 'fill_blank'
   | 'tap_words'
-  | 'story';
+  | 'story'
+  // Canonical lesson_flow activity. It uses legacy completion until a
+  // dedicated validator is implemented for its activity_type.
+  | 'activity';
 
 /** Все phase-2 интерактивные типы, проходящие через step-validation-service. */
 export const INTERACTIVE_STEP_TYPES: StepType[] = [
@@ -291,6 +294,21 @@ export interface StoryContent {
   explanation?: string;
 }
 
+export interface ActivityContent {
+  activity_id: string;
+  activity_type: string;
+  instructions: string;
+  estimated_seconds: number;
+  content: Record<string, unknown>;
+  success_criteria: string[];
+  retry_logic?: {
+    max_attempts?: number;
+    hint_after_attempt?: number;
+    fallback_activity?: string;
+  };
+  ai_config?: Record<string, unknown>;
+}
+
 // ============================================
 // PHASE 2 — Vocabulary / TTS
 // ============================================
@@ -404,6 +422,8 @@ export interface Track {
   language: string;
   level: string;
   track_type: TrackType | string;
+  /** Цели, для которых предназначен трек. Пустой массив — общий трек. */
+  motivation?: string[];
   is_published: boolean;
   sort_order: number;
   created_by?: string;
