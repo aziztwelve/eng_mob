@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { FeedbackBar, type FeedbackState } from './FeedbackBar';
 import { parseStepContent, type StepComponentProps } from './step-types';
 import type { ListeningContent } from '@/types/api';
+import { playWordTTS } from '@/lib/tts';
 
 /**
  * Listening: expo-av plays audio_url; turtle-button = playbackRate 0.5.
@@ -87,9 +88,12 @@ export function ListeningStep({ step, onSubmit, onContinue, isLast }: StepCompon
             </Pressable>
           </>
         ) : (
-          <Text className="text-sm font-medium" style={{ color: 'rgba(255,255,255,0.75)' }}>
-            (Аудио недоступно — подсказка: {content.translation_hint ?? content.audio_text})
-          </Text>
+          <Pressable
+            onPress={() => void playWordTTS(content.audio_text, content.language ?? 'en')}
+            className="bg-[#FFDF5E] w-16 h-16 rounded-full items-center justify-center"
+          >
+            <Volume2 size={28} color="#3D0A1A" />
+          </Pressable>
         )}
       </View>
 
