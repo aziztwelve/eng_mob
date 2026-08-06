@@ -15,6 +15,7 @@ import { useMarkLessonCompleted } from '@/lib/lesson-progress';
 import {
   TextContent,
   QuizContent,
+  ActivityContent,
   UserAchievement,
   isInteractiveStep,
   SubmitAnswerResponse,
@@ -23,6 +24,7 @@ import {
 import { TextStep } from '@/components/lesson/text-step';
 import { QuizStep } from '@/components/lesson/quiz-step';
 import { StepRenderer } from '@/components/lesson/StepRenderer';
+import { ActivityStep } from '@/components/lesson/activity-step';
 import {
   AchievementModal,
   LevelUpOverlay,
@@ -226,6 +228,9 @@ export default function LessonPlayerScreen() {
           return (
             <TextStep content={textContent} onComplete={handleStepComplete} />
           );
+        }
+        case 'activity': {
+          return <ActivityStep content={content as ActivityContent} />;
         }
         default:
           return (
