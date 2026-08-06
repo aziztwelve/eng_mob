@@ -11,9 +11,11 @@ type State = 'idle' | 'recording' | 'recorded' | 'denied';
 
 export function VoiceRecorder({
   loading = false,
+  minDurationSec = 0,
   onSubmit,
 }: {
   loading?: boolean;
+  minDurationSec?: number;
   onSubmit: (input: PronunciationAudioInput, durationSec: number) => void | Promise<void>;
 }) {
   const [state, setState] = useState<State>('idle');
@@ -96,7 +98,8 @@ export function VoiceRecorder({
     setState('idle');
   };
 
-  const submit = async () => { if (audio) await onSubmit(audio, seconds); };
+  const canSubmit = seconds >= minDurationSec;
+  const submit = async () => { if (audio && canSubmit) await onSubmit(audio, seconds); };
 
   if (state === 'denied') {
     return (
@@ -153,14 +156,15 @@ export function VoiceRecorder({
               <Trash2 size={14} color="rgba(255,255,255,0.6)" />
               <Text style={s.rerecText}>Перезаписать</Text>
             </Pressable>
-            <Pressable onPress={submit} disabled={loading} style={s.submitWrap}>
-              <LinearGradient colors={loading ? ['rgba(255,255,255,0.12)', 'rgba(255,255,255,0.12)'] : CTA} style={s.submitBtn}>
+            <Pressable onPress={submit} disabled={loading || !canSubmit} style={s.submitWrap}>
+              <LinearGradient colors={loading || !canSubmit ? ['rgba(255,255,255,0.12)', 'rgba(255,255,255,0.12)'] : CTA} style={s.submitBtn}>
                 {loading
                   ? <ActivityIndicator size="small" color="rgba(255,255,255,0.6)" />
                   : <Text style={s.submitText}>Проверить →</Text>}
               </LinearGradient>
             </Pressable>
           </View>
+          {!canSubmit && <Text style={s.minDuration}>Запишите минимум {formatSeconds(minDurationSec)}.</Text>}
         </View>
       )}
     </View>
@@ -200,6 +204,7 @@ const s = StyleSheet.create({
 
   playBtn: { width: 60, height: 60, borderRadius: 30, alignItems: 'center', justifyContent: 'center' },
   duration: { color: 'rgba(255,255,255,0.55)', fontSize: 12, fontWeight: '500' },
+  minDuration: { color: '#f59e0b', fontSize: 12, fontWeight: '600', textAlign: 'center' },
 
   actionsRow: { flexDirection: 'row', gap: 10 },
   rerecBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderRadius: 14, paddingVertical: 11 },

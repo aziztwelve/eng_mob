@@ -48,6 +48,8 @@ export function ActivityStep({ content, stepId }: ActivityStepProps) {
   const [listeningIndex, setListeningIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState('');
   const [listeningChecked, setListeningChecked] = useState(false);
+  const [showTranscript, setShowTranscript] = useState(false);
+  const [phraseIndex, setPhraseIndex] = useState(0);
   const [dialogueIndex, setDialogueIndex] = useState(0);
   const [conversationId, setConversationId] = useState<string>();
   const [chatLines, setChatLines] = useState<ChatLine[]>([]);
@@ -59,13 +61,13 @@ export function ActivityStep({ content, stepId }: ActivityStepProps) {
   const questions = records(body.questions);
   const models = strings(body.models).concat(strings(body.frames));
   const dialogue = records(body.dialogue);
-  const phrases = strings(body.required_phrases);
+  const phrases = [...new Set(strings(body.required_phrases).concat(strings(body.target_phrases)))];
   const prompt = text(body, 'prompt') || text(body, 'story') || text(body, 'task') || text(body, 'script');
   const script = text(body, 'script');
   const currentWord = vocabulary[vocabIndex];
   const currentQuestion = questions[listeningIndex];
   const allAnswers = [...new Set(questions.map((item) => text(item, 'answer')).filter(Boolean))];
-  const model = models[0] || phrases[0] || prompt;
+  const model = models[phraseIndex] || phrases[phraseIndex] || prompt;
   const isPronunciation = content.activity_type === 'repeat_after_me' || content.activity_type === 'pronunciation_drill';
   const isMission = content.activity_type === 'real_world_mission';
 
@@ -143,10 +145,12 @@ export function ActivityStep({ content, stepId }: ActivityStepProps) {
       <View className="gap-4">
         <Card>
           <Text className="text-xs font-bold uppercase tracking-wider text-[#ffdf5e]">Сначала прослушайте</Text>
-          <Text className="mt-2 text-base leading-6 text-white">{script}</Text>
+          <Text className="mt-2 text-base leading-6 text-white">Прослушайте запись и ответьте на вопрос. Текст откроется после попытки.</Text>
           <Pressable onPress={() => void playWordTTS(script, 'en')} className="mt-4 flex-row items-center justify-center gap-2 rounded-2xl bg-[#1b3056] py-3">
             <Headphones size={18} color="#fff" /><Text className="font-bold text-white">Включить аудио</Text>
           </Pressable>
+          {listeningChecked && <Pressable onPress={() => setShowTranscript((value) => !value)} className="mt-3"><Text className="text-center font-bold text-[#ffdf5e]">{showTranscript ? 'Скрыть текст' : 'Показать текст'}</Text></Pressable>}
+          {showTranscript && <Text className="mt-3 text-base leading-6 text-white/80">{script}</Text>}
         </Card>
         <Card>
           <Text className="text-lg font-black text-white">{text(currentQuestion, 'question')}</Text>
@@ -173,8 +177,9 @@ export function ActivityStep({ content, stepId }: ActivityStepProps) {
           <Volume2 size={18} color="#fff" /><Text className="font-bold text-white">Послушать пример</Text>
         </Pressable>
       </Card>
-      <VoiceRecorder loading={pronunciation.isPending} onSubmit={(audio) => void checkPronunciation(audio)} />
+      <VoiceRecorder key={model} loading={pronunciation.isPending} minDurationSec={isMission ? Number(body.minimum_seconds ?? 0) : 0} onSubmit={(audio) => void checkPronunciation(audio)} />
       {pronunciation.data && <Card><Text className="text-xl font-black text-[#58cc02]">Точность: {Math.round(pronunciation.data.accuracy_score * 100)}%</Text><Text className="mt-2 text-base text-white/80">{pronunciation.data.feedback || pronunciation.data.transcribed_text}</Text></Card>}
+      {content.activity_type === 'repeat_after_me' && models.length > 1 && <Action label={phraseIndex === models.length - 1 ? 'Все фразы пройдены' : 'Следующая фраза'} onPress={() => { setPhraseIndex((index) => Math.min(index + 1, models.length - 1)); pronunciation.reset(); }} />}
     </View>
   );
 
