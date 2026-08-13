@@ -40,7 +40,10 @@ export function VoiceRecorder({
       const perm = await Audio.requestPermissionsAsync();
       if (!perm.granted) { setState('denied'); return; }
       await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
-      const { recording } = await Audio.Recording.createAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
+      const options = Platform.OS === 'android'
+        ? Audio.RecordingOptionsPresets.LOW_QUALITY
+        : Audio.RecordingOptionsPresets.HIGH_QUALITY;
+      const { recording } = await Audio.Recording.createAsync(options);
       recRef.current = recording;
       setSeconds(0);
       setState('recording');
@@ -179,7 +182,7 @@ function formatSeconds(s: number): string {
 function inferAudioMeta(uri: string): { type: string; name: string } {
   const m = uri.match(/\.([a-zA-Z0-9]+)(?:\?.*)?$/);
   const ext = (m?.[1] ?? 'm4a').toLowerCase();
-  const type = ext === 'm4a' ? 'audio/m4a' : ext === 'mp4' ? 'audio/mp4' : ext === 'aac' ? 'audio/aac' : ext === 'wav' ? 'audio/wav' : `audio/${ext}`;
+  const type = ext === '3gp' || ext === '3gpp' ? 'audio/3gpp' : ext === 'm4a' ? 'audio/m4a' : ext === 'mp4' ? 'audio/mp4' : ext === 'aac' ? 'audio/aac' : ext === 'wav' ? 'audio/wav' : `audio/${ext}`;
   return { type, name: `recording.${ext}` };
 }
 
