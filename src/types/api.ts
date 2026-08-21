@@ -151,17 +151,23 @@ export type StepType =
   // Phase 2 interactive
   | 'translate'
   | 'match_pairs'
+  | 'match_pairs_voice'
   | 'listening'
+  | 'listening_shadowing'
   | 'fill_blank'
   | 'tap_words'
   | 'story'
+  | 'choose_definition'
+  | 'listen_choose_word'
+  | 'missing_word'
+  | 'complete_chat'
   // Canonical lesson_flow activity. It uses legacy completion until a
   // dedicated validator is implemented for its activity_type.
   | 'activity';
 
 /** Все phase-2 интерактивные типы, проходящие через step-validation-service. */
 export const INTERACTIVE_STEP_TYPES: StepType[] = [
-  'quiz', 'translate', 'match_pairs', 'listening', 'fill_blank', 'tap_words', 'story',
+  'quiz', 'translate', 'match_pairs', 'match_pairs_voice', 'listening', 'listening_shadowing', 'fill_blank', 'tap_words', 'story', 'choose_definition', 'listen_choose_word', 'missing_word', 'complete_chat',
 ];
 
 export function isInteractiveStep(t: StepType): boolean {
@@ -257,6 +263,10 @@ export interface ListeningContent {
   translation_hint?: string;
   alternative_answers?: string[];
   explanation?: string;
+}
+
+export interface ListeningShadowingContent extends ListeningContent {
+  min_accuracy: number;
 }
 
 export interface FillBlankContent {

@@ -1,0 +1,15 @@
+import React, { useState } from 'react';
+import { View, Text, Pressable, ScrollView } from 'react-native';
+import { FeedbackBar, type FeedbackState } from './FeedbackBar';
+import { parseStepContent, type StepComponentProps } from './step-types';
+import { useTranslation } from 'react-i18next';
+import { stepInstruction } from '@/lib/step-titles';
+
+interface CompleteChatContent { dialogue: Array<{ speaker: string; text: string }>; answer_speaker?: string; options: Array<{ id: string; text: string; is_correct: boolean }>; explanation?: string; }
+
+export function CompleteChatStep({ step, onSubmit, onContinue, isLast }: StepComponentProps) {
+  const { i18n } = useTranslation(); const content = parseStepContent<CompleteChatContent>(step); const [picked, setPicked] = useState<string | null>(null); const [state, setState] = useState<FeedbackState>({ kind: 'idle' });
+  if (!content?.dialogue?.length || !content.options?.length) return <Text className="p-6 text-muted-foreground">Invalid complete_chat content.</Text>;
+  const locked = state.kind !== 'idle'; const submit = async () => { if (!picked) return; setState({ kind: 'submitting' }); try { const response = await onSubmit({ option_id: picked }); const correctText = content.options.find((option) => option.is_correct)?.text; setState(response.is_correct ? { kind: 'correct', explanation: response.explanation ?? content.explanation } : { kind: 'wrong', explanation: response.explanation ?? content.explanation, correctText }); } catch { setState({ kind: 'idle' }); } };
+  return <ScrollView className="flex-1 px-4 pt-4" contentContainerClassName="pb-4"><Text className="text-muted-foreground text-sm font-bold mb-3">{stepInstruction(step.type, i18n.language)}</Text><View className="rounded-2xl border border-[rgba(255,255,255,0.22)] bg-[rgba(255,255,255,0.10)] p-5 mb-4 gap-3">{content.dialogue.map((line, index) => <View key={index}><Text className="text-[#FFDF5E] text-xs font-black">{line.speaker}</Text><Text className="text-foreground font-bold">{line.text}</Text></View>)}<Text className="border-t border-[rgba(255,255,255,0.22)] pt-3 text-muted-foreground font-black">{content.answer_speaker ?? 'You'}: ___</Text></View><View className="gap-2 mb-5">{content.options.map((option) => { const selected = picked === option.id; const correct = state.kind === 'wrong' && option.is_correct; const wrong = state.kind === 'wrong' && selected; return <Pressable key={option.id} disabled={locked} onPress={() => setPicked(option.id)} className={`rounded-2xl border-2 p-4 ${correct || (state.kind === 'correct' && selected) ? 'border-emerald-500 bg-emerald-500/15' : wrong ? 'border-red-500 bg-red-500/10' : selected ? 'border-[#FFDF5E] bg-[rgba(255,223,94,0.18)]' : 'border-[rgba(255,255,255,0.22)] bg-[rgba(255,255,255,0.12)]'}`}><Text className="text-foreground font-bold">{option.text}</Text></Pressable>; })}</View><FeedbackBar state={state} canSubmit={picked !== null} onSubmit={submit} onContinue={onContinue} isLast={isLast} /></ScrollView>;
+}

@@ -230,7 +230,7 @@ export default function LessonPlayerScreen() {
           );
         }
         case 'activity': {
-          return <ActivityStep content={content as ActivityContent} />;
+          return <ActivityStep content={content as ActivityContent} stepId={currentStep.id} />;
         }
         default:
           return (

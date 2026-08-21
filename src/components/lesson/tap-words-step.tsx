@@ -7,6 +7,7 @@ import { FeedbackBar, type FeedbackState } from './FeedbackBar';
 import { DraggableWordBank } from './draggable-word-bank';
 import { parseStepContent, type StepComponentProps } from './step-types';
 import type { TapWordsContent } from '@/types/api';
+import { playWordTTS } from '@/lib/tts';
 
 /**
  * Tap What You Hear (mobile): аудио + tap + DnD word bank.
@@ -31,17 +32,22 @@ export function TapWordsStep({ step, onSubmit, onContinue, isLast }: StepCompone
   const locked = state.kind !== 'idle';
 
   const play = async () => {
-    if (!content.audio_url) return;
     try {
-      if (soundRef.current) {
-        await soundRef.current.unloadAsync();
-        soundRef.current = null;
+      if (content.audio_url) {
+        if (soundRef.current) {
+          await soundRef.current.unloadAsync();
+          soundRef.current = null;
+        }
+        const { sound } = await Audio.Sound.createAsync(
+          { uri: content.audio_url },
+          { shouldPlay: true },
+        );
+        soundRef.current = sound;
+        return;
       }
-      const { sound } = await Audio.Sound.createAsync(
-        { uri: content.audio_url },
-        { shouldPlay: true },
-      );
-      soundRef.current = sound;
+      if (content.audio_text) {
+        await playWordTTS(content.audio_text, 'en');
+      }
     } catch (e) {
       console.warn('tap_words: play failed', e);
     }
@@ -76,7 +82,7 @@ export function TapWordsStep({ step, onSubmit, onContinue, isLast }: StepCompone
       )}
 
       <View className="bg-[rgba(255,255,255,0.10)] rounded-2xl border border-[rgba(255,255,255,0.22)] p-4 mb-5 flex-row items-center gap-3">
-        {content.audio_url ? (
+        {content.audio_url || content.audio_text ? (
           <Pressable
             onPress={play}
             className="bg-[#FFDF5E] w-16 h-16 rounded-full items-center justify-center"
