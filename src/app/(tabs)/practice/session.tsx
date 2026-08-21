@@ -17,6 +17,8 @@ import {
 } from 'lucide-react-native';
 
 import { StepRenderer } from '@/components/lesson/StepRenderer';
+import { stepTitle } from '@/lib/step-titles';
+import { useTranslation } from 'react-i18next';
 import { useLessonGamificationFx } from '@/hooks/use-gamification-fx';
 import { useStep } from '@/hooks/use-steps';
 import { useStepSubmit } from '@/hooks/use-step-submit';
@@ -290,6 +292,7 @@ function CurrentStepCard({
   startedAtRef: React.MutableRefObject<number>;
   onAdvance: () => void;
 }) {
+  const { i18n } = useTranslation();
   const step = useStep(item.step_id);
   const submit = useStepSubmit();
   const lastResultRef = useRef<{ stepId: string; correct: boolean } | null>(
@@ -360,7 +363,7 @@ function CurrentStepCard({
       <View className="bg-card rounded-3xl border-4 border-border p-6 gap-3">
         <SourceBadge item={item} />
         <Text className="text-foreground font-black text-xl">
-          {step.data.step.title}
+          {stepTitle(step.data.step.type, i18n.language)}
         </Text>
         <Text className="text-muted-foreground font-medium">
           Этот шаг — не интерактивный, в практике пропускаем.
@@ -388,7 +391,7 @@ function CurrentStepCard({
           </Text>
         </View>
         <Text className="text-foreground font-black text-xl">
-          {step.data.step.title}
+          {stepTitle(step.data.step.type, i18n.language)}
         </Text>
       </View>
 

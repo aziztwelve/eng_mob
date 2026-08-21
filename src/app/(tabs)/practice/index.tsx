@@ -14,7 +14,8 @@ import Svg, { Path, Circle, Ellipse, Line } from "react-native-svg";
 import { ActivityIndicator } from "react-native";
 
 import { useFlashcards, useFlashcardStats, useSeedStarter } from "@/hooks/use-flashcards";
-import { useMyTracks, useTrack } from "@/hooks/use-tracks";
+import { useTracks, useTrack } from "@/hooks/use-tracks";
+import { useOnboardingState } from "@/hooks/use-onboarding";
 import { useUserStats } from "@/hooks/use-user-stats";
 import { useHearts } from "@/hooks/use-hearts";
 import type { Flashcard, Track } from "@/types/api";
@@ -38,6 +39,17 @@ const glass = {
 /* ------------------------------------------------------------------ */
 const TABS = ["Треки", "Курсы", "Мои слова"] as const;
 type TabName = (typeof TABS)[number];
+
+const TRACK_GOALS = [
+  { key: "work", title: "Работа и карьера", emoji: "💼" },
+  { key: "exam", title: "Экзамен", emoji: "🎯" },
+  { key: "travel", title: "Путешествия", emoji: "✈️" },
+  { key: "speaking", title: "Разговорная практика", emoji: "🗣️" },
+  { key: "study", title: "Учёба", emoji: "📚" },
+  { key: "social", title: "Друзья и общение", emoji: "🫂" },
+  { key: "content", title: "Фильмы и книги", emoji: "🎬" },
+  { key: "listening_shadowing", title: "Listening & Shadowing", emoji: "🎧" },
+] as const;
 
 /* ------------------------------------------------------------------ */
 /* Small parts                                                         */
@@ -137,16 +149,13 @@ export default function LessonsScreen() {
             {/* subhead */}
             <View style={s.subhead}>
               <View>
-                <Text style={s.subheadTitle}>Мои треки</Text>
+                <Text style={s.subheadTitle}>Цели и треки</Text>
                 <LinearGradient colors={GOLD} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.subheadUnderline} />
               </View>
-              <Pressable onPress={() => router.push("/tracks")} style={{ marginLeft: "auto" }}>
-                <Text style={s.subheadLink}>Все треки ›</Text>
-              </Pressable>
             </View>
 
             {/* tracks (под уровень аккаунта, из БД) */}
-            <MyTracks />
+            <LevelGoals />
 
             {/* banner */}
             <View style={[s.banner, glass]}>
@@ -178,10 +187,12 @@ export default function LessonsScreen() {
 /* ------------------------------------------------------------------ */
 /* «Мои треки» — треки из БД под уровень аккаунта (без бейджей уровня) */
 /* ------------------------------------------------------------------ */
-function MyTracks() {
-  // Персональный план юзера (Phase 8): бэкенд подбирает треки по level+goal
-  // и лениво генерирует план. Показываем уроки активного трека напрямую.
-  const { data, isLoading } = useMyTracks();
+function LevelGoals() {
+  const router = useRouter();
+  const onboarding = useOnboardingState();
+  const level = String(onboarding.data?.level ?? "").toLowerCase() || undefined;
+  const language = onboarding.data?.target_language || undefined;
+  const { data, isLoading } = useTracks({ level, language, limit: 100 });
   const tracks = data?.tracks ?? [];
 
   if (isLoading) {
@@ -191,14 +202,24 @@ function MyTracks() {
     return (
       <View style={[trk.empty, glass]}>
         <Text style={{ fontSize: 40 }}>🧭</Text>
-        <Text style={trk.emptyText}>Пока нет треков для твоего уровня и цели</Text>
+        <Text style={trk.emptyText}>Пока нет треков для выбранного уровня</Text>
       </View>
     );
   }
 
-  // 1 активный трек за раз (иначе первый по порядку плана).
-  const active = tracks.find((t) => t.status === "active") ?? tracks[0];
-  return <TrackLessons track={active} />;
+  return <View style={{ gap: 10 }}>
+    {TRACK_GOALS.map((goal) => {
+      const count = tracks.filter((track) => track.motivation?.includes(goal.key)).length;
+      return <Pressable key={goal.key} onPress={() => router.push(`/tracks?goal=${goal.key}` as never)} style={[trk.card, glass]}>
+        <View style={trk.thumb}><Text style={{ fontSize: 22 }}>{goal.emoji}</Text></View>
+        <View style={{ flex: 1 }}>
+          <Text style={trk.title}>{goal.title}</Text>
+          <Text style={trk.desc}>{count ? `${count} треков` : "Треки скоро появятся"}</Text>
+        </View>
+        <Text style={trk.goText}>›</Text>
+      </Pressable>;
+    })}
+  </View>;
 }
 
 /* ------------------------------------------------------------------ */

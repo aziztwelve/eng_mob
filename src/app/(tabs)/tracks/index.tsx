@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, TextInput, FlatList, Pressable, ActivityIndicator, StyleSheet } from 'react-native';
-import { Stack } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTracks } from '@/hooks/use-tracks';
 import { useOnboardingState } from '@/hooks/use-onboarding';
@@ -23,9 +23,39 @@ const TYPE_FILTERS: Array<{ label: string; value: TrackType | null; emoji: strin
   { label: 'Темы', value: 'thematic', emoji: '🎯' },
 ];
 
+const GOALS = [
+  { key: 'work', title: 'Работа и карьера', emoji: '💼' },
+  { key: 'exam', title: 'Экзамен', emoji: '🎯' },
+  { key: 'travel', title: 'Путешествия', emoji: '✈️' },
+  { key: 'speaking', title: 'Разговорная практика', emoji: '🗣️' },
+  { key: 'study', title: 'Учёба', emoji: '📚' },
+  { key: 'social', title: 'Друзья и общение', emoji: '🫂' },
+  { key: 'content', title: 'Фильмы и книги', emoji: '🎬' },
+  { key: 'listening_shadowing', title: 'Listening & Shadowing', emoji: '🎧' },
+] as const;
+
+type GoalKey = typeof GOALS[number]['key'];
+const LEGACY_GOAL_ALIASES: Record<string, GoalKey> = {
+  relocation: 'speaking',
+  education: 'study',
+  career: 'work',
+  hobby: 'content',
+  family: 'social',
+  brain: 'listening_shadowing',
+};
+
 export default function TracksScreen() {
+  const params = useLocalSearchParams<{ goal?: string }>();
+  const router = useRouter();
   const [search, setSearch] = useState('');
   const [trackType, setTrackType] = useState<TrackType | null>(null);
+  const [selectedGoal, setSelectedGoal] = useState<GoalKey | null>(null);
+
+  useEffect(() => {
+    if (params.goal && GOALS.some((goal) => goal.key === params.goal)) {
+      setSelectedGoal(params.goal as GoalKey);
+    }
+  }, [params.goal]);
 
   const onboarding = useOnboardingState();
   const level = String(onboarding.data?.level ?? '').toLowerCase() || undefined;
@@ -36,11 +66,41 @@ export default function TracksScreen() {
     track_type: trackType ?? undefined,
     language,
     level,
-    limit: 50,
+    // API добавляет к трекам выбранной цели универсальные (motivation: []).
+    // Они тоже должны быть доступны в каждой цели.
+    motivation: selectedGoal ? [selectedGoal] : undefined,
+    // На уровне показываем все цели и их треки, а не только первую страницу.
+    limit: 100,
   });
 
   const all: Track[] = data?.tracks ?? [];
-  const tracks = all;
+  const tracksByGoal = useMemo(() => {
+    const byGoal = new Map<GoalKey, Track[]>();
+    GOALS.forEach(({ key }) => byGoal.set(key, []));
+
+    all.forEach((track) => {
+      const goals = (track.motivation ?? []).map((goal) => LEGACY_GOAL_ALIASES[goal] ?? goal);
+      const matchingGoals = goals.filter((goal): goal is GoalKey => GOALS.some((item) => item.key === goal));
+      matchingGoals.forEach((goal) => byGoal.get(goal)?.push(track));
+    });
+
+    return byGoal;
+  }, [all]);
+  // Сервис также возвращает технические персональные треки других пользователей.
+  // В каталоге целей показываем только опубликованные тематические программы.
+  const selectedTracks = selectedGoal
+    ? all.filter((track) => track.track_type === 'thematic')
+    : [];
+  const selectedGoalMeta = selectedGoal ? GOALS.find((goal) => goal.key === selectedGoal) : null;
+
+  // Если у цели одна тематическая программа (как у «Путешествий»), не
+  // показываем пользователю промежуточный технический контейнер трека.
+  useEffect(() => {
+    if (selectedGoal && !isLoading && selectedTracks.length === 1) {
+      const track = selectedTracks[0];
+      router.replace(`/(tabs)/tracks/${track.code || track.id}?goal=${selectedGoal}` as never);
+    }
+  }, [isLoading, router, selectedGoal, selectedTracks]);
 
   return (
     <View style={{ flex: 1 }}>
@@ -48,41 +108,22 @@ export default function TracksScreen() {
 
       {/* Header */}
       <View style={{ paddingHorizontal: 18, paddingTop: 12 }}>
-        <Text style={st.title}>Треки</Text>
+        <Text style={st.title}>Уроки</Text>
         <LinearGradient colors={GOLD} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={st.underline} />
-        <Text style={st.subtitle}>Подобраны под твой уровень</Text>
-
-        <View style={[st.search, glass]}>
-          <Text style={{ fontSize: 16 }}>🔍</Text>
-          <TextInput
-            style={st.searchInput}
-            placeholder="Поиск треков..."
-            placeholderTextColor="rgba(255,255,255,0.5)"
-            value={search}
-            onChangeText={setSearch}
-          />
+        <View style={[st.levelNode, glass]}>
+          <Text style={st.levelNodeText}>Уровень {level?.toUpperCase() ?? 'не выбран'} → все цели → треки</Text>
         </View>
+        <Text style={st.subtitle}>{selectedGoal ? 'Выбери трек, затем урок' : 'Выбери цель, затем подходящий трек с уроками'}</Text>
 
-        <View style={st.filters}>
-          {TYPE_FILTERS.map((f) => {
-            const active = trackType === f.value;
-            return (
-              <Pressable key={f.label} onPress={() => setTrackType(f.value)}>
-                {active ? (
-                  <LinearGradient colors={CTA} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={st.pillActive}>
-                    <Text style={{ marginRight: 5 }}>{f.emoji}</Text>
-                    <Text style={st.pillTextActive}>{f.label}</Text>
-                  </LinearGradient>
-                ) : (
-                  <View style={[st.pill, glass]}>
-                    <Text style={{ marginRight: 5 }}>{f.emoji}</Text>
-                    <Text style={st.pillText}>{f.label}</Text>
-                  </View>
-                )}
-              </Pressable>
-            );
-          })}
-        </View>
+        {selectedGoal && <>
+          <Pressable onPress={() => { setSelectedGoal(null); setSearch(''); setTrackType(null); }} style={st.backButton}>
+            <Text style={st.backButtonText}>‹ Все цели</Text>
+          </Pressable>
+          <View style={[st.search, glass]}>
+            <Text style={{ fontSize: 16 }}>🔍</Text>
+            <TextInput style={st.searchInput} placeholder="Поиск треков..." placeholderTextColor="rgba(255,255,255,0.5)" value={search} onChangeText={setSearch} />
+          </View>
+        </>}
       </View>
 
       {/* Content */}
@@ -95,14 +136,32 @@ export default function TracksScreen() {
           <Text style={{ fontSize: 40, marginBottom: 10 }}>😕</Text>
           <Text style={st.msg}>Не удалось загрузить треки</Text>
         </View>
-      ) : tracks.length === 0 ? (
+      ) : !selectedGoal ? (
+        <FlatList
+          key="goals-grid"
+          data={GOALS}
+          numColumns={2}
+          keyExtractor={(goal) => goal.key}
+          contentContainerStyle={st.goalsGrid}
+          columnWrapperStyle={st.goalRow}
+          renderItem={({ item: goal }) => {
+            const count = tracksByGoal.get(goal.key)?.length ?? 0;
+            return <Pressable onPress={() => setSelectedGoal(goal.key)} style={[st.goalCard, glass]}>
+              <Text style={st.goalEmoji}>{goal.emoji}</Text>
+              <Text style={st.goalTitle}>{goal.title}</Text>
+              <Text style={st.goalCount}>{count ? `${count} треков` : 'Скоро появятся'}</Text>
+            </Pressable>;
+          }}
+        />
+      ) : selectedTracks.length === 0 ? (
         <View style={st.center}>
           <Text style={{ fontSize: 40, marginBottom: 10 }}>🔍</Text>
-          <Text style={st.msg}>Треков не найдено</Text>
+          <Text style={st.msg}>Для цели «{selectedGoalMeta?.title}» треков пока нет</Text>
         </View>
       ) : (
         <FlatList
-          data={tracks}
+          key={`tracks-${selectedGoal}`}
+          data={selectedTracks}
           renderItem={({ item }) => <TrackCard track={item} />}
           keyExtractor={(item) => item.id}
           contentContainerStyle={{ paddingHorizontal: 18, paddingTop: 16, paddingBottom: 40 }}
@@ -117,8 +176,18 @@ const st = StyleSheet.create({
   title: { color: '#fff', fontSize: 28, fontWeight: '900' },
   underline: { width: 44, height: 3, borderRadius: 2, marginTop: 6 },
   subtitle: { color: 'rgba(255,255,255,0.82)', fontSize: 13, fontWeight: '600', marginTop: 10 },
+  levelNode: { alignSelf: 'flex-start', borderRadius: 14, paddingHorizontal: 12, paddingVertical: 8, marginTop: 12 },
+  levelNodeText: { color: '#FFE69A', fontSize: 12, fontWeight: '900' },
   search: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 12, marginTop: 14 },
   searchInput: { flex: 1, color: '#fff', fontSize: 15, fontWeight: '600' },
+  backButton: { alignSelf: 'flex-start', marginTop: 14, paddingVertical: 4 },
+  backButtonText: { color: '#FFE69A', fontSize: 14, fontWeight: '900' },
+  goalsGrid: { paddingHorizontal: 18, paddingTop: 18, paddingBottom: 40 },
+  goalRow: { gap: 12, marginBottom: 12 },
+  goalCard: { flex: 1, minHeight: 142, borderRadius: 20, padding: 16, justifyContent: 'space-between' },
+  goalEmoji: { fontSize: 30 },
+  goalTitle: { color: '#fff', fontSize: 16, fontWeight: '900', marginTop: 12 },
+  goalCount: { color: 'rgba(255,255,255,0.64)', fontSize: 12, fontWeight: '700', marginTop: 6 },
   filters: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
   pill: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 16 },
   pillActive: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 16 },
@@ -126,4 +195,9 @@ const st = StyleSheet.create({
   pillTextActive: { color: '#fff', fontWeight: '800', fontSize: 13 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   msg: { color: 'rgba(255,255,255,0.85)', fontWeight: '700', fontSize: 15 },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 18, marginBottom: 10 },
+  sectionEyebrow: { color: 'rgba(255,223,94,0.75)', fontSize: 10, fontWeight: '900', letterSpacing: 1 },
+  sectionTitle: { color: '#fff', fontSize: 18, fontWeight: '900' },
+  sectionCount: { color: 'rgba(255,255,255,0.62)', fontSize: 13, fontWeight: '800' },
+  emptyGoal: { color: 'rgba(255,255,255,0.52)', fontSize: 13, fontWeight: '600', marginBottom: 6 },
 });

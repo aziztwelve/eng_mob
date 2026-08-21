@@ -19,11 +19,10 @@ export type TestimonialGoal =
   | 'work'         // работа / карьера
   | 'travel'       // путешествия
   | 'exam'         // экзамены / учёба
-  | 'relocation'   // переезд
+  | 'speaking'     // разговорная практика
   | 'social'       // друзья / общение
   | 'content'      // фильмы / книги
-  | 'fun'          // для удовольствия
-  | 'brain'        // тренировка мозга
+  | 'listening_shadowing' // Listening & Shadowing
   | 'study';       // школа / университет
 
 export interface Testimonial {
@@ -68,7 +67,7 @@ export const TESTIMONIALS: Testimonial[] = [
     avatarEmoji: '🧑‍🎒',
     age: 24,
     stars: 5,
-    goals: ['travel', 'fun', 'content'],
+    goals: ['travel', 'content'],
     name: 'Дамир',
     badge: {
       ru: 'Учусь 4 месяца',
@@ -100,11 +99,11 @@ export const TESTIMONIALS: Testimonial[] = [
     },
   },
   {
-    id: 'sergey-brain',
+    id: 'sergey-listening-shadowing',
     avatarEmoji: '🧑‍🦳',
     age: 54,
     stars: 4,
-    goals: ['brain', 'fun', 'content'],
+    goals: ['listening_shadowing', 'content'],
     name: 'Сергей',
     badge: {
       ru: 'Учусь после 50',
@@ -118,21 +117,21 @@ export const TESTIMONIALS: Testimonial[] = [
     },
   },
   {
-    id: 'aisulu-relocation',
+    id: 'aisulu-speaking',
     avatarEmoji: '👩‍🔬',
     age: 31,
     stars: 5,
-    goals: ['relocation', 'work', 'social'],
+    goals: ['speaking', 'work', 'social'],
     name: 'Айсулу',
     badge: {
-      ru: 'Переехала в Берлин',
-      en: 'Moved to Berlin',
-      kk: 'Берлинге көштім',
+      ru: 'Заговорила по-немецки',
+      en: 'Started speaking German',
+      kk: 'Немісше сөйлей бастадым',
     },
     quote: {
-      ru: 'Переезд в Германию был как прыжок. LingoIQ помог не утонуть в первые недели — теперь спокойно решаю банк, аренду и работу на немецком.',
-      en: 'Moving to Germany felt like a leap. LingoIQ kept me afloat in the first weeks — now I handle bank, rent and work in German calmly.',
-      kk: 'Германияға көшу — секіру сияқты болды. LingoIQ алғашқы апталарда қолдады — қазір банк, пәтер, жұмыс — бәрі немісше.',
+      ru: 'Сначала боялась говорить по-немецки. LingoIQ помог начать с коротких диалогов — теперь спокойно общаюсь на работе и в повседневных ситуациях.',
+      en: 'At first I was afraid to speak German. LingoIQ helped me start with short dialogues — now I communicate calmly at work and in everyday situations.',
+      kk: 'Алғашында немісше сөйлеуге қорқатынмын. LingoIQ қысқа диалогтардан бастауға көмектесті — қазір жұмыста да, күнделікті өмірде де еркін сөйлесемін.',
     },
   },
   {
@@ -140,7 +139,7 @@ export const TESTIMONIALS: Testimonial[] = [
     avatarEmoji: '🎮',
     age: 17,
     stars: 5,
-    goals: ['content', 'fun'],
+    goals: ['content'],
     name: 'Тимур',
     badge: {
       ru: 'Школьник',

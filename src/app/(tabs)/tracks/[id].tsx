@@ -19,9 +19,14 @@ const glass = {
 const TYPE_EMOJI: Record<string, string> = {
   daily: '🗓️', stories: '📖', podcast: '🎧', thematic: '🎯', personal: '🧭',
 };
+const GOAL_TITLES: Record<string, string> = {
+  work: 'Работа и карьера', exam: 'Экзамен', travel: 'Путешествия',
+  speaking: 'Разговорная практика', study: 'Учёба', social: 'Друзья и общение',
+  content: 'Фильмы и книги', listening_shadowing: 'Listening & Shadowing',
+};
 
 export default function TrackDetailsScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, goal } = useLocalSearchParams<{ id: string; goal?: string }>();
   const router = useRouter();
   const { t } = useTranslation();
   const { data: track, isLoading, error } = useTrack(id, true);
@@ -53,6 +58,7 @@ export default function TrackDetailsScreen() {
   }
 
   const emoji = TYPE_EMOJI[track.track_type as string] ?? '✨';
+  const title = goal ? GOAL_TITLES[goal] ?? track.title : track.title;
   const lessons = track.lessons ?? [];
   // Источник правды для замков: серверный прогресс (кросс-девайс) ∪ локальный
   // (мгновенно отражает только что пройденный урок до синка с сервером).
@@ -69,7 +75,7 @@ export default function TrackDetailsScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-      <Stack.Screen options={{ title: track.title }} />
+      <Stack.Screen options={{ title }} />
       <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: 40, gap: 16 }} showsVerticalScrollIndicator={false}>
         {/* Hero */}
         <View style={[s.hero, glass]}>
@@ -80,7 +86,7 @@ export default function TrackDetailsScreen() {
               <Text style={{ fontSize: 44 }}>{emoji}</Text>
             )}
           </View>
-          <Text style={s.title}>{track.title}</Text>
+          <Text style={s.title}>{title}</Text>
           <LinearGradient colors={GOLD} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.underline} />
           {!!track.description && <Text style={s.desc}>{track.description}</Text>}
         </View>
