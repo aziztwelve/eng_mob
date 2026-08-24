@@ -69,6 +69,7 @@ const en = {
         work:       { title: 'Work & career',     subtitle: 'Meetings, messages, growth' },
         exam:       { title: 'Exam',              subtitle: 'IELTS / TOEFL / DELF' },
         travel:     { title: 'Travel',            subtitle: 'Speak freely anywhere' },
+        relocation: { title: 'Relocation',        subtitle: 'Handle everyday life in a new country' },
         speaking: { title: 'Speaking proficiency', subtitle: 'Speak fluently and confidently' },
         study:      { title: 'School & studies',  subtitle: 'School, university, courses' },
         social:     { title: 'Friends & people',  subtitle: 'Meet new people, stay in touch' },

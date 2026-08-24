@@ -1,5 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { TracksApi, MyTracksApi } from '@/lib/api-client';
+import { FLASHCARDS_KEY, FLASHCARD_STATS_KEY } from '@/hooks/use-flashcards';
 import type { TrackFilters } from '@/types/api';
 
 /** Персональный план треков юзера (Phase 8). Бэкенд лениво генерирует план
@@ -43,5 +44,26 @@ export function useTrackProgress(idOrCode: string) {
     staleTime: 30 * 1000,
     select: (data) =>
       new Set(data.lessons.filter((l) => l.completed).map((l) => l.lesson_id)),
+  });
+}
+
+export function useTrackDictionary(idOrCode: string, search = '') {
+  return useQuery({
+    queryKey: ['trackDictionary', idOrCode, search],
+    queryFn: () => TracksApi.dictionary(idOrCode, search),
+    enabled: !!idOrCode,
+    staleTime: 60 * 1000,
+  });
+}
+
+export function useAddTrackDictionaryWords(idOrCode: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (vocabularyIds: string[]) => TracksApi.addDictionaryWords(idOrCode, vocabularyIds),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['trackDictionary', idOrCode] });
+      queryClient.invalidateQueries({ queryKey: FLASHCARDS_KEY });
+      queryClient.invalidateQueries({ queryKey: FLASHCARD_STATS_KEY });
+    },
   });
 }

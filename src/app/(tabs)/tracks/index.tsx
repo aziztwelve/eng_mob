@@ -8,25 +8,17 @@ import { TrackCard } from '@/components/tracks/track-card';
 import type { Track, TrackType } from '@/types/api';
 
 const GOLD = ['#FFDF5E', '#FFB338'] as const;
-const CTA = ['#A8243F', '#CC5A1F'] as const;
 const glass = {
   backgroundColor: 'rgba(255,255,255,0.14)',
   borderWidth: 1,
   borderColor: 'rgba(255,255,255,0.22)',
 } as const;
 
-const TYPE_FILTERS: Array<{ label: string; value: TrackType | null; emoji: string }> = [
-  { label: 'Все', value: null, emoji: '✨' },
-  { label: 'Каждый день', value: 'daily', emoji: '🗓️' },
-  { label: 'Истории', value: 'stories', emoji: '📖' },
-  { label: 'Подкаст', value: 'podcast', emoji: '🎧' },
-  { label: 'Темы', value: 'thematic', emoji: '🎯' },
-];
-
 const GOALS = [
   { key: 'work', title: 'Работа и карьера', emoji: '💼' },
   { key: 'exam', title: 'Экзамен', emoji: '🎯' },
   { key: 'travel', title: 'Путешествия', emoji: '✈️' },
+  { key: 'relocation', title: 'Переезд', emoji: '🏠' },
   { key: 'speaking', title: 'Разговорная практика', emoji: '🗣️' },
   { key: 'study', title: 'Учёба', emoji: '📚' },
   { key: 'social', title: 'Друзья и общение', emoji: '🫂' },
@@ -36,19 +28,20 @@ const GOALS = [
 
 type GoalKey = typeof GOALS[number]['key'];
 const LEGACY_GOAL_ALIASES: Record<string, GoalKey> = {
-  relocation: 'speaking',
   education: 'study',
   career: 'work',
   hobby: 'content',
   family: 'social',
   brain: 'listening_shadowing',
 };
+const LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1'];
 
 export default function TracksScreen() {
   const params = useLocalSearchParams<{ goal?: string }>();
   const router = useRouter();
   const [search, setSearch] = useState('');
   const [trackType, setTrackType] = useState<TrackType | null>(null);
+  const [selectedLevel, setSelectedLevel] = useState<string | null>(null);
   const [selectedGoal, setSelectedGoal] = useState<GoalKey | null>(null);
 
   useEffect(() => {
@@ -58,14 +51,13 @@ export default function TracksScreen() {
   }, [params.goal]);
 
   const onboarding = useOnboardingState();
-  const level = String(onboarding.data?.level ?? '').toLowerCase() || undefined;
   const language = onboarding.data?.target_language || undefined;
 
   const { data, isLoading, error } = useTracks({
     search: search || undefined,
     track_type: trackType ?? undefined,
     language,
-    level,
+    level: selectedLevel?.toLowerCase(),
     // API добавляет к трекам выбранной цели универсальные (motivation: []).
     // Они тоже должны быть доступны в каждой цели.
     motivation: selectedGoal ? [selectedGoal] : undefined,
@@ -73,7 +65,7 @@ export default function TracksScreen() {
     limit: 100,
   });
 
-  const all: Track[] = data?.tracks ?? [];
+  const all = useMemo<Track[]>(() => data?.tracks ?? [], [data?.tracks]);
   const tracksByGoal = useMemo(() => {
     const byGoal = new Map<GoalKey, Track[]>();
     GOALS.forEach(({ key }) => byGoal.set(key, []));
@@ -88,41 +80,53 @@ export default function TracksScreen() {
   }, [all]);
   // Сервис также возвращает технические персональные треки других пользователей.
   // В каталоге целей показываем только опубликованные тематические программы.
-  const selectedTracks = selectedGoal
-    ? all.filter((track) => track.track_type === 'thematic')
-    : [];
+  const selectedTracks = useMemo(
+    () => selectedGoal
+      ? (tracksByGoal.get(selectedGoal) ?? []).filter((track) => track.track_type === 'thematic')
+      : [],
+    [selectedGoal, tracksByGoal],
+  );
   const selectedGoalMeta = selectedGoal ? GOALS.find((goal) => goal.key === selectedGoal) : null;
 
   // Если у цели одна тематическая программа (как у «Путешествий»), не
   // показываем пользователю промежуточный технический контейнер трека.
   useEffect(() => {
-    if (selectedGoal && !isLoading && selectedTracks.length === 1) {
+    if (selectedLevel && selectedGoal && !isLoading && selectedTracks.length === 1) {
       const track = selectedTracks[0];
       router.replace(`/(tabs)/tracks/${track.code || track.id}?goal=${selectedGoal}` as never);
     }
-  }, [isLoading, router, selectedGoal, selectedTracks]);
+  }, [isLoading, router, selectedGoal, selectedLevel, selectedTracks]);
 
   return (
     <View style={{ flex: 1 }}>
-      <Stack.Screen options={{ title: 'Треки' }} />
+      <Stack.Screen options={{ title: 'Уроки' }} />
 
       {/* Header */}
       <View style={{ paddingHorizontal: 18, paddingTop: 12 }}>
         <Text style={st.title}>Уроки</Text>
         <LinearGradient colors={GOLD} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={st.underline} />
         <View style={[st.levelNode, glass]}>
-          <Text style={st.levelNodeText}>Уровень {level?.toUpperCase() ?? 'не выбран'} → все цели → треки</Text>
+          <Text style={st.levelNodeText}>
+            {selectedLevel ? `${selectedLevel} → ` : ''}Уровень → цель → треки
+          </Text>
         </View>
-        <Text style={st.subtitle}>{selectedGoal ? 'Выбери трек, затем урок' : 'Выбери цель, затем подходящий трек с уроками'}</Text>
+        <Text style={st.subtitle}>
+          {selectedGoal ? 'Выбери трек, затем урок' : selectedLevel ? 'Теперь выбери цель обучения' : 'Сначала выбери свой уровень'}
+        </Text>
 
-        {selectedGoal && <>
-          <Pressable onPress={() => { setSelectedGoal(null); setSearch(''); setTrackType(null); }} style={st.backButton}>
-            <Text style={st.backButtonText}>‹ Все цели</Text>
+        {selectedLevel && <>
+          <Pressable onPress={() => {
+            if (selectedGoal) setSelectedGoal(null);
+            else setSelectedLevel(null);
+            setSearch('');
+            setTrackType(null);
+          }} style={st.backButton}>
+            <Text style={st.backButtonText}>{selectedGoal ? '‹ Все цели' : '‹ Все уровни'}</Text>
           </Pressable>
-          <View style={[st.search, glass]}>
+          {selectedGoal && <View style={[st.search, glass]}>
             <Text style={{ fontSize: 16 }}>🔍</Text>
             <TextInput style={st.searchInput} placeholder="Поиск треков..." placeholderTextColor="rgba(255,255,255,0.5)" value={search} onChangeText={setSearch} />
-          </View>
+          </View>}
         </>}
       </View>
 
@@ -136,6 +140,22 @@ export default function TracksScreen() {
           <Text style={{ fontSize: 40, marginBottom: 10 }}>😕</Text>
           <Text style={st.msg}>Не удалось загрузить треки</Text>
         </View>
+      ) : !selectedLevel ? (
+        <FlatList
+          key="levels-grid"
+          data={LEVELS}
+          numColumns={2}
+          keyExtractor={(levelItem) => levelItem}
+          contentContainerStyle={st.goalsGrid}
+          columnWrapperStyle={st.goalRow}
+          renderItem={({ item: levelItem }) => (
+            <Pressable onPress={() => setSelectedLevel(levelItem)} style={[st.goalCard, glass]}>
+              <Text style={st.levelEmoji}>{levelItem}</Text>
+              <Text style={st.goalTitle}>{levelItem === 'A1' ? 'Начальный' : levelItem === 'C1' ? 'Продвинутый' : 'Уровень CEFR'}</Text>
+              <Text style={st.goalCount}>Выбрать уровень</Text>
+            </Pressable>
+          )}
+        />
       ) : !selectedGoal ? (
         <FlatList
           key="goals-grid"
@@ -145,7 +165,7 @@ export default function TracksScreen() {
           contentContainerStyle={st.goalsGrid}
           columnWrapperStyle={st.goalRow}
           renderItem={({ item: goal }) => {
-            const count = tracksByGoal.get(goal.key)?.length ?? 0;
+            const count = (tracksByGoal.get(goal.key) ?? []).filter((track) => track.track_type === 'thematic').length;
             return <Pressable onPress={() => setSelectedGoal(goal.key)} style={[st.goalCard, glass]}>
               <Text style={st.goalEmoji}>{goal.emoji}</Text>
               <Text style={st.goalTitle}>{goal.title}</Text>
@@ -178,6 +198,7 @@ const st = StyleSheet.create({
   subtitle: { color: 'rgba(255,255,255,0.82)', fontSize: 13, fontWeight: '600', marginTop: 10 },
   levelNode: { alignSelf: 'flex-start', borderRadius: 14, paddingHorizontal: 12, paddingVertical: 8, marginTop: 12 },
   levelNodeText: { color: '#FFE69A', fontSize: 12, fontWeight: '900' },
+  levelEmoji: { color: '#FFE69A', fontSize: 34, fontWeight: '900', letterSpacing: 1 },
   search: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 12, marginTop: 14 },
   searchInput: { flex: 1, color: '#fff', fontSize: 15, fontWeight: '600' },
   backButton: { alignSelf: 'flex-start', marginTop: 14, paddingVertical: 4 },

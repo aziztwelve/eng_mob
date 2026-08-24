@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, ScrollView, Pressable, ActivityIndicator, Image, StyleSheet } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Lock, Check } from 'lucide-react-native';
+import { Lock, Check, BookOpen } from 'lucide-react-native';
 import Toast from 'react-native-toast-message';
 import { useTranslation } from 'react-i18next';
 import { useTrack, useTrackProgress } from '@/hooks/use-tracks';
@@ -21,6 +21,7 @@ const TYPE_EMOJI: Record<string, string> = {
 };
 const GOAL_TITLES: Record<string, string> = {
   work: 'Работа и карьера', exam: 'Экзамен', travel: 'Путешествия',
+  relocation: 'Переезд',
   speaking: 'Разговорная практика', study: 'Учёба', social: 'Друзья и общение',
   content: 'Фильмы и книги', listening_shadowing: 'Listening & Shadowing',
 };
@@ -90,6 +91,20 @@ export default function TrackDetailsScreen() {
           <LinearGradient colors={GOLD} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.underline} />
           {!!track.description && <Text style={s.desc}>{track.description}</Text>}
         </View>
+
+        <Pressable
+          onPress={() => router.push(`/(tabs)/tracks/${track.code || track.id}/dictionary` as never)}
+          style={[s.dictionary, glass]}
+        >
+          <View style={s.dictionaryIcon}>
+            <BookOpen size={24} color="#FFD84A" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={s.dictionaryTitle}>Словарь трека</Text>
+            <Text style={s.dictionaryText}>Выбери слова и добавь их во флешкарты</Text>
+          </View>
+          <Text style={s.dictionaryArrow}>›</Text>
+        </Pressable>
 
         {/* Lessons */}
         <View style={{ gap: 12 }}>
@@ -165,6 +180,12 @@ const s = StyleSheet.create({
   title: { color: '#fff', fontSize: 24, fontWeight: '900', marginTop: 4 },
   underline: { width: 44, height: 3, borderRadius: 2 },
   desc: { color: 'rgba(255,255,255,0.85)', fontSize: 14, lineHeight: 20 },
+
+  dictionary: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 20, padding: 14 },
+  dictionaryIcon: { width: 46, height: 46, borderRadius: 15, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,216,74,0.16)' },
+  dictionaryTitle: { color: '#fff', fontSize: 16, fontWeight: '900' },
+  dictionaryText: { color: 'rgba(255,255,255,0.72)', fontSize: 12, marginTop: 3 },
+  dictionaryArrow: { color: '#FFD84A', fontSize: 28, fontWeight: '900' },
 
   section: { color: '#fff', fontSize: 18, fontWeight: '900' },
   lesson: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 20 },

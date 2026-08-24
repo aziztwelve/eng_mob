@@ -9,16 +9,16 @@ import { motivationPatch } from '@/lib/onboarding-patches';
 const TOTAL_STEPS = 12;
 
 type Goal =
-  | 'work' | 'exam' | 'travel' | 'speaking' | 'study'
+  | 'work' | 'exam' | 'travel' | 'relocation' | 'speaking' | 'study'
   | 'social' | 'content' | 'listening_shadowing';
 
 const GOAL_EMOJI: Record<Goal, string> = {
-  work: '💼', exam: '🎯', travel: '✈️', speaking: '🗣️', study: '📚',
+  work: '💼', exam: '🎯', travel: '✈️', relocation: '🏠', speaking: '🗣️', study: '📚',
   social: '🫂', content: '🎬', listening_shadowing: '🎧',
 };
 
 const GOAL_ORDER: Goal[] = [
-  'work', 'exam', 'travel', 'speaking', 'study',
+  'work', 'exam', 'travel', 'relocation', 'speaking', 'study',
   'social', 'content', 'listening_shadowing',
 ];
 

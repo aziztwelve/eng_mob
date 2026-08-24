@@ -69,6 +69,7 @@ const kk = {
         work:       { title: 'Жұмыс және мансап',  subtitle: 'Кездесулер, хат алмасу, өсу' },
         exam:       { title: 'Емтихан',             subtitle: 'IELTS / TOEFL / DELF' },
         travel:     { title: 'Саяхат',              subtitle: 'Кез келген елде еркін сөйлесу' },
+        relocation: { title: 'Көшу',                subtitle: 'Жаңа елдегі күнделікті өмірге бейімделу' },
         speaking: { title: 'Сөйлеу шеберлігі',    subtitle: 'Еркін әрі сенімді сөйлеу' },
         study:      { title: 'Оқу',                 subtitle: 'Мектеп, университет, курстар' },
         social:     { title: 'Достар және қарым-қатынас', subtitle: 'Танысу мен байланыс' },

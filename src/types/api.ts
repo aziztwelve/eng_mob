@@ -489,6 +489,38 @@ export interface TrackProgressResponse {
   total: number;
 }
 
+export interface TrackVocabularyEntry {
+  vocabulary: {
+    id: string;
+    word: string;
+    translation: string;
+    language: string;
+    target_language: string;
+    definition?: string;
+    example_sentence?: string;
+    transcription?: string;
+    audio_url?: string;
+    image_url?: string;
+  };
+  lesson_id?: string;
+  first_seen_order: number;
+  added: boolean;
+  flashcard_id?: string;
+}
+
+export interface TrackDictionaryResponse {
+  track_id: string;
+  track_code: string;
+  entries: TrackVocabularyEntry[];
+  total: number;
+}
+
+export interface AddTrackDictionaryResponse {
+  created: string[];
+  skipped: string[];
+  flashcards: Flashcard[];
+}
+
 export interface StepWithVideo {
   step: Step;
   video_url?: string; // Only for type=video

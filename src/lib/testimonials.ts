@@ -18,6 +18,7 @@ import type { UiLanguage } from './supported-languages';
 export type TestimonialGoal =
   | 'work'         // работа / карьера
   | 'travel'       // путешествия
+  | 'relocation'   // переезд
   | 'exam'         // экзамены / учёба
   | 'speaking'     // разговорная практика
   | 'social'       // друзья / общение
@@ -67,7 +68,7 @@ export const TESTIMONIALS: Testimonial[] = [
     avatarEmoji: '🧑‍🎒',
     age: 24,
     stars: 5,
-    goals: ['travel', 'content'],
+    goals: ['travel', 'relocation', 'content'],
     name: 'Дамир',
     badge: {
       ru: 'Учусь 4 месяца',

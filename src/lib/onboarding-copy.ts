@@ -9,7 +9,7 @@
  */
 
 export type GoalKey =
-  | 'work' | 'exam' | 'travel' | 'speaking' | 'study'
+  | 'work' | 'exam' | 'travel' | 'relocation' | 'speaking' | 'study'
   | 'social' | 'content' | 'listening_shadowing'
   | 'default';
 
@@ -64,6 +64,16 @@ export const PROJECTION_TEMPLATES: Record<GoalKey, ProjectionCopy> = {
       'Через 3 месяца: выражаешь мысли ясно и естественно.',
     ],
     bottom: 'Будем говорить с первого урока — в реальных ситуациях.',
+  },
+  relocation: {
+    title: 'Новая страна станет проще.',
+    subtitle: 'Подготовимся к реальным ситуациям после переезда.',
+    timeline: [
+      'Через 2 недели: справляешься с аэропортом и первыми вопросами.',
+      'Через месяц: решаешь бытовые дела без постоянного переводчика.',
+      'Через 3 месяца: уверенно общаешься в новой среде.',
+    ],
+    bottom: 'Будем тренировать язык для жизни, документов и общения после переезда.',
   },
   study: {
     title: 'Учёба пойдёт легче.',
@@ -179,6 +189,16 @@ export const PLAN_TEMPLATES: Record<GoalKey, PlanCopy> = {
       '6 месяцев: говоришь естественно и уверенно.',
     ],
   },
+  relocation: {
+    title: 'Как раскрывается твой путь',
+    subtitle: 'От аэропорта и быта до уверенной жизни в новой стране.',
+    timeline: [
+      '1 неделя: аэропорт, адрес, документы и базовые вопросы.',
+      '1 месяц: магазин, банк, аренда и повседневные просьбы.',
+      '3 месяца: общение с соседями и коллегами без ступора.',
+      '6 месяцев: чувствуешь себя уверенно в новой среде.',
+    ],
+  },
   study: {
     title: 'Как раскрывается твой путь',
     subtitle: 'Академический язык, который реально работает.',
@@ -274,6 +294,7 @@ export const ROADMAP_TEMPLATES: Record<GoalKey, RoadmapCopy> = {
   },
   default: DEFAULT_ROADMAP,
   speaking: { ...DEFAULT_ROADMAP, title: 'Карта разговорной практики' },
+  relocation: { ...DEFAULT_ROADMAP, title: 'Карта переезда' },
   study: { ...DEFAULT_ROADMAP, title: 'Учебная карта' },
   social: { ...DEFAULT_ROADMAP, title: 'Карта общения' },
   content: { ...DEFAULT_ROADMAP, title: 'Карта контента' },

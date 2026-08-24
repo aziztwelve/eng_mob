@@ -44,6 +44,7 @@ const TRACK_GOALS = [
   { key: "work", title: "Работа и карьера", emoji: "💼" },
   { key: "exam", title: "Экзамен", emoji: "🎯" },
   { key: "travel", title: "Путешествия", emoji: "✈️" },
+  { key: "relocation", title: "Переезд", emoji: "🏠" },
   { key: "speaking", title: "Разговорная практика", emoji: "🗣️" },
   { key: "study", title: "Учёба", emoji: "📚" },
   { key: "social", title: "Друзья и общение", emoji: "🫂" },

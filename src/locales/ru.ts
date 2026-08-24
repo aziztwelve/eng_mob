@@ -71,6 +71,7 @@ const ru = {
         work:       { title: 'Работа и карьера',    subtitle: 'Встречи, переписка, рост' },
         exam:       { title: 'Экзамен',              subtitle: 'IELTS / TOEFL / DELF' },
         travel:     { title: 'Путешествия',          subtitle: 'Свободно общаться в любой стране' },
+        relocation: { title: 'Переезд',              subtitle: 'Освоиться в новой стране без языкового барьера' },
         speaking: { title: 'Разговорная практика', subtitle: 'Говорить свободно и уверенно' },
         study:      { title: 'Учёба',                subtitle: 'Школа, университет, курсы' },
         social:     { title: 'Друзья и общение',     subtitle: 'Знакомства и поддержание связи' },

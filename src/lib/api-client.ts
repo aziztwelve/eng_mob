@@ -49,6 +49,8 @@ import {
   TrackFilters,
   TrackWithLessons,
   TrackProgressResponse,
+  TrackDictionaryResponse,
+  AddTrackDictionaryResponse,
   UpdatePreferencesRequest,
   UpdatePreferencesResponse,
   UserAchievementsResponse,
@@ -310,6 +312,20 @@ export const TracksApi = {
   /** Прогресс прохождения уроков трека текущего юзера (для замков). */
   progress: (idOrCode: string) =>
     ApiClient.get<TrackProgressResponse>(`/progress/tracks/${idOrCode}`),
+
+  dictionary: (idOrCode: string, search = '', limit = 100, offset = 0) => {
+    const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+    if (search) params.set('search', search);
+    return ApiClient.get<TrackDictionaryResponse>(
+      `/tracks/${encodeURIComponent(idOrCode)}/dictionary?${params.toString()}`,
+    );
+  },
+
+  addDictionaryWords: (idOrCode: string, vocabularyIds: string[]) =>
+    ApiClient.post<AddTrackDictionaryResponse>(
+      `/tracks/${encodeURIComponent(idOrCode)}/dictionary/add`,
+      { vocabulary_ids: vocabularyIds },
+    ),
 };
 
 /**
