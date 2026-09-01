@@ -63,6 +63,7 @@ import {
 import { Platform } from 'react-native';
 
 import { AuthService, ensureGuestSession } from './auth-service';
+import { getCurrentLang } from './i18n';
 
 /**
  * Resolve base URL with platform-aware host rewrite.
@@ -149,6 +150,9 @@ export class ApiClient {
     
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
+      // Язык контента (треки/уроки/шаги): course-service резолвит
+      // локаль с фолбэками ru → en.
+      'Accept-Language': getCurrentLang(),
       ...(options.headers as Record<string, string>),
     };
 
