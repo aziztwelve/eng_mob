@@ -2,6 +2,7 @@ import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTranslation } from 'react-i18next';
 import { neon, neonStyles } from '@/components/neon-screen';
 import { useFlashcardStats } from '@/hooks/use-flashcards';
 
@@ -14,6 +15,7 @@ const S = {
  * «Флешкарты» (повторение слов). Без mock-данных — реальная SRS-статистика.
  */
 export function FlashcardSection() {
+  const { t } = useTranslation();
   const stats = useFlashcardStats();
 
   const todayDue = stats.data?.today_due ?? 0;
@@ -33,7 +35,7 @@ export function FlashcardSection() {
             <Text>🎴</Text>
           </View>
           <Text style={{ fontSize: 19, fontWeight: '900', color: neon.text }}>
-            Флешкарты
+            {t('home.flashcards')}
           </Text>
         </View>
         <Text style={{ color: neon.muted, fontWeight: '700', fontSize: 13 }}>
@@ -58,7 +60,7 @@ export function FlashcardSection() {
           {todayDue > 0 ? `${todayDue} слов на сегодня` : 'Все повторено 🎉'}
         </Text>
         <Text style={{ color: neon.muted, fontSize: 13, fontWeight: '600', marginTop: 6 }}>
-          {todayDue > 0 ? 'Нажмите, чтобы повторить' : 'Добавьте новые слова или вернитесь позже'}
+          {todayDue > 0 ? t('fc.tap_to_review') : t('fc.add_or_later')}
         </Text>
       </Pressable>
 
@@ -67,7 +69,7 @@ export function FlashcardSection() {
           onPress={goToFlashcards}
           style={[S.surface, { borderRadius: 14, padding: 14, alignItems: 'center', marginTop: 12 }]}
         >
-          <Text style={{ color: neon.text, fontWeight: '800', fontSize: 14 }}>Повторить →</Text>
+          <Text style={{ color: neon.text, fontWeight: '800', fontSize: 14 }}>{t('fc.review_arrow')}</Text>
         </Pressable>
       )}
     </View>

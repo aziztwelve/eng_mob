@@ -19,6 +19,7 @@ import { useOnboardingState } from "@/hooks/use-onboarding";
 import { useUserStats } from "@/hooks/use-user-stats";
 import { useHearts } from "@/hooks/use-hearts";
 import type { Flashcard, Track } from "@/types/api";
+import { useTranslation } from 'react-i18next';
 
 /* ------------------------------------------------------------------ */
 /* Palette (Sunset Lava)                                               */
@@ -84,6 +85,7 @@ function Owl() {
 /* Screen                                                              */
 /* ------------------------------------------------------------------ */
 export default function LessonsScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<TabName>("Треки");
@@ -118,10 +120,10 @@ export default function LessonsScreen() {
 
         {/* title + search */}
         <View style={s.titleRow}>
-          <Text style={s.title}>Уроки</Text>
+          <Text style={s.title}>{t('practice.lessons')}</Text>
           <View style={[s.search, glass]}>
             <SearchIcon />
-            <Text style={s.searchText}>Поиск</Text>
+            <Text style={s.searchText}>{t('practice.search')}</Text>
           </View>
         </View>
 
@@ -150,7 +152,7 @@ export default function LessonsScreen() {
             {/* subhead */}
             <View style={s.subhead}>
               <View>
-                <Text style={s.subheadTitle}>Цели и треки</Text>
+                <Text style={s.subheadTitle}>{t('practice.goals_tracks')}</Text>
                 <LinearGradient colors={GOLD} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.subheadUnderline} />
               </View>
             </View>
@@ -162,11 +164,11 @@ export default function LessonsScreen() {
             <View style={[s.banner, glass]}>
               <Owl />
               <View style={s.bannerMain}>
-                <Text style={s.bannerTitle}>Продолжай учиться!</Text>
-                <Text style={s.bannerText}>Учись каждый день и достигай своих целей вместе с LingoIQ!</Text>
+                <Text style={s.bannerTitle}>{t('practice.keep_learning')}</Text>
+                <Text style={s.bannerText}>{t('practice.keep_learning_text')}</Text>
                 <Pressable>
                   <LinearGradient colors={CTA} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.remind}>
-                    <Text style={s.remindText}>Напоминание 🔔</Text>
+                    <Text style={s.remindText}>{t('practice.reminder')}</Text>
                   </LinearGradient>
                 </Pressable>
               </View>
@@ -177,7 +179,7 @@ export default function LessonsScreen() {
         ) : (
           <View style={s.empty}>
             <Text style={s.emptyEmoji}>📚</Text>
-            <Text style={s.emptyText}>Курсы скоро появятся</Text>
+            <Text style={s.emptyText}>{t('practice.courses_soon')}</Text>
           </View>
         )}
       </ScrollView>
@@ -189,6 +191,7 @@ export default function LessonsScreen() {
 /* «Мои треки» — треки из БД под уровень аккаунта (без бейджей уровня) */
 /* ------------------------------------------------------------------ */
 function LevelGoals() {
+  const { t } = useTranslation();
   const router = useRouter();
   const onboarding = useOnboardingState();
   const level = String(onboarding.data?.level ?? "").toLowerCase() || undefined;
@@ -203,7 +206,7 @@ function LevelGoals() {
     return (
       <View style={[trk.empty, glass]}>
         <Text style={{ fontSize: 40 }}>🧭</Text>
-        <Text style={trk.emptyText}>Пока нет треков для выбранного уровня</Text>
+        <Text style={trk.emptyText}>{t('practice.no_tracks_level')}</Text>
       </View>
     );
   }
@@ -227,6 +230,7 @@ function LevelGoals() {
 /* Уроки трека — рендерим напрямую внутри «Мои треки».                 */
 /* ------------------------------------------------------------------ */
 function TrackLessons({ track }: { track: Track }) {
+  const { t } = useTranslation();
   const router = useRouter();
   const { data: full, isLoading } = useTrack(track.id, true);
   const lessons = full?.lessons ?? [];
@@ -238,7 +242,7 @@ function TrackLessons({ track }: { track: Track }) {
     return (
       <View style={[trk.empty, glass]}>
         <Text style={{ fontSize: 40 }}>🦉</Text>
-        <Text style={trk.emptyText}>Уроки скоро появятся</Text>
+        <Text style={trk.emptyText}>{t('tracks.lessons_soon')}</Text>
       </View>
     );
   }
@@ -292,6 +296,7 @@ const trk = StyleSheet.create({
 /* «Мои слова» — флешкарты пользователя внутри вкладки Уроки           */
 /* ------------------------------------------------------------------ */
 function MyWordsTab() {
+  const { t } = useTranslation();
   const router = useRouter();
   const stats = useFlashcardStats();
   const flashcards = useFlashcards({ limit: 30 });
@@ -314,7 +319,7 @@ function MyWordsTab() {
     return (
       <View style={[mw.card, { padding: 22, alignItems: "center", gap: 14, marginTop: 18 }]}>
         <Text style={{ fontSize: 48 }}>🎴</Text>
-        <Text style={mw.emptyTitle}>Здесь будут твои слова</Text>
+        <Text style={mw.emptyTitle}>{t('practice.your_words')}</Text>
         <Text style={mw.emptyText}>
           Загрузи стартовый набор для повторения или проходи уроки — слова добавятся сами.
         </Text>
@@ -327,12 +332,12 @@ function MyWordsTab() {
             {seedStarter.isPending ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={mw.ctaText}>Загрузить стартовый набор</Text>
+              <Text style={mw.ctaText}>{t('practice.load_starter')}</Text>
             )}
           </LinearGradient>
         </Pressable>
         <Pressable onPress={() => router.push("/flashcards" as never)} style={[mw.card, mw.outlineBtn]}>
-          <Text style={mw.outlineText}>Открыть флешкарты</Text>
+          <Text style={mw.outlineText}>{t('practice.open_flashcards')}</Text>
         </Pressable>
       </View>
     );
@@ -341,24 +346,24 @@ function MyWordsTab() {
   return (
     <View style={{ marginTop: 18, gap: 14 }}>
       <View style={[mw.card, { flexDirection: "row", padding: 8 }]}>
-        <MwStat label="На сегодня" value={todayDue} color="#FFD84A" />
-        <MwStat label="Выучено" value={mastered} color="#2EECC8" />
-        <MwStat label="Всего" value={total} color="#fff" />
+        <MwStat label={t('practice.stat_today')} value={todayDue} color="#FFD84A" />
+        <MwStat label={t('fc.mastered')} value={mastered} color="#2EECC8" />
+        <MwStat label={t('fc.total')} value={total} color="#fff" />
       </View>
 
       {todayDue > 0 ? (
         <Pressable onPress={() => router.push("/flashcards/session" as never)} style={mw.ctaWrap}>
           <LinearGradient colors={CTA} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[mw.cta, mw.ctaRow]}>
             <View style={{ flex: 1 }}>
-              <Text style={mw.ctaText}>Повторить слова</Text>
-              <Text style={mw.ctaSub}>{todayDue} на сегодня</Text>
+              <Text style={mw.ctaText}>{t('fc.review_words')}</Text>
+              <Text style={mw.ctaSub}>{t('practice.due_today2', { count: todayDue })}</Text>
             </View>
             <Text style={{ fontSize: 22 }}>▶️</Text>
           </LinearGradient>
         </Pressable>
       ) : (
         <Pressable onPress={() => router.push("/flashcards" as never)} style={[mw.card, mw.outlineBtn]}>
-          <Text style={mw.outlineText}>Открыть флешкарты</Text>
+          <Text style={mw.outlineText}>{t('practice.open_flashcards')}</Text>
         </Pressable>
       )}
 
@@ -375,7 +380,7 @@ function MyWordsTab() {
               </View>
               {card.pinned_today ? (
                 <View style={mw.badge}>
-                  <Text style={mw.badgeText}>Сегодня</Text>
+                  <Text style={mw.badgeText}>{t('fc.today_badge')}</Text>
                 </View>
               ) : null}
             </View>
@@ -384,7 +389,7 @@ function MyWordsTab() {
       </View>
 
       <Pressable onPress={() => router.push("/flashcards" as never)} style={{ alignSelf: "center", paddingVertical: 10 }}>
-        <Text style={mw.allLink}>Все слова →</Text>
+        <Text style={mw.allLink}>{t('practice.all_words')}</Text>
       </Pressable>
     </View>
   );

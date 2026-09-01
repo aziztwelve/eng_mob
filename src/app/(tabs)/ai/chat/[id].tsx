@@ -25,6 +25,7 @@ import { useAIConversation, useAIQuota, useSendMessage, useTranscribeAudio } fro
 import { getChatTTSUri } from '@/lib/tts';
 import { glass, CTA } from '@/components/sunset';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTranslation } from 'react-i18next';
 
 /* STT — формат записи под Google STT (как в chat-input/ai-hub). */
 const STT_SR = 16000;
@@ -55,6 +56,7 @@ function VoiceConsole({
   send: (text: string) => Promise<string>;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   const [phase, setPhase] = useState<VoicePhase>('recording');
   const recRef = useRef<Audio.Recording | null>(null);
   const soundRef = useRef<Audio.Sound | null>(null);
@@ -114,7 +116,7 @@ function VoiceConsole({
       await playReply(reply);
     } catch (e) {
       console.error('voice turn failed', e);
-      Toast.show({ type: 'error', text1: 'Ошибка', text2: e instanceof Error ? e.message : undefined });
+      Toast.show({ type: 'error', text1: t('common.error'), text2: e instanceof Error ? e.message : undefined });
       if (activeRef.current) void beginRecording();
     }
   }, [beginRecording, playReply, send, transcribeMut, language]);
@@ -166,6 +168,7 @@ const vs = StyleSheet.create({
 });
 
 export default function ChatConversationScreen() {
+  const { t } = useTranslation();
   const params = useLocalSearchParams<{ id: string; draft?: string }>();
   const id = params.id;
   const draft = typeof params.draft === 'string' ? params.draft : undefined;
@@ -278,17 +281,17 @@ export default function ChatConversationScreen() {
           </View>
         ) : conv.error || !conversation ? (
           <View style={[s.emptyCard, glass]}>
-            <Text style={s.emptyTitle}>Диалог не найден</Text>
+            <Text style={s.emptyTitle}>{t('ai.not_found')}</Text>
             <Pressable onPress={() => router.replace('/ai/chat')} style={s.backToListBtn}>
               <LinearGradient colors={CTA} style={s.backToListGrad}>
-                <Text style={s.backToListText}>К списку</Text>
+                <Text style={s.backToListText}>{t('ai.back_to_list')}</Text>
               </LinearGradient>
             </Pressable>
           </View>
         ) : messages.length === 0 ? (
           <View style={[s.emptyCard, glass]}>
             <Text style={{ fontSize: 32, marginBottom: 8 }}>💬</Text>
-            <Text style={s.emptyText}>Напишите первое сообщение, чтобы начать.</Text>
+            <Text style={s.emptyText}>{t('ai.write_first')}</Text>
           </View>
         ) : (
           messages.map((m) => <ChatMessage key={m.id} message={m} language={conversation?.target_language} />)
@@ -307,7 +310,7 @@ export default function ChatConversationScreen() {
 
         {sendMut.isError && (
           <View style={s.errBubble}>
-            <Text style={s.errText}>Не удалось отправить. Попробуйте ещё раз.</Text>
+            <Text style={s.errText}>{t('ai.send_err')}</Text>
           </View>
         )}
       </ScrollView>
@@ -316,7 +319,7 @@ export default function ChatConversationScreen() {
       <View style={[s.inputBar, { paddingBottom: inputPaddingBottom }]}>
         {!canChat && (
           <View style={s.limitBar}>
-            <Text style={s.limitText}>Лимит чатов исчерпан. Сбрасывается завтра.</Text>
+            <Text style={s.limitText}>{t('ai.chat_limit_bar')}</Text>
           </View>
         )}
         {voiceMode ? (

@@ -18,13 +18,14 @@ import {
 import { useMistakes } from '@/hooks/use-srs';
 import { tsToDate } from '@/lib/api-client';
 import type { Mistake, MistakeFilter } from '@/types/api';
+import { useTranslation } from 'react-i18next';
 
 const PAGE_SIZE = 20;
 
 const TABS: Array<{ value: MistakeFilter; label: string }> = [
-  { value: 'unresolved', label: 'Не исправлены' },
-  { value: 'resolved', label: 'Исправлены' },
-  { value: 'all', label: 'Все' },
+  { value: 'unresolved', label: 'practice.tab_active' },
+  { value: 'resolved', label: 'practice.tab_resolved' },
+  { value: 'all', label: 'practice.tab_all' },
 ];
 
 /**
@@ -35,6 +36,7 @@ const TABS: Array<{ value: MistakeFilter; label: string }> = [
  * шаг (см. step-validation.recordSRS). Здесь — только просмотр.
  */
 export default function MistakesScreen() {
+  const { t } = useTranslation();
   const [tab, setTab] = useState<MistakeFilter>('unresolved');
   const [page, setPage] = useState(0);
 
@@ -55,20 +57,20 @@ export default function MistakesScreen() {
 
   return (
     <View className="flex-1 bg-background">
-      <Stack.Screen options={{ title: 'Ошибки' }} />
+      <Stack.Screen options={{ title: t('practice.mistakes_title') }} />
       <ScrollView contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 80 }}>
         <Pressable
           onPress={() => router.back()}
           className="flex-row items-center gap-1 self-start active:opacity-60"
         >
           <ArrowLeft size={16} color="#9ca3af" />
-          <Text className="text-muted-foreground font-bold">К практике</Text>
+          <Text className="text-muted-foreground font-bold">{t('practice.to_practice')}</Text>
         </Pressable>
 
         <View className="gap-2">
           <View className="flex-row items-center gap-2">
             <AlertTriangle size={28} color="#f97316" />
-            <Text className="text-foreground font-black text-3xl">Ошибки</Text>
+            <Text className="text-foreground font-black text-3xl">{t('practice.mistakes_title')}</Text>
           </View>
           <Text className="text-muted-foreground font-medium">
             Шаги, на которых вы запинались. Снимаются автоматически, когда вы
@@ -78,12 +80,12 @@ export default function MistakesScreen() {
 
         {/* Tabs */}
         <View className="flex-row bg-card rounded-2xl border-2 border-border p-1">
-          {TABS.map((t) => {
-            const active = tab === t.value;
+          {TABS.map((tabItem) => {
+            const active = tab === tabItem.value;
             return (
               <Pressable
-                key={t.value}
-                onPress={() => onTabChange(t.value)}
+                key={tabItem.value}
+                onPress={() => onTabChange(tabItem.value)}
                 className={`flex-1 rounded-xl py-2 items-center ${
                   active ? 'bg-primary' : 'bg-transparent'
                 }`}
@@ -93,7 +95,7 @@ export default function MistakesScreen() {
                     active ? 'text-primary-foreground' : 'text-foreground'
                   }`}
                 >
-                  {t.label}
+                  {t(tabItem.label as never)}
                 </Text>
               </Pressable>
             );
@@ -112,9 +114,9 @@ export default function MistakesScreen() {
             </Text>
             <Text className="text-muted-foreground font-medium text-center">
               {tab === 'unresolved'
-                ? 'Все ошибки исправлены — отличная работа!'
+                ? t('practice.all_fixed')
                 : tab === 'resolved'
-                  ? 'Пока нет исправленных ошибок.'
+                  ? t('practice.no_resolved')
                   : 'У вас ещё нет зарегистрированных ошибок.'}
             </Text>
           </View>
@@ -170,6 +172,7 @@ export default function MistakesScreen() {
 }
 
 function MistakeRow({ mistake }: { mistake: Mistake }) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const last = tsToDate(mistake.last_made_at ?? null);
   const resolved = mistake.is_resolved;
@@ -184,13 +187,13 @@ function MistakeRow({ mistake }: { mistake: Mistake }) {
           {resolved ? (
             <View className="flex-row items-center gap-1 bg-emerald-500 rounded-full px-3 py-1">
               <CheckCircle2 size={12} color="#ffffff" />
-              <Text className="text-white text-xs font-bold">Исправлено</Text>
+              <Text className="text-white text-xs font-bold">{t('practice.fixed')}</Text>
             </View>
           ) : (
             <View className="flex-row items-center gap-1 bg-orange-500 rounded-full px-3 py-1">
               <AlertTriangle size={12} color="#ffffff" />
               <Text className="text-white text-xs font-bold">
-                Не исправлено
+                {t('practice.not_fixed')}
               </Text>
             </View>
           )}

@@ -1,19 +1,21 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, FlatList, Pressable, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { useCourses } from '@/hooks/use-courses';
 import { Course } from '@/types/api';
 
 const LEVEL_FILTERS = [
-  { label: 'All', value: null },
-  { label: 'A1-A2', value: 'A1-A2' },
-  { label: 'B1', value: 'B1' },
-  { label: 'B2', value: 'B2' },
-  { label: 'C1-C2', value: 'C1-C2' },
+  { value: null },
+  { value: 'A1-A2' },
+  { value: 'B1' },
+  { value: 'B2' },
+  { value: 'C1-C2' },
 ];
 
 export default function CoursesScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [search, setSearch] = useState('');
   const [selectedLevel, setSelectedLevel] = useState<string | null>(null);
 
@@ -61,7 +63,7 @@ export default function CoursesScreen() {
         
         {item.students && (
           <Text className="text-muted-foreground text-xs">
-            {item.students.toLocaleString()} students
+            {t('courses.students', { count: item.students.toLocaleString() })}
           </Text>
         )}
       </View>
@@ -73,13 +75,13 @@ export default function CoursesScreen() {
       {/* Header */}
       <View className="bg-card border-b-2 border-border px-4 pt-12 pb-4">
         <Text className="text-3xl font-black text-primary mb-4">
-          Courses
+          {t('courses.title')}
         </Text>
 
         {/* Search Bar */}
         <TextInput
           className="bg-background border-2 border-border rounded-2xl px-4 py-3 text-foreground mb-3"
-          placeholder="Search courses..."
+          placeholder={t('courses.search_ph')}
           placeholderTextColor="#666"
           value={search}
           onChangeText={setSearch}
@@ -89,7 +91,7 @@ export default function CoursesScreen() {
         <View className="flex-row space-x-2">
           {LEVEL_FILTERS.map((filter) => (
             <Pressable
-              key={filter.label}
+              key={filter.value ?? 'all'}
               onPress={() => setSelectedLevel(filter.value)}
               className={`px-4 py-2 rounded-full border-2 ${
                 selectedLevel === filter.value
@@ -104,7 +106,7 @@ export default function CoursesScreen() {
                     : 'text-muted-foreground'
                 }`}
               >
-                {filter.label}
+                {filter.value ?? t('courses.filter_all')}
               </Text>
             </Pressable>
           ))}
@@ -115,26 +117,26 @@ export default function CoursesScreen() {
       {isLoading ? (
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color="#FFD84A" />
-          <Text className="text-muted-foreground mt-4">Loading courses...</Text>
+          <Text className="text-muted-foreground mt-4">{t('courses.loading')}</Text>
         </View>
       ) : error ? (
         <View className="flex-1 items-center justify-center px-6">
           <Text className="text-4xl mb-4">😕</Text>
           <Text className="text-foreground font-bold text-lg mb-2">
-            Oops! Something went wrong
+            {t('courses.error_title')}
           </Text>
           <Text className="text-muted-foreground text-center">
-            {(error as any)?.message || 'Failed to load courses'}
+            {(error as any)?.message || t('courses.error_default')}
           </Text>
         </View>
       ) : !courses || courses.length === 0 ? (
         <View className="flex-1 items-center justify-center px-6">
           <Text className="text-4xl mb-4">🔍</Text>
           <Text className="text-foreground font-bold text-lg mb-2">
-            No courses found
+            {t('courses.empty_title')}
           </Text>
           <Text className="text-muted-foreground text-center">
-            Try adjusting your search or filters
+            {t('courses.empty_desc')}
           </Text>
         </View>
       ) : (

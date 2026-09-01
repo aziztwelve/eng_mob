@@ -2,6 +2,7 @@ import React from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Sparkles } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTranslation } from 'react-i18next';
 import { glass, CTA } from '@/components/sunset';
 import type { AIScenario } from '@/types/api';
 
@@ -14,6 +15,7 @@ export function ScenarioCard({
   loading?: boolean;
   onStart: (scenarioId: string) => void;
 }) {
+  const { t } = useTranslation();
   return (
     <View style={[s.card, glass]}>
       <View style={s.header}>
@@ -31,7 +33,7 @@ export function ScenarioCard({
 
       {scenario.ai_role ? (
         <Text style={s.role}>
-          <Text style={s.roleLabel}>Роль AI: </Text>
+          <Text style={s.roleLabel}>{t('ai.ai_role')}</Text>
           {scenario.ai_role}
         </Text>
       ) : null}
@@ -53,7 +55,7 @@ export function ScenarioCard({
         >
           {loading
             ? <ActivityIndicator size="small" color="rgba(255,255,255,0.6)" />
-            : <Text style={s.ctaText}>Начать →</Text>}
+            : <Text style={s.ctaText}>{t('ai.start')}</Text>}
         </LinearGradient>
       </Pressable>
     </View>

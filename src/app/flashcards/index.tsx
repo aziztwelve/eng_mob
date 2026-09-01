@@ -3,6 +3,7 @@ import { View, Text, ScrollView, Pressable, ActivityIndicator, TextInput, StyleS
 import { Stack, router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Plus, Search, Play } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 
 import { useFlashcards, useFlashcardStats, useSeedStarter } from '@/hooks/use-flashcards';
 import { AddFlashcardSheet } from '@/components/flashcards/AddFlashcardSheet';
@@ -18,11 +19,20 @@ const glass = {
   borderColor: 'rgba(255,255,255,0.22)',
 } as const;
 
+function wordUnitKey(count: number): string {
+  const mod10 = count % 10;
+  const mod100 = count % 100;
+  if (mod10 === 1 && mod100 !== 11) return 'fc.word_1';
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return 'fc.word_2';
+  return 'fc.word_5';
+}
+
 /**
  * /flashcards — хаб «Флешкарты» (повторение слов). Дизайн Sunset Lava,
  * как на главной и в уроках (фон-градиент из layout + glass-карточки).
  */
 export default function FlashcardsHubScreen() {
+  const { t } = useTranslation();
   const [search, setSearch] = useState('');
   const [showAddSheet, setShowAddSheet] = useState(false);
   const stats = useFlashcardStats();
@@ -40,7 +50,7 @@ export default function FlashcardsHubScreen() {
     <View style={{ flex: 1 }}>
       <Stack.Screen
         options={{
-          title: 'Флешкарты',
+          title: t('home.flashcards'),
           headerRight: () => (
             <Pressable onPress={() => setShowAddSheet(true)} style={{ padding: 8 }}>
               <Plus size={24} color="#FFD84A" />
@@ -52,9 +62,9 @@ export default function FlashcardsHubScreen() {
       <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: 40, gap: 16 }}>
         {/* Title */}
         <View>
-          <Text style={st.title}>Повторение слов 🎴</Text>
+          <Text style={st.title}>{t('fc.review_title')}</Text>
           <LinearGradient colors={GOLD} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={st.underline} />
-          <Text style={st.subtitle}>Карточки с интервальным повторением</Text>
+          <Text style={st.subtitle}>{t('fc.review_sub')}</Text>
         </View>
 
         {stats.isLoading ? (
@@ -73,9 +83,9 @@ export default function FlashcardsHubScreen() {
             <View style={[st.card, { flexDirection: 'row', alignItems: 'center', padding: 16, gap: 18 }]}>
               <GoalRing completed={todayCompleted} total={todayGoal} />
               <View style={{ flex: 1, gap: 12 }}>
-                <MiniStat label="Учу" value={learning} color="#FF9E6E" />
-                <MiniStat label="Выучено" value={mastered} color="#2EECC8" />
-                <MiniStat label="Всего" value={total} color="#fff" />
+                <MiniStat label={t('fc.learning')} value={learning} color="#FF9E6E" />
+                <MiniStat label={t('fc.mastered')} value={mastered} color="#2EECC8" />
+                <MiniStat label={t('fc.total')} value={total} color="#fff" />
               </View>
             </View>
 
@@ -84,9 +94,9 @@ export default function FlashcardsHubScreen() {
               <Pressable onPress={() => router.push('/flashcards/session' as any)} style={st.ctaWrap}>
                 <LinearGradient colors={CTA} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={st.cta}>
                   <View style={{ flex: 1 }}>
-                    <Text style={st.ctaTitle}>Повторить слова</Text>
+                    <Text style={st.ctaTitle}>{t('fc.review_words')}</Text>
                     <Text style={st.ctaSub}>
-                      {todayDue} {todayDue === 1 ? 'слово' : 'слов'} на сегодня
+                      {t('fc.due_today', { count: todayDue, unit: t(wordUnitKey(todayDue) as never) })}
                     </Text>
                   </View>
                   <Play size={30} color="white" fill="white" />
@@ -102,7 +112,7 @@ export default function FlashcardsHubScreen() {
               <TextInput
                 value={search}
                 onChangeText={setSearch}
-                placeholder="Поиск слов..."
+                placeholder={t('fc.search_ph')}
                 placeholderTextColor="rgba(255,255,255,0.5)"
                 style={st.searchInput}
               />
@@ -117,7 +127,7 @@ export default function FlashcardsHubScreen() {
                   <FlashcardItem key={card.id} card={card} />
                 ))}
                 {flashcards.data?.items.length === 0 && (
-                  <Text style={st.emptyHint}>Ничего не найдено</Text>
+                  <Text style={st.emptyHint}>{t('fc.nothing_found')}</Text>
                 )}
               </View>
             )}
@@ -140,6 +150,7 @@ function MiniStat({ label, value, color }: { label: string; value: number; color
 }
 
 function FlashcardItem({ card }: { card: Flashcard }) {
+  const { t } = useTranslation();
   return (
     <View style={[st.card, { padding: 14 }]}>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -152,7 +163,7 @@ function FlashcardItem({ card }: { card: Flashcard }) {
         </View>
         {card.pinned_today && (
           <View style={st.todayBadge}>
-            <Text style={st.todayBadgeText}>Сегодня</Text>
+            <Text style={st.todayBadgeText}>{t('fc.today_badge')}</Text>
           </View>
         )}
       </View>
@@ -169,25 +180,23 @@ function EmptyState({
   onAdd: () => void;
   loading: boolean;
 }) {
+  const { t } = useTranslation();
   return (
     <View style={[st.card, { padding: 24, alignItems: 'center', gap: 14 }]}>
       <Text style={{ fontSize: 54 }}>🎴</Text>
-      <Text style={st.emptyTitle}>Здесь будут твои слова</Text>
-      <Text style={st.emptyText}>
-        Загрузи стартовый набор слов для повторения или добавь своё слово. Слова из уроков
-        добавляются автоматически.
-      </Text>
+      <Text style={st.emptyTitle}>{t('practice.your_words')}</Text>
+      <Text style={st.emptyText}>{t('fc.empty_text')}</Text>
       <Pressable onPress={onSeed} disabled={loading} style={[st.ctaWrap, { alignSelf: 'stretch' }]}>
         <LinearGradient colors={CTA} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[st.cta, { justifyContent: 'center' }]}>
           {loading ? (
             <ActivityIndicator color="white" />
           ) : (
-            <Text style={st.ctaTitle}>Загрузить стартовый набор</Text>
+            <Text style={st.ctaTitle}>{t('practice.load_starter')}</Text>
           )}
         </LinearGradient>
       </Pressable>
       <Pressable onPress={onAdd} style={[st.card, st.outlineBtn]}>
-        <Text style={st.outlineBtnText}>Добавить своё слово</Text>
+        <Text style={st.outlineBtnText}>{t('fc.add_own')}</Text>
       </Pressable>
     </View>
   );

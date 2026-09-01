@@ -17,12 +17,10 @@ import type { UiLanguage } from './supported-languages';
 
 export type TestimonialGoal =
   | 'work'         // работа / карьера
+  | 'business_english' // деловой английский
   | 'travel'       // путешествия
-  | 'relocation'   // переезд
   | 'exam'         // экзамены / учёба
   | 'speaking'     // разговорная практика
-  | 'social'       // друзья / общение
-  | 'content'      // фильмы / книги
   | 'listening_shadowing' // Listening & Shadowing
   | 'study';       // школа / университет
 
@@ -50,7 +48,7 @@ export const TESTIMONIALS: Testimonial[] = [
     avatarEmoji: '👩‍💻',
     age: 28,
     stars: 5,
-    goals: ['work', 'social'],
+    goals: ['work'],
     name: 'Алина',
     badge: {
       ru: '60 дней подряд',
@@ -68,7 +66,7 @@ export const TESTIMONIALS: Testimonial[] = [
     avatarEmoji: '🧑‍🎒',
     age: 24,
     stars: 5,
-    goals: ['travel', 'relocation', 'content'],
+    goals: ['travel'],
     name: 'Дамир',
     badge: {
       ru: 'Учусь 4 месяца',
@@ -104,7 +102,7 @@ export const TESTIMONIALS: Testimonial[] = [
     avatarEmoji: '🧑‍🦳',
     age: 54,
     stars: 4,
-    goals: ['listening_shadowing', 'content'],
+    goals: ['listening_shadowing'],
     name: 'Сергей',
     badge: {
       ru: 'Учусь после 50',
@@ -122,7 +120,7 @@ export const TESTIMONIALS: Testimonial[] = [
     avatarEmoji: '👩‍🔬',
     age: 31,
     stars: 5,
-    goals: ['speaking', 'work', 'social'],
+    goals: ['speaking', 'work'],
     name: 'Айсулу',
     badge: {
       ru: 'Заговорила по-немецки',
@@ -140,7 +138,7 @@ export const TESTIMONIALS: Testimonial[] = [
     avatarEmoji: '🎮',
     age: 17,
     stars: 5,
-    goals: ['content'],
+    goals: ['listening_shadowing'],
     name: 'Тимур',
     badge: {
       ru: 'Школьник',

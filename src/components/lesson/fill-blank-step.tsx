@@ -18,7 +18,7 @@ export function FillBlankStep({ step, onSubmit, onContinue, isLast }: StepCompon
   if (!content) {
     return (
       <View className="p-6">
-        <Text className="text-muted-foreground">Не удалось распарсить content.</Text>
+        <Text className="text-muted-foreground">{t('lesson.parse_error')}</Text>
       </View>
     );
   }

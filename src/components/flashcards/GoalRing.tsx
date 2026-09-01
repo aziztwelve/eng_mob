@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
+import { useTranslation } from 'react-i18next';
 
 interface GoalRingProps {
   /** Сколько карточек уже повторено сегодня. */
@@ -24,6 +25,7 @@ export function GoalRing({
   stroke = 11,
   color = '#FFD84A',
 }: GoalRingProps) {
+  const { t } = useTranslation();
   const radius = (size - stroke) / 2;
   const circumference = 2 * Math.PI * radius;
   const pct = total > 0 ? Math.min(1, completed / total) : completed > 0 ? 1 : 0;
@@ -68,7 +70,7 @@ export function GoalRing({
           marginTop: 1,
         }}
       >
-        НА СЕГОДНЯ
+        {t('cards.today')}
       </Text>
     </View>
   );

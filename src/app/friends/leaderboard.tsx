@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { Stack, Link, router } from 'expo-router';
 import { ArrowLeft, Medal, Trophy, Users } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 
 import { Avatar } from '@/components/ui/avatar';
 import { useFriendsLeaderboard } from '@/hooks/use-friends';
@@ -20,30 +21,31 @@ import type { LeaderboardFriendEntry } from '@/types/api';
  *   sort: weekly_xp DESC, ranks 1..N. Включает self.
  */
 export default function FriendsLeaderboardScreen() {
+  const { t } = useTranslation();
   const board = useFriendsLeaderboard();
   const entries = board.data?.entries ?? [];
 
   return (
     <View className="flex-1 bg-background">
-      <Stack.Screen options={{ title: 'Friends Leaderboard' }} />
+      <Stack.Screen options={{ title: t('friends.lb_title') }} />
       <ScrollView contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 80 }}>
         <Pressable
           onPress={() => router.back()}
           className="flex-row items-center gap-1 self-start active:opacity-60"
         >
           <ArrowLeft size={16} color="#9ca3af" />
-          <Text className="text-muted-foreground font-bold">К друзьям</Text>
+          <Text className="text-muted-foreground font-bold">{t('friends.to_friends')}</Text>
         </Pressable>
 
         <View className="gap-2">
           <View className="flex-row items-center gap-2">
             <Trophy size={28} color="#f59e0b" />
             <Text className="text-foreground font-black text-3xl">
-              Friends Leaderboard
+              {t('friends.lb_title')}
             </Text>
           </View>
           <Text className="text-muted-foreground font-medium">
-            Сравнение weekly XP среди ваших друзей. Обновляется каждую минуту.
+            {t('friends.lb_desc')}
           </Text>
         </View>
 
@@ -54,14 +56,14 @@ export default function FriendsLeaderboardScreen() {
         ) : entries.length === 0 ? (
           <View className="bg-card rounded-3xl border-4 border-border p-8 items-center gap-3">
             <Users size={42} color="#9ca3af" />
-            <Text className="text-foreground font-black text-xl">Пока пусто</Text>
+            <Text className="text-foreground font-black text-xl">{t('friends.lb_empty')}</Text>
             <Text className="text-muted-foreground font-medium text-center">
-              Добавьте друзей, чтобы появилась таблица.
+              {t('friends.lb_empty_desc')}
             </Text>
             <Link href="/friends/search" asChild>
               <Pressable className="bg-primary rounded-2xl px-5 py-3 mt-2 active:opacity-80">
                 <Text className="text-primary-foreground font-black">
-                  Найти друзей
+                  {t('friends.find_friends')}
                 </Text>
               </Pressable>
             </Link>
@@ -89,6 +91,7 @@ function Row({
   entry: LeaderboardFriendEntry;
   isLast: boolean;
 }) {
+  const { t } = useTranslation();
   const isTop3 = entry.rank <= 3;
   const name = displayName(entry);
 
@@ -130,7 +133,7 @@ function Row({
             {name}
           </Text>
           {entry.is_me && (
-            <Text className="text-primary font-black text-xs">(вы)</Text>
+            <Text className="text-primary font-black text-xs">{t('friends.you')}</Text>
           )}
         </View>
         <Text

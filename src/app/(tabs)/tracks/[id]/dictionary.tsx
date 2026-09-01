@@ -4,6 +4,7 @@ import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BookOpen, Check, Search } from 'lucide-react-native';
 import Toast from 'react-native-toast-message';
+import { useTranslation } from 'react-i18next';
 
 import { useAddTrackDictionaryWords, useTrackDictionary } from '@/hooks/use-tracks';
 
@@ -15,6 +16,7 @@ const glass = {
 } as const;
 
 export default function TrackDictionaryScreen() {
+  const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [search, setSearch] = useState('');
   const [query, setQuery] = useState('');
@@ -47,21 +49,21 @@ export default function TrackDictionaryScreen() {
       setSelected(new Set());
       Toast.show({
         type: 'success',
-        text1: 'Слова добавлены',
-        text2: `Новых: ${result.created.length}, уже были: ${result.skipped.length}`,
+        text1: t('dict.added_toast'),
+        text2: t('dict.added_toast_d', { created: result.created.length, skipped: result.skipped.length }),
       });
     } catch {
-      Toast.show({ type: 'error', text1: 'Не удалось добавить слова' });
+      Toast.show({ type: 'error', text1: t('dict.add_failed') });
     }
   };
 
   return (
     <View style={{ flex: 1 }}>
-      <Stack.Screen options={{ title: 'Словарь трека' }} />
+      <Stack.Screen options={{ title: t('dict.stack_title') }} />
       <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
         <View>
-          <Text style={s.title}>Слова из уроков</Text>
-          <Text style={s.subtitle}>Добавляй нужные слова в личную библиотеку и повторяй по интервальному расписанию.</Text>
+          <Text style={s.title}>{t('dict.title')}</Text>
+          <Text style={s.subtitle}>{t('dict.subtitle')}</Text>
         </View>
 
         <View style={[s.search, glass]}>
@@ -69,7 +71,7 @@ export default function TrackDictionaryScreen() {
           <TextInput
             value={search}
             onChangeText={setSearch}
-            placeholder="Найти слово или перевод"
+            placeholder={t('dict.search_ph')}
             placeholderTextColor="rgba(255,255,255,0.48)"
             style={s.searchInput}
           />
@@ -80,22 +82,22 @@ export default function TrackDictionaryScreen() {
         ) : dictionary.error ? (
           <View style={[s.empty, glass]}>
             <Text style={s.emptyEmoji}>😕</Text>
-            <Text style={s.emptyTitle}>Словарь не загрузился</Text>
-            <Pressable onPress={() => dictionary.refetch()}><Text style={s.link}>Попробовать снова</Text></Pressable>
+            <Text style={s.emptyTitle}>{t('dict.load_failed')}</Text>
+            <Pressable onPress={() => dictionary.refetch()}><Text style={s.link}>{t('dict.retry')}</Text></Pressable>
           </View>
         ) : entries.length === 0 ? (
           <View style={[s.empty, glass]}>
             <BookOpen size={38} color="#FFD84A" />
-            <Text style={s.emptyTitle}>{query ? 'Ничего не найдено' : 'Словарь готовится'}</Text>
-            <Text style={s.emptyText}>{query ? 'Попробуй изменить запрос.' : 'В этом треке пока нет слов с проверенным переводом.'}</Text>
+            <Text style={s.emptyTitle}>{query ? t('fc.nothing_found') : t('dict.preparing')}</Text>
+            <Text style={s.emptyText}>{query ? t('dict.change_query') : t('dict.empty')}</Text>
           </View>
         ) : (
           <View style={{ gap: 10 }}>
             <View style={s.listHeader}>
-              <Text style={s.count}>{dictionary.data?.total ?? entries.length} слов</Text>
+              <Text style={s.count}>{t('dict.words_count', { count: dictionary.data?.total ?? entries.length })}</Text>
               {available.length > 0 && (
                 <Pressable onPress={() => setSelected(new Set(available.map((entry) => entry.vocabulary.id)))}>
-                  <Text style={s.link}>Выбрать все</Text>
+                  <Text style={s.link}>{t('dict.select_all')}</Text>
                 </Pressable>
               )}
             </View>
@@ -116,7 +118,7 @@ export default function TrackDictionaryScreen() {
                   <View style={[s.checkbox, checked && s.checkboxChecked]}>
                     {checked && <Check size={16} color={entry.added ? '#18351F' : '#3D0A1A'} strokeWidth={3} />}
                   </View>
-                  {entry.added && <Text style={s.added}>В библиотеке</Text>}
+                  {entry.added && <Text style={s.added}>{t('dict.in_library')}</Text>}
                 </Pressable>
               );
             })}
@@ -125,7 +127,7 @@ export default function TrackDictionaryScreen() {
 
         {entries.some((entry) => entry.added) && (
           <Pressable onPress={() => router.push('/flashcards' as never)} style={s.libraryLink}>
-            <Text style={s.libraryLinkText}>Открыть мои флешкарты →</Text>
+            <Text style={s.libraryLinkText}>{t('dict.open_my')}</Text>
           </Pressable>
         )}
       </ScrollView>
@@ -134,7 +136,7 @@ export default function TrackDictionaryScreen() {
         <View style={s.footer}>
           <Pressable disabled={addWords.isPending} onPress={() => add(selectedIDs)} style={s.ctaWrap}>
             <LinearGradient colors={CTA} style={s.cta}>
-              {addWords.isPending ? <ActivityIndicator color="#fff" /> : <Text style={s.ctaText}>Добавить {selectedIDs.length} во флешкарты</Text>}
+              {addWords.isPending ? <ActivityIndicator color="#fff" /> : <Text style={s.ctaText}>{t('dict.add_n', { count: selectedIDs.length })}</Text>}
             </LinearGradient>
           </Pressable>
         </View>

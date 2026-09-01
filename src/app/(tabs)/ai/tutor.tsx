@@ -20,8 +20,10 @@ import { LangPills } from '@/components/ai/lang-pills';
 import { useAIQuota, useAskTutor } from '@/hooks/use-ai';
 import { AI_NATIVE_LANGS, AI_TARGET_LANGS, DEFAULT_NATIVE_LANG, DEFAULT_TARGET_LANG } from '@/lib/ai-languages';
 import { glass, SunsetHeader, CtaButton } from '@/components/sunset';
+import { useTranslation } from 'react-i18next';
 
 export default function TutorScreen() {
+  const { t } = useTranslation();
   const [question, setQuestion] = useState('');
   const [targetLang, setTargetLang] = useState(DEFAULT_TARGET_LANG);
   const [nativeLang, setNativeLang] = useState(DEFAULT_NATIVE_LANG);
@@ -37,7 +39,7 @@ export default function TutorScreen() {
     try {
       await mut.mutateAsync({ question: question.trim(), target_language: targetLang || undefined, native_language: nativeLang || undefined });
     } catch (err) {
-      Toast.show({ type: 'error', text1: 'Ошибка', text2: err instanceof Error ? err.message : undefined });
+      Toast.show({ type: 'error', text1: t('common.error'), text2: err instanceof Error ? err.message : undefined });
     }
   };
 
@@ -51,7 +53,7 @@ export default function TutorScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 6, paddingBottom: 78 + insets.bottom }}
       >
-        <SunsetHeader title="Спросить учителя" />
+        <SunsetHeader title={t('ai.ask_teacher')} />
 
         <QuotaWidget compact />
 
@@ -59,31 +61,31 @@ export default function TutorScreen() {
           <View style={{ gap: 12, marginTop: 12 }}>
             {/* Вопрос + ответ */}
             <View style={[s.card, glass]}>
-              <Text style={s.label}>Вопрос</Text>
+              <Text style={s.label}>{t('ai.question')}</Text>
               <Text style={s.questionText}>{question}</Text>
               <View style={s.divider} />
-              <Text style={s.label}>Ответ</Text>
+              <Text style={s.label}>{t('ai.answer')}</Text>
               <Markdown style={mdStyles}>{mut.data.answer}</Markdown>
             </View>
 
             <Pressable onPress={handleReset} style={[s.resetBtn, glass]}>
               <RotateCcw size={15} color="rgba(255,255,255,0.7)" />
-              <Text style={s.resetText}>Задать новый вопрос</Text>
+              <Text style={s.resetText}>{t('ai.ask_new')}</Text>
             </Pressable>
           </View>
         ) : (
           <View style={{ gap: 12, marginTop: 12 }}>
             {/* Языки */}
             <View style={[s.card, glass]}>
-              <Text style={s.label}>Язык изучения</Text>
+              <Text style={s.label}>{t('ai.target_lang')}</Text>
               <LangPills options={AI_TARGET_LANGS} value={targetLang} onChange={setTargetLang} />
-              <Text style={[s.label, { marginTop: 14 }]}>Язык ответа</Text>
+              <Text style={[s.label, { marginTop: 14 }]}>{t('ai.answer_lang')}</Text>
               <LangPills options={AI_NATIVE_LANGS} value={nativeLang} onChange={setNativeLang} variant="full" />
             </View>
 
             {/* Вопрос */}
             <View style={[s.card, glass]}>
-              <Text style={s.label}>Ваш вопрос</Text>
+              <Text style={s.label}>{t('ai.your_q')}</Text>
               <TextInput
                 value={question}
                 onChangeText={setQuestion}
@@ -96,11 +98,11 @@ export default function TutorScreen() {
             </View>
 
             {!canChat && (
-              <Text style={s.limitText}>Лимит запросов на сегодня исчерпан.</Text>
+              <Text style={s.limitText}>{t('ai.ask_limit')}</Text>
             )}
 
             <CtaButton
-              label={mut.isPending ? 'Думаем…' : 'Спросить'}
+              label={mut.isPending ? t('ai.thinking') : t('ai.ask')}
               onPress={handleSubmit}
               block
             />

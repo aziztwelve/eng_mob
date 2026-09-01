@@ -17,6 +17,7 @@ import {
   useRejectFriendRequest,
 } from '@/hooks/use-friends';
 import type { FriendInfo } from '@/types/api';
+import { useTranslation } from 'react-i18next';
 
 /**
  * /friends/pending — incoming + outgoing friend requests.
@@ -26,6 +27,7 @@ import type { FriendInfo } from '@/types/api';
  *   - is_incoming=false → caller отправитель (показываем Cancel)
  */
 export default function FriendsPendingScreen() {
+  const { t } = useTranslation();
   const pending = usePendingFriends();
   const accept = useAcceptFriendRequest();
   const reject = useRejectFriendRequest();
@@ -39,12 +41,12 @@ export default function FriendsPendingScreen() {
       await accept.mutateAsync(f.friendship_id);
       Toast.show({
         type: 'success',
-        text1: `${friendDisplayName(f)} теперь у вас в друзьях`,
+        text1: t('friends.accepted_toast', { name: friendDisplayName(f) }),
       });
     } catch (err) {
       Toast.show({
         type: 'error',
-        text1: 'Не удалось принять',
+        text1: t('common.accept_failed'),
         text2: err instanceof Error ? err.message : undefined,
       });
     }
@@ -55,12 +57,12 @@ export default function FriendsPendingScreen() {
       await reject.mutateAsync(f.friendship_id);
       Toast.show({
         type: 'success',
-        text1: isOutgoing ? 'Запрос отменён' : 'Запрос отклонён',
+        text1: isOutgoing ? t('friends.request_cancelled') : t('friends.request_rejected'),
       });
     } catch (err) {
       Toast.show({
         type: 'error',
-        text1: 'Не удалось обновить',
+        text1: t('common.update_failed'),
         text2: err instanceof Error ? err.message : undefined,
       });
     }
@@ -68,24 +70,23 @@ export default function FriendsPendingScreen() {
 
   return (
     <View className="flex-1 bg-background">
-      <Stack.Screen options={{ title: 'Запросы' }} />
+      <Stack.Screen options={{ title: t('friends.requests') }} />
       <ScrollView contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 80 }}>
         <Pressable
           onPress={() => router.back()}
           className="flex-row items-center gap-1 self-start active:opacity-60"
         >
           <ArrowLeft size={16} color="#9ca3af" />
-          <Text className="text-muted-foreground font-bold">К друзьям</Text>
+          <Text className="text-muted-foreground font-bold">{t('friends.to_friends')}</Text>
         </Pressable>
 
         <View className="gap-2">
           <View className="flex-row items-center gap-2">
             <Bell size={28} color="#36E3FF" />
-            <Text className="text-foreground font-black text-3xl">Запросы</Text>
+            <Text className="text-foreground font-black text-3xl">{t('friends.requests')}</Text>
           </View>
           <Text className="text-muted-foreground font-medium">
-            Принимайте или отклоняйте входящие запросы и отзывайте свои
-            исходящие.
+            {t('friends.requests_desc')}
           </Text>
         </View>
 
@@ -96,16 +97,16 @@ export default function FriendsPendingScreen() {
         ) : list.length === 0 ? (
           <View className="bg-card rounded-3xl border-4 border-border p-8 items-center gap-2">
             <Text className="text-foreground font-black text-xl">
-              Нет ожидающих запросов
+              {t('friends.no_pending')}
             </Text>
             <Text className="text-muted-foreground font-medium text-center">
-              Все чисто. Загляните во вкладку Поиск, чтобы найти друзей.
+              {t('friends.no_pending_desc')}
             </Text>
           </View>
         ) : (
           <View className="gap-4">
             {incoming.length > 0 && (
-              <Section title="Входящие" count={incoming.length}>
+              <Section title={t('friends.incoming')} count={incoming.length}>
                 {incoming.map((f, i) => (
                   <Row
                     key={f.friendship_id}
@@ -120,7 +121,7 @@ export default function FriendsPendingScreen() {
                         >
                           <Check size={14} color="#fff" />
                           <Text className="text-white font-bold text-xs">
-                            Принять
+                            {t('friends.accept')}
                           </Text>
                         </Pressable>
                         <Pressable
@@ -130,7 +131,7 @@ export default function FriendsPendingScreen() {
                         >
                           <X size={14} color="#9ca3af" />
                           <Text className="text-muted-foreground font-bold text-xs">
-                            Отклонить
+                            {t('friends.reject')}
                           </Text>
                         </Pressable>
                       </View>
@@ -141,7 +142,7 @@ export default function FriendsPendingScreen() {
             )}
 
             {outgoing.length > 0 && (
-              <Section title="Исходящие" count={outgoing.length}>
+              <Section title={t('friends.outgoing')} count={outgoing.length}>
                 {outgoing.map((f, i) => (
                   <Row
                     key={f.friendship_id}
@@ -155,7 +156,7 @@ export default function FriendsPendingScreen() {
                       >
                         <X size={14} color="#9ca3af" />
                         <Text className="text-muted-foreground font-bold text-xs">
-                          Отменить
+                          {t('friends.cancel_req')}
                         </Text>
                       </Pressable>
                     }

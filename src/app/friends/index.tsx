@@ -25,6 +25,7 @@ import {
   useRemoveFriend,
 } from '@/hooks/use-friends';
 import type { FriendInfo } from '@/types/api';
+import { useTranslation } from 'react-i18next';
 
 /**
  * /friends — главный экран Friends. Показывает список accepted-друзей
@@ -37,6 +38,7 @@ import type { FriendInfo } from '@/types/api';
  *   /friends/leaderboard — рейтинг среди друзей + self
  */
 export default function FriendsScreen() {
+  const { t } = useTranslation();
   const friends = useFriends();
   const pending = usePendingFriends({ direction: 'incoming', limit: 50 });
   const remove = useRemoveFriend();
@@ -46,21 +48,21 @@ export default function FriendsScreen() {
 
   const onRemove = (f: FriendInfo) => {
     Alert.alert(
-      'Удалить из друзей',
-      `Удалить ${friendDisplayName(f)} из списка друзей?`,
+      t('friends.remove_q'),
+      t('friends.remove_desc', { name: friendDisplayName(f) }),
       [
-        { text: 'Отмена', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Удалить',
+          text: t('common.remove'),
           style: 'destructive',
           onPress: async () => {
             try {
               await remove.mutateAsync(f.user_id);
-              Toast.show({ type: 'success', text1: 'Удалён из друзей' });
+              Toast.show({ type: 'success', text1: t('common.removed') });
             } catch (err) {
               Toast.show({
                 type: 'error',
-                text1: 'Не удалось удалить',
+                text1: t('common.delete_failed'),
                 text2: err instanceof Error ? err.message : undefined,
               });
             }
@@ -72,23 +74,23 @@ export default function FriendsScreen() {
 
   return (
     <View className="flex-1 bg-background">
-      <Stack.Screen options={{ title: 'Друзья' }} />
+      <Stack.Screen options={{ title: t('social.friends') }} />
       <ScrollView contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 80 }}>
         <Pressable
           onPress={() => router.back()}
           className="flex-row items-center gap-1 self-start active:opacity-60"
         >
           <ArrowLeft size={16} color="#9ca3af" />
-          <Text className="text-muted-foreground font-bold">Назад</Text>
+          <Text className="text-muted-foreground font-bold">{t('social.back')}</Text>
         </Pressable>
 
         <View className="gap-2">
           <View className="flex-row items-center gap-2">
             <Users size={28} color="#00FFA3" />
-            <Text className="text-foreground font-black text-3xl">Друзья</Text>
+            <Text className="text-foreground font-black text-3xl">{t('social.friends')}</Text>
           </View>
           <Text className="text-muted-foreground font-medium">
-            Добавляйте друзей и сравнивайте прогресс на friends-leaderboard.
+            {t('friends.sub')}
           </Text>
         </View>
 
@@ -101,10 +103,10 @@ export default function FriendsScreen() {
               </View>
               <View className="flex-1">
                 <Text className="text-foreground font-black text-base">
-                  Поиск пользователей
+                  {t('friends.search_users')}
                 </Text>
                 <Text className="text-muted-foreground font-medium text-sm">
-                  Найти по username и отправить запрос
+                  {t('friends.search_users_sub')}
                 </Text>
               </View>
               <Text className="text-muted-foreground">→</Text>
@@ -118,10 +120,10 @@ export default function FriendsScreen() {
               </View>
               <View className="flex-1">
                 <Text className="text-foreground font-black text-base">
-                  Запросы
+                  {t('friends.requests')}
                 </Text>
                 <Text className="text-muted-foreground font-medium text-sm">
-                  Входящие и исходящие
+                  {t('friends.requests_sub')}
                 </Text>
               </View>
               {incomingCount > 0 && (
@@ -142,10 +144,10 @@ export default function FriendsScreen() {
               </View>
               <View className="flex-1">
                 <Text className="text-foreground font-black text-base">
-                  Friends Leaderboard
+                  {t('friends.lb_title')}
                 </Text>
                 <Text className="text-muted-foreground font-medium text-sm">
-                  Сравните weekly XP среди друзей
+                  {t('friends.lb_sub')}
                 </Text>
               </View>
               <Text className="text-muted-foreground">→</Text>
@@ -156,7 +158,7 @@ export default function FriendsScreen() {
         {/* Friends list */}
         <View className="gap-2">
           <Text className="text-foreground font-black text-lg">
-            Ваши друзья {friends.data ? `(${friends.data.total})` : ''}
+            {t('friends.your_friends')} {friends.data ? `(${friends.data.total})` : ''}
           </Text>
 
           {friends.isLoading ? (
@@ -167,10 +169,10 @@ export default function FriendsScreen() {
             <View className="bg-card rounded-3xl border-4 border-border p-8 items-center gap-2">
               <Users size={42} color="#9ca3af" />
               <Text className="text-foreground font-black text-xl">
-                Пока нет друзей
+                {t('friends.no_friends')}
               </Text>
               <Text className="text-muted-foreground font-medium text-center">
-                Найдите кого-нибудь во вкладке «Поиск» и отправьте запрос.
+                {t('friends.no_friends_desc')}
               </Text>
             </View>
           ) : (
@@ -207,7 +209,7 @@ export default function FriendsScreen() {
                   >
                     <UserMinus size={14} color="#9ca3af" />
                     <Text className="text-muted-foreground font-bold text-xs">
-                      Удалить
+                      {t('common.remove')}
                     </Text>
                   </Pressable>
                 </View>

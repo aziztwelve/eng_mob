@@ -6,6 +6,7 @@ import { playWordTTS } from '@/lib/tts';
 import { VoiceRecorder } from '@/components/ai/voice-recorder';
 import { ChatInput } from '@/components/ai/chat-input';
 import { useCheckPronunciation, useSendMessage, useStartConversation } from '@/hooks/use-ai';
+import { useTranslation } from 'react-i18next';
 
 interface ActivityStepProps {
   content: ActivityContent;
@@ -41,6 +42,7 @@ function Action({ label, onPress, disabled = false }: { label: string; onPress: 
 }
 
 export function ActivityStep({ content, stepId }: ActivityStepProps) {
+  const { t } = useTranslation();
   const body = content.content ?? {};
   const [answer, setAnswer] = useState('');
   const [vocabIndex, setVocabIndex] = useState(0);
@@ -102,16 +104,16 @@ export function ActivityStep({ content, stepId }: ActivityStepProps) {
 
   const renderWarmUp = () => (
     <Card>
-      <Text className="text-xs font-bold uppercase tracking-wider text-[#ffdf5e]">Ваш ответ</Text>
+      <Text className="text-xs font-bold uppercase tracking-wider text-[#ffdf5e]">{t('lesson_act.answer')}</Text>
       <Text className="mt-2 text-lg font-black text-white">{prompt}</Text>
       <TextInput
         value={answer}
         onChangeText={setAnswer}
-        placeholder="Напишите слово или короткий ответ"
+        placeholder={t('lesson.answer_ph')}
         placeholderTextColor="rgba(255,255,255,0.35)"
         className="mt-4 rounded-2xl border border-white/20 bg-[#07162c] px-4 py-3 text-base text-white"
       />
-      <View className="mt-3"><Action label={answer.trim() ? 'Ответ готов' : 'Напишите ответ'} disabled={!answer.trim()} onPress={() => {}} /></View>
+      <View className="mt-3"><Action label={answer.trim() ? t('lesson_act.answer_ready') : t('lesson_act.write_answer')} disabled={!answer.trim()} onPress={() => {}} /></View>
     </Card>
   );
 
@@ -127,13 +129,13 @@ export function ActivityStep({ content, stepId }: ActivityStepProps) {
         {revealed && <Text className="mt-5 text-base leading-6 text-white">Say it aloud, then tap next.</Text>}
         <View className="mt-5 flex-row gap-3">
           <Pressable onPress={() => void playWordTTS(word, 'en')} className="flex-1 flex-row items-center justify-center gap-2 rounded-2xl border border-white/20 bg-white/10 py-3">
-            <Volume2 size={18} color="#ffdf5e" /><Text className="font-bold text-white">Слушать</Text>
+            <Volume2 size={18} color="#ffdf5e" /><Text className="font-bold text-white">{t('lesson_act.listen')}</Text>
           </Pressable>
           <Pressable onPress={() => setRevealed(true)} className="flex-1 flex-row items-center justify-center gap-2 rounded-2xl bg-[#1b3056] py-3">
-            <Play size={16} color="#fff" /><Text className="font-bold text-white">Повторить</Text>
+            <Play size={16} color="#fff" /><Text className="font-bold text-white">{t('lesson_act.repeat')}</Text>
           </Pressable>
         </View>
-        <View className="mt-3"><Action label={vocabIndex === vocabulary.length - 1 ? 'Слова пройдены' : 'Следующее слово'} onPress={() => { setVocabIndex((index) => Math.min(index + 1, vocabulary.length - 1)); setRevealed(false); }} /></View>
+        <View className="mt-3"><Action label={vocabIndex === vocabulary.length - 1 ? t('lesson_act.words_done') : t('lesson_act.next_word')} onPress={() => { setVocabIndex((index) => Math.min(index + 1, vocabulary.length - 1)); setRevealed(false); }} /></View>
       </Card>
     );
   };
@@ -144,12 +146,12 @@ export function ActivityStep({ content, stepId }: ActivityStepProps) {
     return (
       <View className="gap-4">
         <Card>
-          <Text className="text-xs font-bold uppercase tracking-wider text-[#ffdf5e]">Сначала прослушайте</Text>
-          <Text className="mt-2 text-base leading-6 text-white">Прослушайте запись и ответьте на вопрос. Текст откроется после попытки.</Text>
+          <Text className="text-xs font-bold uppercase tracking-wider text-[#ffdf5e]">{t('lesson_act.listen_first')}</Text>
+          <Text className="mt-2 text-base leading-6 text-white">{t('lesson_act.listen_first_desc')}</Text>
           <Pressable onPress={() => void playWordTTS(script, 'en')} className="mt-4 flex-row items-center justify-center gap-2 rounded-2xl bg-[#1b3056] py-3">
-            <Headphones size={18} color="#fff" /><Text className="font-bold text-white">Включить аудио</Text>
+            <Headphones size={18} color="#fff" /><Text className="font-bold text-white">{t('lesson_act.play_audio')}</Text>
           </Pressable>
-          {listeningChecked && <Pressable onPress={() => setShowTranscript((value) => !value)} className="mt-3"><Text className="text-center font-bold text-[#ffdf5e]">{showTranscript ? 'Скрыть текст' : 'Показать текст'}</Text></Pressable>}
+          {listeningChecked && <Pressable onPress={() => setShowTranscript((value) => !value)} className="mt-3"><Text className="text-center font-bold text-[#ffdf5e]">{showTranscript ? t('lesson_act.hide_text') : t('lesson_act.show_text')}</Text></Pressable>}
           {showTranscript && <Text className="mt-3 text-base leading-6 text-white/80">{script}</Text>}
         </Card>
         <Card>
@@ -162,7 +164,7 @@ export function ActivityStep({ content, stepId }: ActivityStepProps) {
               return <Pressable key={option} disabled={listeningChecked} onPress={() => setSelectedAnswer(option)} className={`rounded-2xl border p-4 ${isCorrect ? 'border-[#58cc02] bg-[#58cc02]/15' : isWrong ? 'border-red-400 bg-red-400/15' : isSelected ? 'border-[#ffdf5e] bg-[#ffdf5e]/10' : 'border-white/15 bg-white/5'}`}><Text className="text-base font-semibold text-white">{option}</Text></Pressable>;
             })}
           </View>
-          {!listeningChecked ? <View className="mt-4"><Action label="Проверить ответ" disabled={!selectedAnswer} onPress={() => setListeningChecked(true)} /></View> : <View className="mt-4"><Action label={listeningIndex === questions.length - 1 ? 'Аудирование пройдено' : 'Следующий вопрос'} onPress={() => { setListeningIndex((index) => Math.min(index + 1, questions.length - 1)); setSelectedAnswer(''); setListeningChecked(false); }} /></View>}
+          {!listeningChecked ? <View className="mt-4"><Action label={t('lesson_act.check')} disabled={!selectedAnswer} onPress={() => setListeningChecked(true)} /></View> : <View className="mt-4"><Action label={listeningIndex === questions.length - 1 ? t('lesson_act.listening_done') : t('lesson_act.next_q')} onPress={() => { setListeningIndex((index) => Math.min(index + 1, questions.length - 1)); setSelectedAnswer(''); setListeningChecked(false); }} /></View>}
         </Card>
       </View>
     );
@@ -171,21 +173,21 @@ export function ActivityStep({ content, stepId }: ActivityStepProps) {
   const renderVoicePractice = () => (
     <View className="gap-4">
       <Card>
-        <Text className="text-xs font-bold uppercase tracking-wider text-[#ffdf5e]">Произнесите фразу</Text>
+        <Text className="text-xs font-bold uppercase tracking-wider text-[#ffdf5e]">{t('lesson_act.say_phrase')}</Text>
         <Text className="mt-2 text-2xl font-black leading-8 text-white">{model}</Text>
         <Pressable onPress={() => void playWordTTS(model, 'en')} className="mt-4 flex-row items-center justify-center gap-2 rounded-2xl bg-[#1b3056] py-3">
-          <Volume2 size={18} color="#fff" /><Text className="font-bold text-white">Послушать пример</Text>
+          <Volume2 size={18} color="#fff" /><Text className="font-bold text-white">{t('lesson_act.hear_sample')}</Text>
         </Pressable>
       </Card>
       <VoiceRecorder key={model} loading={pronunciation.isPending} minDurationSec={isMission ? Number(body.minimum_seconds ?? 0) : 0} onSubmit={(audio) => void checkPronunciation(audio)} />
-      {pronunciation.data && <Card><Text className="text-xl font-black text-[#58cc02]">Точность: {Math.round(pronunciation.data.accuracy_score * 100)}%</Text><Text className="mt-2 text-base text-white/80">{pronunciation.data.feedback || pronunciation.data.transcribed_text}</Text></Card>}
-      {content.activity_type === 'repeat_after_me' && models.length > 1 && <Action label={phraseIndex === models.length - 1 ? 'Все фразы пройдены' : 'Следующая фраза'} onPress={() => { setPhraseIndex((index) => Math.min(index + 1, models.length - 1)); pronunciation.reset(); }} />}
+      {pronunciation.data && <Card><Text className="text-xl font-black text-[#58cc02]">{t('lesson.accuracy', { v: Math.round(pronunciation.data.accuracy_score * 100) })}</Text><Text className="mt-2 text-base text-white/80">{pronunciation.data.feedback || pronunciation.data.transcribed_text}</Text></Card>}
+      {content.activity_type === 'repeat_after_me' && models.length > 1 && <Action label={phraseIndex === models.length - 1 ? t('lesson_act.phrases_done') : t('lesson_act.next_phrase')} onPress={() => { setPhraseIndex((index) => Math.min(index + 1, models.length - 1)); pronunciation.reset(); }} />}
     </View>
   );
 
   const renderDialogue = () => (
     <Card>
-      <Text className="text-xs font-bold uppercase tracking-wider text-[#ffdf5e]">Диалог с подсказками</Text>
+      <Text className="text-xs font-bold uppercase tracking-wider text-[#ffdf5e]">{t('lesson_act.guided_dialogue')}</Text>
       <View className="mt-4 gap-3">
         {dialogue.slice(0, dialogueIndex + 1).map((line, index) => {
           const speaker = text(line, 'speaker');
@@ -193,19 +195,19 @@ export function ActivityStep({ content, stepId }: ActivityStepProps) {
           return <Pressable key={`${speaker}-${index}`} onPress={() => void playWordTTS(lineText, 'en')} className={`rounded-2xl p-4 ${speaker === 'A' ? 'bg-[#1b3056]' : 'bg-white/10'}`}><Text className="text-xs font-bold text-[#ffdf5e]">{speaker}</Text><Text className="mt-1 text-base text-white">{lineText}</Text></Pressable>;
         })}
       </View>
-      <View className="mt-4"><Action label={dialogueIndex === dialogue.length - 1 ? 'Диалог пройден' : 'Следующая реплика'} onPress={() => setDialogueIndex((index) => Math.min(index + 1, dialogue.length - 1))} /></View>
+      <View className="mt-4"><Action label={dialogueIndex === dialogue.length - 1 ? t('lesson_act.dialogue_done') : t('lesson_act.next_line')} onPress={() => setDialogueIndex((index) => Math.min(index + 1, dialogue.length - 1))} /></View>
     </Card>
   );
 
   const renderRoleplay = () => (
     <View className="gap-4">
       <Card>
-        <Text className="text-xs font-bold uppercase tracking-wider text-[#ffdf5e]">Разговор с AI</Text>
+        <Text className="text-xs font-bold uppercase tracking-wider text-[#ffdf5e]">{t('lesson_act.ai_talk')}</Text>
         <Text className="mt-2 text-lg font-black text-white">{text(body, 'scenario') || prompt}</Text>
-        {phrases.length > 0 && <Text className="mt-3 text-sm leading-5 text-white/70">Попробуйте использовать: {phrases.join(' ')}</Text>}
-        {!conversationId && <View className="mt-4"><Action label={startConversation.isPending ? 'Запускаем AI...' : 'Начать разговор'} disabled={startConversation.isPending} onPress={() => void beginRoleplay()} /></View>}
+        {phrases.length > 0 && <Text className="mt-3 text-sm leading-5 text-white/70">{t('lesson_act.try_use')}{' '}{phrases.join(' ')}</Text>}
+        {!conversationId && <View className="mt-4"><Action label={startConversation.isPending ? t('lesson_act.starting_ai') : t('lesson_act.start_talk')} disabled={startConversation.isPending} onPress={() => void beginRoleplay()} /></View>}
       </Card>
-      {conversationId && <Card><View className="gap-3">{chatLines.map((line, index) => <View key={`${line.role}-${index}`} className={`self-${line.role === 'user' ? 'end' : 'start'} max-w-[90%] rounded-2xl p-3 ${line.role === 'user' ? 'bg-[#ffb338]' : 'bg-[#1b3056]'}`}><Text className={line.role === 'user' ? 'text-[#07162c]' : 'text-white'}>{line.content}</Text></View>)}</View><View className="mt-4"><ChatInput loading={sendMessage.isPending} language="en" placeholder="Reply in English..." onSend={(message) => sendRoleplayMessage(message)} /></View></Card>}
+      {conversationId && <Card><View className="gap-3">{chatLines.map((line, index) => <View key={`${line.role}-${index}`} className={`self-${line.role === 'user' ? 'end' : 'start'} max-w-[90%] rounded-2xl p-3 ${line.role === 'user' ? 'bg-[#ffb338]' : 'bg-[#1b3056]'}`}><Text className={line.role === 'user' ? 'text-[#07162c]' : 'text-white'}>{line.content}</Text></View>)}</View><View className="mt-4"><ChatInput loading={sendMessage.isPending} language="en" placeholder={t('lesson.reply_ph')} onSend={(message) => sendRoleplayMessage(message)} /></View></Card>}
     </View>
   );
 
@@ -225,8 +227,8 @@ export function ActivityStep({ content, stepId }: ActivityStepProps) {
         {content.estimated_seconds > 0 && <Text className="mt-3 text-sm text-white/60">About {content.estimated_seconds} seconds</Text>}
       </View>
       {interaction}
-      {content.success_criteria.length > 0 && <Card><Text className="text-base font-black text-white">Ваша цель</Text>{content.success_criteria.map((criterion) => <View key={criterion} className="mt-3 flex-row gap-2"><Check size={16} color="#58cc02" /><Text className="flex-1 text-sm leading-5 text-white/75">{criterion}</Text></View>)}</Card>}
-      <View className="flex-row items-center gap-2"><ChevronRight size={18} color="#ffdf5e" /><Text className="flex-1 text-sm text-white/60">Когда закончите, нажмите «Продолжить» внизу, чтобы сохранить прогресс.</Text></View>
+      {content.success_criteria.length > 0 && <Card><Text className="text-base font-black text-white">{t('lesson_act.your_goal')}</Text>{content.success_criteria.map((criterion) => <View key={criterion} className="mt-3 flex-row gap-2"><Check size={16} color="#58cc02" /><Text className="flex-1 text-sm leading-5 text-white/75">{criterion}</Text></View>)}</Card>}
+      <View className="flex-row items-center gap-2"><ChevronRight size={18} color="#ffdf5e" /><Text className="flex-1 text-sm text-white/60">{t('lesson_act.finish_hint')}</Text></View>
     </ScrollView>
   );
 }

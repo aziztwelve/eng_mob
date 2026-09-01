@@ -18,13 +18,13 @@ interface ListenChooseWordContent {
 }
 
 export function ListenChooseWordStep({ step, onSubmit, onContinue, isLast }: StepComponentProps) {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const content = parseStepContent<ListenChooseWordContent>(step);
   const [picked, setPicked] = useState<string | null>(null);
   const [state, setState] = useState<FeedbackState>({ kind: 'idle' });
 
   if (!content?.sentence_template || !content.audio_text || !content.options?.length) {
-    return <Text className="p-6 text-muted-foreground">Invalid listen_choose_word content.</Text>;
+    return <Text className="p-6 text-muted-foreground">{t('lesson.parse_error')}</Text>;
   }
 
   const locked = state.kind !== 'idle';
@@ -52,15 +52,15 @@ export function ListenChooseWordStep({ step, onSubmit, onContinue, isLast }: Ste
       <View className="rounded-3xl border border-[rgba(255,255,255,0.22)] bg-[#1B3056] p-5 mb-5">
         <View className="flex-row items-center gap-2 mb-4">
           <Headphones size={18} color="#FFDF5E" />
-          <Text className="text-[#FFDF5E] text-xs font-black uppercase tracking-wider">Listen to the sentence</Text>
+          <Text className="text-[#FFDF5E] text-xs font-black uppercase tracking-wider">{t('lesson.listen_sentence')}</Text>
         </View>
         <Text className="text-foreground text-2xl font-black leading-8 mb-5">{content.sentence_template}</Text>
         <Pressable onPress={() => void play(content.audio_text, content.audio_url)} className="flex-row items-center justify-center gap-3 rounded-2xl bg-[#FFDF5E] py-4">
           <Volume2 size={24} color="#3D0A1A" />
-          <Text className="text-[#3D0A1A] font-black">Слушать ещё раз</Text>
+          <Text className="text-[#3D0A1A] font-black">{t('lesson.listen_again')}</Text>
         </Pressable>
       </View>
-      <Text className="text-foreground font-black text-base mb-3">Какое слово пропущено?</Text>
+      <Text className="text-foreground font-black text-base mb-3">{t('lesson.which_word_missing')}</Text>
       <View className="gap-3 mb-5">
         {content.options.map((option) => {
           const selected = picked === option.id;

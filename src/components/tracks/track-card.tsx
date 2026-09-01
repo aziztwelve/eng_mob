@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, Pressable, Image, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import type { Track, TrackType } from '@/types/api';
+import type { Track } from '@/types/api';
 
 const CTA = ['#A8243F', '#CC5A1F'] as const;
 const glass = {
@@ -11,22 +11,9 @@ const glass = {
   borderColor: 'rgba(255,255,255,0.22)',
 } as const;
 
-const TYPE_EMOJI: Record<string, string> = {
-  daily: '🗓️',
-  stories: '📖',
-  podcast: '🎧',
-  thematic: '🎯',
-  personal: '🧭',
-};
-
-function emojiFor(type: string) {
-  return TYPE_EMOJI[type] ?? '✨';
-}
-
 /** Карточка трека в стиле Sunset Lava (как главная/уроки). Без бейджей уровня. */
 export function TrackCard({ track }: { track: Track }) {
   const router = useRouter();
-  const emoji = emojiFor(track.track_type as TrackType);
 
   return (
     <Pressable
@@ -37,7 +24,7 @@ export function TrackCard({ track }: { track: Track }) {
         {track.icon_url ? (
           <Image source={{ uri: track.icon_url }} style={s.thumbImg} resizeMode="cover" />
         ) : (
-          <Text style={{ fontSize: 30 }}>{emoji}</Text>
+            <Text style={{ fontSize: 30 }}>✨</Text>
         )}
       </View>
 

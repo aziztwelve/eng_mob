@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, ScrollView, Pressable, ActivityIndicator, StyleSheet } from 'react-native';
 import { Stack } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAchievements, useMyAchievements } from '@/hooks/use-achievements';
@@ -12,14 +13,15 @@ const CATEGORIES = ['all', 'learning', 'streak', 'xp', 'special'] as const;
 type Category = (typeof CATEGORIES)[number];
 
 const CATEGORY_LABEL: Record<Category, string> = {
-  all: 'Все',
-  learning: 'Учёба',
-  streak: 'Серия',
-  xp: 'XP',
-  special: 'Особые',
+  all: 'ach.cat_all',
+  learning: 'ach.cat_learning',
+  streak: 'ach.cat_streak',
+  xp: 'xp',
+  special: 'ach.cat_special',
 };
 
 export default function AchievementsScreen() {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const [category, setCategory] = useState<Category>('all');
   const all = useAchievements(category === 'all' ? undefined : { category });
@@ -40,7 +42,7 @@ export default function AchievementsScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-      <Stack.Screen options={{ title: 'Достижения' }} />
+      <Stack.Screen options={{ title: t('profile.ach_title') }} />
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 40 + insets.bottom }}
@@ -52,11 +54,11 @@ export default function AchievementsScreen() {
               <Pressable key={c} onPress={() => setCategory(c)}>
                 {active ? (
                   <LinearGradient colors={GOLD} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.pill}>
-                    <Text style={s.pillTextActive}>{CATEGORY_LABEL[c]}</Text>
+                    <Text style={s.pillTextActive}>{t(CATEGORY_LABEL[c])}</Text>
                   </LinearGradient>
                 ) : (
                   <View style={[glass, s.pill]}>
-                    <Text style={s.pillText}>{CATEGORY_LABEL[c]}</Text>
+                    <Text style={s.pillText}>{t(CATEGORY_LABEL[c])}</Text>
                   </View>
                 )}
               </Pressable>
@@ -69,7 +71,7 @@ export default function AchievementsScreen() {
         ) : (
           <>
             {unlocked.length > 0 && (
-              <Section title={`Получены · ${unlocked.length}`}>
+              <Section title={t('ach.unlocked', { count: unlocked.length })}>
                 {unlocked.map((a) => (
                   <View key={a.id} style={{ width: '48%' }}>
                     <AchievementCard achievement={a} user={ownedMap.get(a.id)} />
@@ -78,7 +80,7 @@ export default function AchievementsScreen() {
               </Section>
             )}
             {locked.length > 0 && (
-              <Section title={`Заблокированы · ${locked.length}`}>
+              <Section title={t('ach.locked', { count: locked.length })}>
                 {locked.map((a) => (
                   <View key={a.id} style={{ width: '48%' }}>
                     <AchievementCard achievement={a} />
@@ -87,7 +89,7 @@ export default function AchievementsScreen() {
               </Section>
             )}
             {items.length === 0 && (
-              <Text style={s.empty}>Достижений пока нет.</Text>
+              <Text style={s.empty}>{t('ach.empty')}</Text>
             )}
           </>
         )}

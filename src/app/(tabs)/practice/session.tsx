@@ -50,6 +50,7 @@ const SESSION_SIZE = 10;
  * 4. На последнем шаге — экран summary.
  */
 export default function PracticeSessionScreen() {
+  const { t } = useTranslation();
   const generate = useGeneratePracticeSession();
   const fireGamificationFx = useLessonGamificationFx();
   const qc = useQueryClient();
@@ -97,14 +98,14 @@ export default function PracticeSessionScreen() {
       <Container>
         <View className="bg-card rounded-3xl border-4 border-border p-8 items-center gap-3">
           <Text className="text-foreground font-bold text-center">
-            Не удалось сгенерировать сессию.
+            {t('practice.gen_failed')}
           </Text>
           <Pressable
             onPress={() => generate.mutate({ size: SESSION_SIZE })}
             className="bg-primary rounded-2xl px-5 py-3 active:opacity-80"
           >
             <Text className="text-primary-foreground font-black">
-              Попробовать ещё раз
+              {t('practice.retry')}
             </Text>
           </Pressable>
         </View>
@@ -117,16 +118,15 @@ export default function PracticeSessionScreen() {
         <View className="bg-card rounded-3xl border-4 border-border p-8 items-center gap-3">
           <Clock size={48} color="#9ca3af" />
           <Text className="text-foreground font-black text-2xl text-center">
-            Сейчас нечего повторять
+            {t('practice.nothing_now')}
           </Text>
           <Text className="text-muted-foreground font-medium text-center">
-            Карточек на повторение нет, ошибок и слабых навыков тоже. Хорошая
-            работа — возвращайтесь, когда наберётся материал.
+            {t('practice.nothing_now_desc')}
           </Text>
           <Link href="/practice" asChild>
             <Pressable className="bg-primary rounded-2xl px-5 py-3 mt-2 active:opacity-80">
               <Text className="text-primary-foreground font-black">
-                К практике
+                {t('practice.to_practice')}
               </Text>
             </Pressable>
           </Link>
@@ -142,11 +142,10 @@ export default function PracticeSessionScreen() {
         <View className="bg-card rounded-3xl border-4 border-border p-8 items-center gap-3">
           <Sparkles size={48} color="#FFD84A" />
           <Text className="text-foreground font-black text-3xl text-center">
-            Сессия завершена!
+            {t('practice.finished')}
           </Text>
           <Text className="text-muted-foreground font-medium text-center">
-            Верно: <Text className="text-foreground font-black">{correct}</Text>{' '}
-            из {total}
+            {t('practice.correct_of', { correct, total })}
           </Text>
           <View className="flex-row flex-wrap gap-2 justify-center pt-2">
             <Pressable
@@ -171,12 +170,12 @@ export default function PracticeSessionScreen() {
               className="bg-primary rounded-2xl px-5 py-3 active:opacity-80"
             >
               <Text className="text-primary-foreground font-black">
-                Ещё одна сессия
+                {t('practice.another')}
               </Text>
             </Pressable>
             <Link href="/practice" asChild>
               <Pressable className="bg-card border-2 border-border rounded-2xl px-5 py-3 active:opacity-80">
-                <Text className="text-foreground font-black">К практике</Text>
+                <Text className="text-foreground font-black">{t('practice.to_practice')}</Text>
               </Pressable>
             </Link>
           </View>
@@ -205,16 +204,17 @@ export default function PracticeSessionScreen() {
 }
 
 function Container({ children }: { children: React.ReactNode }) {
+  const { t } = useTranslation();
   return (
     <View className="flex-1 bg-background">
-      <Stack.Screen options={{ title: 'Practice session' }} />
+      <Stack.Screen options={{ title: t('practice.session_title') }} />
       <ScrollView contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 80 }}>
         <Pressable
           onPress={() => router.back()}
           className="flex-row items-center gap-1 self-start active:opacity-60"
         >
           <ArrowLeft size={16} color="#9ca3af" />
-          <Text className="text-muted-foreground font-bold">К практике</Text>
+          <Text className="text-muted-foreground font-bold">{t('practice.to_practice')}</Text>
         </Pressable>
         {children}
       </ScrollView>
@@ -247,13 +247,14 @@ function ProgressBar({
 }
 
 function SourceBadge({ item }: { item: PracticeItem }) {
+  const { t } = useTranslation();
   const src = practiceSourceLabel(item.source);
   if (src === 'overdue') {
     return (
       <View className="flex-row items-center gap-1 bg-primary rounded-full px-3 py-1">
         <Clock size={12} color="#ffffff" />
         <Text className="text-primary-foreground font-bold text-xs">
-          К повторению
+          {t('practice.src_overdue')}
         </Text>
       </View>
     );
@@ -262,7 +263,7 @@ function SourceBadge({ item }: { item: PracticeItem }) {
     return (
       <View className="flex-row items-center gap-1 bg-orange-500 rounded-full px-3 py-1">
         <AlertTriangle size={12} color="#ffffff" />
-        <Text className="text-white font-bold text-xs">Ошибка</Text>
+        <Text className="text-white font-bold text-xs">{t('practice.src_mistake')}</Text>
       </View>
     );
   }
@@ -270,7 +271,7 @@ function SourceBadge({ item }: { item: PracticeItem }) {
     return (
       <View className="flex-row items-center gap-1 bg-amber-500 rounded-full px-3 py-1">
         <TrendingDown size={12} color="#ffffff" />
-        <Text className="text-white font-bold text-xs">Слабая</Text>
+        <Text className="text-white font-bold text-xs">{t('practice.src_weak')}</Text>
       </View>
     );
   }
@@ -292,7 +293,7 @@ function CurrentStepCard({
   startedAtRef: React.MutableRefObject<number>;
   onAdvance: () => void;
 }) {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const step = useStep(item.step_id);
   const submit = useStepSubmit();
   const lastResultRef = useRef<{ stepId: string; correct: boolean } | null>(
@@ -347,13 +348,13 @@ function CurrentStepCard({
     return (
       <View className="bg-card rounded-3xl border-4 border-border p-6 items-center gap-3">
         <Text className="text-foreground font-bold text-center">
-          Не удалось загрузить шаг.
+          {t('practice.step_failed')}
         </Text>
         <Pressable
           onPress={onContinue}
           className="bg-primary rounded-2xl px-5 py-3 active:opacity-80"
         >
-          <Text className="text-primary-foreground font-black">Пропустить</Text>
+          <Text className="text-primary-foreground font-black">{t('cards.skip')}</Text>
         </Pressable>
       </View>
     );
@@ -366,7 +367,7 @@ function CurrentStepCard({
           {stepTitle(step.data.step.type, i18n.language)}
         </Text>
         <Text className="text-muted-foreground font-medium">
-          Этот шаг — не интерактивный, в практике пропускаем.
+          {t('practice.non_interactive')}
         </Text>
         <Pressable
           onPress={() => {
@@ -375,7 +376,7 @@ function CurrentStepCard({
           }}
           className="bg-primary rounded-2xl px-5 py-3 self-start active:opacity-80"
         >
-          <Text className="text-primary-foreground font-black">Дальше</Text>
+          <Text className="text-primary-foreground font-black">{t('lesson.feedback.next')}</Text>
         </Pressable>
       </View>
     );

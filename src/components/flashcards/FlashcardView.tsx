@@ -16,6 +16,7 @@ import { Check, X, Undo2, SkipForward, Volume2 } from 'lucide-react-native';
 import { fx } from '@/lib/fx';
 import { getFxPreferences } from '@/lib/fx-prefs';
 import { playWordTTS } from '@/lib/tts';
+import { useTranslation } from 'react-i18next';
 
 const SCREEN_W = Dimensions.get('window').width;
 // Дистанция свайпа, после которой ответ засчитывается на отпускании.
@@ -53,6 +54,8 @@ export function FlashcardView({
   canUndo = false,
   stackCount = 0,
 }: FlashcardViewProps) {
+
+  const { t } = useTranslation();
   const [isFlipped, setIsFlipped] = useState(false);
   const [ttsBusy, setTtsBusy] = useState(false);
   const rotation = useSharedValue(0);
@@ -248,7 +251,7 @@ export function FlashcardView({
                 {transcription ? (
                   <Text className="text-[#A8243F] text-lg mt-2 font-semibold">{transcription}</Text>
                 ) : null}
-                <Text className="text-[#9a7c86] text-sm mt-4">Нажмите для перевода</Text>
+                <Text className="text-[#9a7c86] text-sm mt-4">{t('cards.tap_to_flip')}</Text>
               </Animated.View>
 
               {/* Back */}
@@ -281,7 +284,7 @@ export function FlashcardView({
                 )}
                 {isFlipped ? (
                   <Text className="text-[#c19aa6] text-xs text-center mt-4">
-                    Свайп вправо — помню · влево — не помню
+                    {t('cards.swipe_hint')}
                   </Text>
                 ) : null}
               </Animated.View>
@@ -294,7 +297,7 @@ export function FlashcardView({
               >
                 <View className="bg-primary rounded-2xl px-5 py-2 flex-row items-center gap-2">
                   <Check size={22} color="white" />
-                  <Text className="text-white font-black text-lg">Помню</Text>
+                  <Text className="text-white font-black text-lg">{t('cards.remember')}</Text>
                 </View>
               </Animated.View>
               <Animated.View
@@ -304,7 +307,7 @@ export function FlashcardView({
               >
                 <View className="bg-red-500 rounded-2xl px-5 py-2 flex-row items-center gap-2">
                   <X size={22} color="white" />
-                  <Text className="text-white font-black text-lg">Не помню</Text>
+                  <Text className="text-white font-black text-lg">{t('cards.forgot')}</Text>
                 </View>
               </Animated.View>
             </View>
@@ -321,7 +324,7 @@ export function FlashcardView({
             className="flex-1 bg-red-500 rounded-2xl p-4 flex-row items-center justify-center gap-2 active:opacity-80"
           >
             <X size={24} color="white" />
-            <Text className="text-white font-bold text-lg">Не помню</Text>
+            <Text className="text-white font-bold text-lg">{t('cards.forgot')}</Text>
           </Pressable>
 
           <Pressable
@@ -329,7 +332,7 @@ export function FlashcardView({
             className="flex-1 bg-primary rounded-2xl p-4 flex-row items-center justify-center gap-2 active:opacity-80"
           >
             <Check size={24} color="white" />
-            <Text className="text-white font-bold text-lg">Помню</Text>
+            <Text className="text-white font-bold text-lg">{t('cards.remember')}</Text>
           </Pressable>
         </View>
       )}

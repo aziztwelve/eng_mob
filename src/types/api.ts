@@ -421,7 +421,8 @@ export interface LessonWithSteps {
 // LEARNING TRACKS (Phase 0)
 // ============================================
 
-export type TrackType = 'thematic' | 'daily' | 'stories' | 'podcast';
+/** Deprecated compatibility field. New tracks have no classification. */
+export type TrackType = '' | 'thematic' | 'daily' | 'stories' | 'podcast';
 
 export interface Track {
   id: string;
@@ -431,7 +432,7 @@ export interface Track {
   icon_url: string;
   language: string;
   level: string;
-  track_type: TrackType | string;
+  track_type?: TrackType | string;
   /** Цели, для которых предназначен трек. Пустой массив — общий трек. */
   motivation?: string[];
   is_published: boolean;

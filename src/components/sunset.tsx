@@ -2,6 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet, Pressable } from "react-native";
 import { Stack } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
+import { useTranslation } from "react-i18next";
 import Svg, { Path, Circle, Ellipse, Line } from "react-native-svg";
 import { useUserStats } from "@/hooks/use-user-stats";
 
@@ -121,6 +122,7 @@ export function SunsetHeader({
   onSearch?: () => void;
   showStats?: boolean;
 }) {
+  const { t } = useTranslation();
   return (
     <View>
       {showStats ? <SunsetStats /> : null}
@@ -129,7 +131,7 @@ export function SunsetHeader({
         {search ? (
           <Pressable onPress={onSearch} style={[st.search, glass]}>
             <SearchIcon />
-            <Text style={st.searchText}>Поиск</Text>
+            <Text style={st.searchText}>{t('practice.search')}</Text>
           </Pressable>
         ) : null}
       </View>

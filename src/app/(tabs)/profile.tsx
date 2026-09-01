@@ -30,26 +30,26 @@ function uiLang(code?: string): UiLanguage {
   return c === 'en' || c === 'kk' ? (c as UiLanguage) : 'ru';
 }
 
-function streakSuffix(streak: number): string {
+function streakUnitKey(streak: number): string {
   const mod10 = streak % 10;
   const mod100 = streak % 100;
-  if (mod10 === 1 && mod100 !== 11) return 'день';
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return 'дня';
-  return 'дней';
+  if (mod10 === 1 && mod100 !== 11) return 'profile.day_1';
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return 'profile.day_2';
+  return 'profile.day_5';
 }
 
 const MENU = [
-  { emoji: '📊', label: 'Статистика',   href: '/profile/stats' },
-  { emoji: '🔥', label: 'Серия',        href: '/profile/streak' },
-  { emoji: '💪', label: 'Сила навыков', href: '/profile/strength' },
-  { emoji: '🔔', label: 'Уведомления',  href: '/profile/notifications' },
-  { emoji: '⚙️', label: 'Настройки',    href: '/profile/settings' },
+  { emoji: '📊', label: 'profile.stats',        href: '/profile/stats' },
+  { emoji: '🔥', label: 'profile.streak',       href: '/profile/streak' },
+  { emoji: '💪', label: 'profile.strength',     href: '/profile/strength' },
+  { emoji: '🔔', label: 'profile.notifications', href: '/profile/notifications' },
+  { emoji: '⚙️', label: 'profile.settings',     href: '/profile/settings' },
 ] as const;
 
 export default function ProfileScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const logout = useLogout();
   const { data: user } = useCurrentUser();
   const { data: stats } = useUserStats();
@@ -95,11 +95,11 @@ export default function ProfileScreen() {
   const lvl = levelText(onboarding?.level);
   const streakPart =
     streak > 0
-      ? `в строю ${streak} ${streakSuffix(streak)} 🔥`
-      : 'Начни серию!';
+      ? t('profile.in_streak', { count: streak, unit: t(streakUnitKey(streak) as never) })
+      : t('profile.start_streak');
   const subtitle = [langName, lvl, streakPart].filter(Boolean).join(' · ');
 
-  const displayName = user?.name || user?.username || 'Ученик';
+  const displayName = user?.name || user?.username || t('profile.student');
 
   return (
     <View style={{ flex: 1 }}>
@@ -108,7 +108,7 @@ export default function ProfileScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 6, paddingBottom: 78 + insets.bottom }}
       >
-        <SunsetHeader title="Профиль" />
+        <SunsetHeader title={t('profile.title')} />
 
         {/* Identity card */}
         <View style={[glass, { borderRadius: 20, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 12 }]}>
@@ -130,21 +130,21 @@ export default function ProfileScreen() {
           <DailyGoalRing size={100} />
           <View style={{ flex: 1 }}>
             <Text style={{ color: '#fff', fontWeight: '900', fontSize: 16 }}>
-              {goalDone ? 'Цель дня выполнена! 🎉' : 'Цель дня почти готова!'}
+              {goalDone ? t('profile.goal_done') : t('profile.goal_almost')}
             </Text>
             <Text style={{ color: 'rgba(255,255,255,0.78)', fontSize: 13, fontWeight: '600', marginTop: 4 }}>
-              {goalDone ? 'Отличная работа!' : `Ещё ${xpLeft} XP до награды`}
+              {goalDone ? t('profile.great_job') : t('profile.xp_left', { xp: xpLeft })}
             </Text>
             {!goalDone && (
               <View style={{ marginTop: 12 }}>
-                <CtaButton label="Добить цель" onPress={() => router.push('/(tabs)/practice')} />
+                <CtaButton label={t('profile.finish_goal')} onPress={() => router.push('/(tabs)/practice')} />
               </View>
             )}
           </View>
         </View>
 
         {/* Achievements */}
-        <SunsetSubhead title="Достижения" linkLabel="Все →" onLink={() => router.push('/profile/achievements')} />
+        <SunsetSubhead title={t('profile.achievements')} linkLabel={t('profile.all')} onLink={() => router.push('/profile/achievements')} />
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           {unlocked.map((ua) => (
             <View key={ua.achievement.id} style={[glass, { width: 72, height: 84, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginRight: 10, gap: 4 }]}>
@@ -179,7 +179,7 @@ export default function ProfileScreen() {
               }}>
                 <Text style={{ fontSize: 20 }}>{item.emoji}</Text>
               </View>
-              <Text style={{ flex: 1, color: '#fff', fontWeight: '800', fontSize: 15 }}>{item.label}</Text>
+              <Text style={{ flex: 1, color: '#fff', fontWeight: '800', fontSize: 15 }}>{t(item.label as never)}</Text>
               <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 22 }}>›</Text>
             </Pressable>
           ))}
@@ -195,7 +195,7 @@ export default function ProfileScreen() {
           }]}
         >
           <Text style={{ color: '#FF6FA0', fontWeight: '900', fontSize: 15 }}>
-            {logout.isPending ? 'Выходим...' : 'Выйти из аккаунта'}
+            {logout.isPending ? t('profile.logging_out') : t('profile.logout')}
           </Text>
         </Pressable>
       </ScrollView>

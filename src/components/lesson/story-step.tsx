@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, Pressable, ScrollView, Image, StyleSheet } from 'react-native';
 import Markdown from 'react-native-markdown-display';
+import { useTranslation } from 'react-i18next';
 import { FeedbackBar, type FeedbackState } from './FeedbackBar';
 import { parseStepContent, type StepComponentProps } from './step-types';
 import type { StoryContent, StoryScene } from '@/types/api';
@@ -62,6 +63,7 @@ const mdTranslation = StyleSheet.create({
  * `react-native-markdown-display` с двумя style-вариантами (main + translation).
  */
 export function StoryStep({ step, onSubmit, onContinue, isLast }: StepComponentProps) {
+  const { t } = useTranslation();
   const content = parseStepContent<StoryContent>(step);
   const scenes = content?.scenes ?? [];
   const [sceneIdx, setSceneIdx] = useState(0);
@@ -71,7 +73,7 @@ export function StoryStep({ step, onSubmit, onContinue, isLast }: StepComponentP
   if (!content || scenes.length === 0) {
     return (
       <View className="p-6">
-        <Text className="text-muted-foreground">Не удалось распарсить story content.</Text>
+        <Text className="text-muted-foreground">{t('lesson.parse_error')}</Text>
       </View>
     );
   }
@@ -188,7 +190,7 @@ export function StoryStep({ step, onSubmit, onContinue, isLast }: StepComponentP
           onSubmit={handleNext}
           onContinue={onContinue}
           isLast={isLast}
-          submitLabel={lastScene ? 'Завершить' : 'Дальше'}
+          submitLabel={lastScene ? t('lesson.feedback.finish') : t('lesson.feedback.next')}
         />
       )}
     </ScrollView>

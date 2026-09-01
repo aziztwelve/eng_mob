@@ -1,6 +1,7 @@
 import React, { useCallback, useRef } from 'react';
 import { View, Text, LayoutChangeEvent } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { useTranslation } from 'react-i18next';
 import Animated, {
   measure,
   runOnJS,
@@ -45,8 +46,9 @@ export function DraggableWordBank({
   picked,
   onChange,
   disabled = false,
-  emptyHint = 'Нажми или перетащи слова сюда',
+  emptyHint,
 }: DraggableWordBankProps) {
+  const { t } = useTranslation();
   const answerRef = useAnimatedRef<Animated.View>();
   const bankRef = useAnimatedRef<Animated.View>();
 
@@ -117,7 +119,7 @@ export function DraggableWordBank({
       >
         {picked.length === 0 ? (
           <Text className="text-sm font-medium m-auto" style={{ color: 'rgba(255,255,255,0.65)' }}>
-            {emptyHint}
+            {emptyHint ?? t('lesson.word_bank_hint')}
           </Text>
         ) : (
           picked.map((bankIndex) => (

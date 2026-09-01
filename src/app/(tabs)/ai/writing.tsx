@@ -20,11 +20,13 @@ import { QuotaWidget, hasQuotaLeft } from '@/components/ai/quota-widget';
 import { useAIQuota, useAssessWriting } from '@/hooks/use-ai';
 import { AI_TARGET_LANGS, DEFAULT_TARGET_LANG } from '@/lib/ai-languages';
 import { glass, SunsetHeader, SunsetSubhead, CtaButton } from '@/components/sunset';
+import { useTranslation } from 'react-i18next';
 
 const LEVEL_OPTIONS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
 const MIN_WORDS = 10;
 
 export default function WritingScreen() {
+  const { t } = useTranslation();
   const [prompt, setPrompt] = useState('');
   const [text, setText] = useState('');
   const [lang, setLang] = useState(DEFAULT_TARGET_LANG);
@@ -44,7 +46,7 @@ export default function WritingScreen() {
     try {
       await mut.mutateAsync({ prompt: prompt.trim() || undefined, user_text: text, target_language: lang, user_level: level });
     } catch (err) {
-      Toast.show({ type: 'error', text1: 'Ошибка проверки', text2: err instanceof Error ? err.message : undefined });
+      Toast.show({ type: 'error', text1: t('ai.check_failed'), text2: err instanceof Error ? err.message : undefined });
     }
   };
 
@@ -67,17 +69,17 @@ export default function WritingScreen() {
             <AssessmentResult data={mut.data} />
             <Pressable onPress={handleReset} style={[s.resetBtn, glass]}>
               <RotateCcw size={15} color="rgba(255,255,255,0.7)" />
-              <Text style={s.resetText}>Проверить ещё одну работу</Text>
+              <Text style={s.resetText}>{t('ai.check_another')}</Text>
             </Pressable>
           </View>
         ) : (
           <View style={{ gap: 12, marginTop: 12 }}>
             {/* Настройки */}
             <View style={[s.card, glass]}>
-              <Text style={s.label}>Язык</Text>
+              <Text style={s.label}>{t('ai.lang')}</Text>
               <LangPills options={AI_TARGET_LANGS} value={lang} onChange={setLang} />
 
-              <Text style={[s.label, { marginTop: 14 }]}>Уровень</Text>
+              <Text style={[s.label, { marginTop: 14 }]}>{t('ai.level')}</Text>
               <View style={s.pillRow}>
                 {LEVEL_OPTIONS.map((o) => (
                   <Pressable
@@ -93,11 +95,11 @@ export default function WritingScreen() {
 
             {/* Задание */}
             <View style={[s.card, glass]}>
-              <Text style={s.label}>Задание (опционально)</Text>
+              <Text style={s.label}>{t('ai.task')}</Text>
               <TextInput
                 value={prompt}
                 onChangeText={setPrompt}
-                placeholder="Например: Опишите ваш типичный рабочий день."
+                placeholder={t('ai.prompt_ph')}
                 placeholderTextColor="rgba(255,255,255,0.35)"
                 style={s.input}
               />
@@ -105,11 +107,11 @@ export default function WritingScreen() {
 
             {/* Текст */}
             <View style={[s.card, glass]}>
-              <Text style={s.label}>Ваш текст</Text>
+              <Text style={s.label}>{t('ai.your_text')}</Text>
               <TextInput
                 value={text}
                 onChangeText={setText}
-                placeholder="Напишите минимум 10 слов…"
+                placeholder={t('ai.text_ph')}
                 placeholderTextColor="rgba(255,255,255,0.35)"
                 multiline
                 textAlignVertical="top"
@@ -121,7 +123,7 @@ export default function WritingScreen() {
             </View>
 
             {!canWrite && (
-              <Text style={s.limitText}>Лимит проверок на сегодня исчерпан. Сбрасывается завтра.</Text>
+              <Text style={s.limitText}>{t('ai.limit_writing')}</Text>
             )}
 
             <CtaButton

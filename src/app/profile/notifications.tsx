@@ -10,6 +10,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { Stack } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Bell, BellOff, ShieldAlert, Smartphone } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
@@ -32,6 +33,7 @@ import { glass, CtaButton } from '@/components/sunset';
  * /profile/notifications — настройки push'ей (mobile mirror web).
  */
 export default function NotificationsSettingsScreen() {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const prefs = useNotificationPreferences();
   const devices = useNotificationDevices();
@@ -74,11 +76,11 @@ export default function NotificationsSettingsScreen() {
     if (!form) return;
     try {
       await updatePrefs.mutateAsync(form);
-      Toast.show({ type: 'success', text1: 'Настройки сохранены' });
+      Toast.show({ type: 'success', text1: t('common.saved') });
     } catch (err) {
       Toast.show({
         type: 'error',
-        text1: 'Не удалось сохранить',
+        text1: t('common.save_failed'),
         text2: err instanceof Error ? err.message : '',
       });
     }
@@ -87,11 +89,11 @@ export default function NotificationsSettingsScreen() {
   const onSubscribe = async () => {
     try {
       await push.subscribe();
-      Toast.show({ type: 'success', text1: 'Push включены на этом устройстве' });
+      Toast.show({ type: 'success', text1: t('notif.push_on') });
     } catch (err) {
       Toast.show({
         type: 'error',
-        text1: 'Не удалось подписаться',
+        text1: t('common.subscribe_failed'),
         text2: err instanceof Error ? err.message : '',
       });
     }
@@ -99,21 +101,21 @@ export default function NotificationsSettingsScreen() {
 
   const onRemoveDevice = (device: DeviceToken) => {
     Alert.alert(
-      'Удалить устройство?',
-      'Push-уведомления больше не будут приходить на это устройство.',
+      t('notif.remove_q'),
+      t('notif.remove_desc'),
       [
-        { text: 'Отмена', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Удалить',
+          text: t('common.remove'),
           style: 'destructive',
           onPress: async () => {
             try {
               await push.unsubscribe(device.id);
-              Toast.show({ type: 'success', text1: 'Устройство удалено' });
+              Toast.show({ type: 'success', text1: t('common.device_removed') });
             } catch (err) {
               Toast.show({
                 type: 'error',
-                text1: 'Не удалось удалить',
+                text1: t('common.delete_failed'),
                 text2: err instanceof Error ? err.message : '',
               });
             }
@@ -125,14 +127,14 @@ export default function NotificationsSettingsScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-      <Stack.Screen options={{ title: 'Уведомления' }} />
+      <Stack.Screen options={{ title: t('profile.notif_title') }} />
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 40 + insets.bottom }}
       >
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
           <Bell size={28} color="#FFD84A" />
-          <Text style={s.title}>Уведомления</Text>
+          <Text style={s.title}>{t('profile.notif_title')}</Text>
         </View>
 
         <PushSubCard
@@ -150,34 +152,34 @@ export default function NotificationsSettingsScreen() {
         ) : (
           <>
             <View style={[glass, s.card]}>
-              <Text style={s.cardTitle}>Каналы</Text>
+              <Text style={s.cardTitle}>{t('notif.channels')}</Text>
               <ChannelToggle
-                label="Напоминания о практике"
-                description="Пушим, если есть просроченные карточки и ты ещё не занимался."
+                label={t('notif.ch_practice')}
+                description={t('notif.ch_practice_d')}
                 value={form.practice_reminder_enabled}
                 onValueChange={(v) => setForm({ ...form, practice_reminder_enabled: v })}
               />
               <ChannelToggle
-                label="Streak в зоне риска"
-                description="Когда streak вот-вот сгорит — пинаем."
+                label={t('notif.ch_streak')}
+                description={t('notif.ch_streak_d')}
                 value={form.streak_risk_enabled}
                 onValueChange={(v) => setForm({ ...form, streak_risk_enabled: v })}
               />
               <ChannelToggle
-                label="Дневная цель"
-                description="Если до конца дня цель не выполнена."
+                label={t('profile.daily_goal')}
+                description={t('notif.ch_goal_d')}
                 value={form.daily_goal_enabled}
                 onValueChange={(v) => setForm({ ...form, daily_goal_enabled: v })}
               />
               <ChannelToggle
-                label="Достижения"
-                description="Когда разблокирована новая ачивка."
+                label={t('profile.achievements')}
+                description={t('notif.ch_ach_d')}
                 value={form.achievement_enabled}
                 onValueChange={(v) => setForm({ ...form, achievement_enabled: v })}
               />
               <ChannelToggle
-                label="Заявки в друзья"
-                description="Кто-то добавил тебя или принял заявку."
+                label={t('notif.ch_friend')}
+                description={t('notif.ch_friend_d')}
                 value={form.friend_request_enabled}
                 onValueChange={(v) => setForm({ ...form, friend_request_enabled: v })}
                 last
@@ -185,19 +187,16 @@ export default function NotificationsSettingsScreen() {
             </View>
 
             <View style={[glass, s.card]}>
-              <Text style={s.cardTitle}>Тихие часы</Text>
-              <Text style={s.cardSub}>
-                В этот промежуток (локального времени) push'и не приходят.
-                Если start == end — отключено.
-              </Text>
+              <Text style={s.cardTitle}>{t('notif.quiet')}</Text>
+              <Text style={s.cardSub}>{t('notif.quiet_d')}</Text>
               <View style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>
                 <HourStepper
-                  label="С"
+                  label={t('notif.from')}
                   value={form.quiet_hours_start}
                   onChange={(v) => setForm({ ...form, quiet_hours_start: v })}
                 />
                 <HourStepper
-                  label="До"
+                  label={t('notif.to')}
                   value={form.quiet_hours_end}
                   onChange={(v) => setForm({ ...form, quiet_hours_end: v })}
                 />
@@ -205,13 +204,13 @@ export default function NotificationsSettingsScreen() {
             </View>
 
             {isDirty && !updatePrefs.isPending ? (
-              <CtaButton label="Сохранить" onPress={onSave} block />
+              <CtaButton label={t('common.save')} onPress={onSave} block />
             ) : (
               <View style={[glass, s.saveDisabled]}>
                 {updatePrefs.isPending ? (
                   <ActivityIndicator color="#fff" />
                 ) : (
-                  <Text style={s.saveDisabledText}>Сохранить</Text>
+                  <Text style={s.saveDisabledText}>{t('common.save')}</Text>
                 )}
               </View>
             )}
@@ -222,12 +221,12 @@ export default function NotificationsSettingsScreen() {
         <View style={[glass, s.card]}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <Smartphone size={18} color="#FFD84A" />
-            <Text style={s.cardTitle}>Устройства</Text>
+            <Text style={s.cardTitle}>{t('notif.devices')}</Text>
           </View>
           {devices.isLoading ? (
             <ActivityIndicator color="#FFD84A" style={{ marginTop: 10 }} />
           ) : (devices.data?.devices?.length ?? 0) === 0 ? (
-            <Text style={s.cardSub}>Нет зарегистрированных устройств.</Text>
+            <Text style={s.cardSub}>{t('notif.no_devices')}</Text>
           ) : (
             <View style={{ marginTop: 6 }}>
               {devices.data!.devices.map((d, i) => (
@@ -260,6 +259,7 @@ function PushSubCard({
   lastError: string | null;
   onSubscribe: () => Promise<void>;
 }) {
+  const { t } = useTranslation();
   if (!ready) {
     return (
       <View style={[glass, s.card, { alignItems: 'center', paddingVertical: 24 }]}>
@@ -273,9 +273,9 @@ function PushSubCard({
       <View style={[glass, s.statusCard, { borderColor: 'rgba(52,211,153,0.5)' }]}>
         <View style={s.statusHead}>
           <Bell size={20} color="#34D399" />
-          <Text style={s.statusTitle}>Push включены на этом устройстве</Text>
+          <Text style={s.statusTitle}>{t('notif.push_on')}</Text>
         </View>
-        <Text style={s.cardSub}>Чтобы отключить — удалите устройство из списка ниже.</Text>
+        <Text style={s.cardSub}>{t('notif.push_on_d')}</Text>
       </View>
     );
   }
@@ -285,11 +285,9 @@ function PushSubCard({
       <View style={[glass, s.statusCard]}>
         <View style={s.statusHead}>
           <BellOff size={20} color="rgba(255,255,255,0.7)" />
-          <Text style={s.statusTitle}>Push не поддерживаются</Text>
+          <Text style={s.statusTitle}>{t('notif.unsupported')}</Text>
         </View>
-        <Text style={s.cardSub}>
-          Push'и работают только на физическом устройстве (не в симуляторе).
-        </Text>
+        <Text style={s.cardSub}>{t('notif.unsupported_d')}</Text>
       </View>
     );
   }
@@ -299,11 +297,9 @@ function PushSubCard({
       <View style={[glass, s.statusCard, { borderColor: 'rgba(249,115,22,0.5)' }]}>
         <View style={s.statusHead}>
           <ShieldAlert size={20} color="#FB923C" />
-          <Text style={s.statusTitle}>Permission заблокирован</Text>
+          <Text style={s.statusTitle}>{t('notif.denied')}</Text>
         </View>
-        <Text style={s.cardSub}>
-          Включите уведомления в системных настройках устройства, затем вернитесь сюда.
-        </Text>
+        <Text style={s.cardSub}>{t('notif.denied_d')}</Text>
       </View>
     );
   }
@@ -313,15 +309,12 @@ function PushSubCard({
     <View style={[glass, s.statusCard, { borderColor: 'rgba(255,216,74,0.45)', gap: 12 }]}>
       <View style={s.statusHead}>
         <Bell size={20} color="#FFD84A" />
-        <Text style={s.statusTitle}>Включить уведомления</Text>
+        <Text style={s.statusTitle}>{t('notif.enable')}</Text>
       </View>
-      <Text style={s.cardSub}>
-        Streak-напоминания, ежедневные цели, ачивки и заявки в друзья — без этого
-        они не дойдут.
-      </Text>
+      <Text style={s.cardSub}>{t('notif.enable_d')}</Text>
       {lastError ? <Text style={s.errorText}>{lastError}</Text> : null}
       <CtaButton
-        label={isSubscribing ? 'Включаем…' : 'Включить push'}
+        label={isSubscribing ? t('notif.enabling') : t('notif.enable_push')}
         onPress={() => void onSubscribe()}
         block
       />
@@ -399,6 +392,7 @@ function DeviceRow({
 }) {
   const platform = platformToShort(device.platform);
   const lastSeen = device.last_seen_at ? tsToDate(device.last_seen_at) : null;
+  const { t } = useTranslation();
   return (
     <View style={[s.toggleRow, last && { borderBottomWidth: 0 }]}>
       <View style={{ flex: 1 }}>
@@ -411,11 +405,11 @@ function DeviceRow({
           </Text>
         </View>
         {lastSeen && (
-          <Text style={s.deviceSeen}>Последний раз: {lastSeen.toLocaleString()}</Text>
+          <Text style={s.deviceSeen}>{t('notif.last_seen', { time: lastSeen.toLocaleString() })}</Text>
         )}
       </View>
       <Pressable onPress={onRemove} disabled={busy} style={[glass, s.removeBtn, busy && { opacity: 0.5 }]}>
-        <Text style={s.removeText}>Удалить</Text>
+        <Text style={s.removeText}>{t('common.remove')}</Text>
       </Pressable>
     </View>
   );

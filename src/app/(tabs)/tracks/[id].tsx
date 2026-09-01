@@ -1,34 +1,27 @@
 import React from 'react';
-import { View, Text, ScrollView, Pressable, ActivityIndicator, Image, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, Pressable, ActivityIndicator, StyleSheet } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Lock, Check, BookOpen } from 'lucide-react-native';
+import { BookOpen, Check, Lock, Play, Trophy } from 'phosphor-react-native';
 import Toast from 'react-native-toast-message';
 import { useTranslation } from 'react-i18next';
 import { useTrack, useTrackProgress } from '@/hooks/use-tracks';
 import { useCompletedLessons } from '@/lib/lesson-progress';
+import { ProgressRing, MiniChart } from '@/components/tracks/progress-bits';
+import { glass, GOLD } from '@/components/sunset';
 
-const CTA = ['#A8243F', '#CC5A1F'] as const;
-const GOLD = ['#FFDF5E', '#FFB338'] as const;
-const glass = {
-  backgroundColor: 'rgba(255,255,255,0.14)',
-  borderWidth: 1,
-  borderColor: 'rgba(255,255,255,0.22)',
-} as const;
-
-const TYPE_EMOJI: Record<string, string> = {
-  daily: '🗓️', stories: '📖', podcast: '🎧', thematic: '🎯', personal: '🧭',
-};
-const GOAL_TITLES: Record<string, string> = {
-  work: 'Работа и карьера', exam: 'Экзамен', travel: 'Путешествия',
-  relocation: 'Переезд',
-  speaking: 'Разговорная практика', study: 'Учёба', social: 'Друзья и общение',
-  content: 'Фильмы и книги', listening_shadowing: 'Listening & Shadowing',
-};
+const TINTS = ['#5B6BFF', '#3FA9FF', '#F5A623', '#2EC4A0', '#F2542D', '#CE82FF', '#FF86B3'] as const;
+function tintFor(code: string) {
+  let hash = 0;
+  for (let i = 0; i < code.length; i++) hash = (hash * 31 + code.charCodeAt(i)) >>> 0;
+  return TINTS[hash % TINTS.length];
+}
 
 export default function TrackDetailsScreen() {
   const { id, goal } = useLocalSearchParams<{ id: string; goal?: string }>();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const { data: track, isLoading, error } = useTrack(id, true);
   const { data: localCompleted } = useCompletedLessons();
@@ -37,7 +30,7 @@ export default function TrackDetailsScreen() {
   if (isLoading) {
     return (
       <View style={s.center}>
-        <Stack.Screen options={{ title: 'Трек' }} />
+        <Stack.Screen options={{ title: t('tracks.title') }} />
         <ActivityIndicator size="large" color="#FFD84A" />
       </View>
     );
@@ -46,20 +39,16 @@ export default function TrackDetailsScreen() {
   if (error || !track) {
     return (
       <View style={s.center}>
-        <Stack.Screen options={{ title: 'Трек' }} />
+        <Stack.Screen options={{ title: t('tracks.title') }} />
         <Text style={{ fontSize: 44, marginBottom: 12 }}>😕</Text>
-        <Text style={s.errTitle}>Трек не найден</Text>
-        <Pressable onPress={() => router.back()} style={s.backBtnWrap}>
-          <LinearGradient colors={CTA} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.backBtn}>
-            <Text style={s.backBtnText}>Назад</Text>
-          </LinearGradient>
-        </Pressable>
+        <Text style={s.errTitle}>{t('tracks.not_found')}</Text>
       </View>
     );
   }
 
-  const emoji = TYPE_EMOJI[track.track_type as string] ?? '✨';
-  const title = goal ? GOAL_TITLES[goal] ?? track.title : track.title;
+  const code = track.code || track.id;
+  const tint = tintFor(code);
+  const title = goal ? t(`tracks.goals.${goal}` as never) ?? track.title : track.title;
   const lessons = track.lessons ?? [];
   // Источник правды для замков: серверный прогресс (кросс-девайс) ∪ локальный
   // (мгновенно отражает только что пройденный урок до синка с сервером).
@@ -74,92 +63,128 @@ export default function TrackDetailsScreen() {
   // Урок доступен, если он первый, уже пройден, или пройден предыдущий.
   const isUnlocked = (i: number) => i === 0 || isCompleted(i) || isCompleted(i - 1);
 
+  const doneCount = lessons.filter((lesson) => completed.has(lesson.id)).length;
+  const pct = lessons.length > 0 ? Math.round((doneCount / lessons.length) * 100) : 0;
+  const currentIdx = lessons.findIndex((_, i) => isUnlocked(i) && !isCompleted(i));
+  const allDone = lessons.length > 0 && doneCount === lessons.length;
+
+  const openLesson = (i: number) => {
+    if (!isUnlocked(i)) {
+      Toast.show({ type: 'info', text1: t('lesson.locked') });
+      return;
+    }
+    router.push(`/learn/${lessons[i].id}`);
+  };
+
   return (
     <View style={{ flex: 1 }}>
       <Stack.Screen options={{ title }} />
-      <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: 40, gap: 16 }} showsVerticalScrollIndicator={false}>
-        {/* Hero */}
-        <View style={[s.hero, glass]}>
-          <View style={s.heroThumb}>
-            {track.icon_url ? (
-              <Image source={{ uri: track.icon_url }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
-            ) : (
-              <Text style={{ fontSize: 44 }}>{emoji}</Text>
-            )}
+      <ScrollView
+        contentContainerStyle={{ padding: 18, paddingBottom: 90 + insets.bottom }}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Прогресс-карточка трека — как «Твой прогресс с AI» */}
+        <View style={[s.progressCard, glass]}>
+          <ProgressRing pct={pct} />
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text style={s.title} numberOfLines={2}>{title}</Text>
+            <Text style={s.progressText}>{t('tracks.lessons_done', { done: doneCount, total: lessons.length })}</Text>
+            <Text style={s.progressText}>
+              {allDone ? t('tracks.track_passed') : t('tracks.keep_going')}
+            </Text>
           </View>
-          <Text style={s.title}>{title}</Text>
-          <LinearGradient colors={GOLD} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.underline} />
-          {!!track.description && <Text style={s.desc}>{track.description}</Text>}
+          <MiniChart pct={pct} />
         </View>
 
+        {!!track.description && (
+          <Text style={s.desc}>{track.description}</Text>
+        )}
+
+        {/* Словарь трека */}
         <Pressable
-          onPress={() => router.push(`/(tabs)/tracks/${track.code || track.id}/dictionary` as never)}
+          onPress={() => router.push(`/(tabs)/tracks/${code}/dictionary` as never)}
           style={[s.dictionary, glass]}
         >
-          <View style={s.dictionaryIcon}>
-            <BookOpen size={24} color="#FFD84A" />
+          <View style={[s.dictionaryIcon, { backgroundColor: `${tint}26`, borderColor: `${tint}66` }]}>
+            <BookOpen size={22} color={tint} weight="duotone" />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={s.dictionaryTitle}>Словарь трека</Text>
-            <Text style={s.dictionaryText}>Выбери слова и добавь их во флешкарты</Text>
+            <Text style={s.dictionaryTitle}>{t('tracks.track_dictionary')}</Text>
+            <Text style={s.dictionaryText}>{t('tracks.dictionary_hint')}</Text>
           </View>
           <Text style={s.dictionaryArrow}>›</Text>
         </Pressable>
 
-        {/* Lessons */}
-        <View style={{ gap: 12 }}>
-          <Text style={s.section}>Уроки {lessons.length ? `· ${lessons.length}` : ''}</Text>
-          {lessons.length > 0 ? (
-            lessons.map((lesson, idx) => {
-              const done = isCompleted(idx);
-              const unlocked = isUnlocked(idx);
-              const onPress = () => {
-                if (!unlocked) {
-                  Toast.show({ type: 'info', text1: t('lesson.locked') });
-                  return;
-                }
-                router.push(`/learn/${lesson.id}`);
-              };
-              return (
-                <Pressable
-                  key={lesson.id}
-                  onPress={onPress}
-                  style={[s.lesson, glass, !unlocked && s.lessonLocked]}
+        {/* Уроки — карточки в стиле AI-инструментов */}
+        <Text style={s.section}>{t('tracks.lessons')} {lessons.length ? `· ${lessons.length}` : ''}</Text>
+        {lessons.length > 0 ? (
+          lessons.map((lesson, idx) => {
+            const done = isCompleted(idx);
+            const unlocked = isUnlocked(idx);
+            const isCurrent = idx === currentIdx;
+            return (
+              <Pressable
+                key={lesson.id}
+                onPress={() => openLesson(idx)}
+                style={[s.lesson, glass, isCurrent && s.lessonCurrent]}
+              >
+                <View
+                  style={[
+                    s.lessonThumb,
+                    { backgroundColor: done ? `${tint}26` : 'rgba(255,255,255,0.08)', borderColor: done ? `${tint}66` : 'rgba(255,255,255,0.18)' },
+                  ]}
                 >
-                  <View style={[s.num, done && s.numDone, !unlocked && s.numLocked]}>
-                    {done ? (
-                      <Check size={18} color="#0E2A14" strokeWidth={3} />
-                    ) : !unlocked ? (
-                      <Lock size={16} color="rgba(255,255,255,0.7)" />
-                    ) : (
-                      <Text style={s.numText}>{idx + 1}</Text>
-                    )}
-                  </View>
-                  <View style={{ flex: 1, minWidth: 0 }}>
-                    <Text style={[s.lessonTitle, !unlocked && s.lockedText]} numberOfLines={2}>{lesson.title}</Text>
-                    {!!lesson.description && (
-                      <Text style={[s.lessonDesc, !unlocked && s.lockedText]} numberOfLines={2}>{lesson.description}</Text>
-                    )}
-                  </View>
-                  {unlocked ? (
-                    <LinearGradient colors={done ? GOLD : CTA} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.go}>
-                      <Text style={[s.goText, done && { color: '#3D0A1A' }]}>{done ? '↻' : '›'}</Text>
+                  {done ? (
+                    <Check size={22} color={tint} weight="bold" />
+                  ) : unlocked ? (
+                    <Text style={[s.lessonNum, { color: tint }]}>{idx + 1}</Text>
+                  ) : (
+                    <Lock size={20} color="rgba(255,255,255,0.4)" weight="fill" />
+                  )}
+                </View>
+
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={[s.lessonTitle, !unlocked && s.lockedText]} numberOfLines={2}>
+                    {lesson.title}
+                  </Text>
+                  {!!lesson.description && (
+                    <Text style={[s.lessonDesc, !unlocked && s.lockedText]} numberOfLines={2}>
+                      {lesson.description}
+                    </Text>
+                  )}
+                  {isCurrent && <Text style={[s.currentLabel, { color: tint }]}>{t('tracks.next_lesson')}</Text>}
+                </View>
+
+                {unlocked ? (
+                  isCurrent ? (
+                    <LinearGradient colors={GOLD} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.go}>
+                      <Play size={18} color="#3D0A1A" weight="fill" />
                     </LinearGradient>
                   ) : (
-                    <View style={s.goLocked}>
-                      <Lock size={16} color="rgba(255,255,255,0.55)" />
-                    </View>
-                  )}
-                </Pressable>
-              );
-            })
-          ) : (
-            <View style={[s.emptyCard, glass]}>
-              <Text style={{ fontSize: 36 }}>🦉</Text>
-              <Text style={s.emptyText}>Уроки скоро появятся</Text>
-            </View>
-          )}
-        </View>
+                    <Text style={s.goDone}>↻</Text>
+                  )
+                ) : (
+                  <View style={s.goLocked}>
+                    <Lock size={16} color="rgba(255,255,255,0.45)" weight="fill" />
+                  </View>
+                )}
+              </Pressable>
+            );
+          })
+        ) : (
+          <View style={[s.emptyCard, glass]}>
+            <Text style={{ fontSize: 36 }}>🦉</Text>
+            <Text style={s.emptyText}>{t('tracks.lessons_soon')}</Text>
+          </View>
+        )}
+
+        {/* Финальная карточка-трофей */}
+        {allDone && (
+          <View style={[s.trophyCard, glass]}>
+            <Trophy size={26} color="#FFD84A" weight="fill" />
+            <Text style={s.trophyText}>{t('tracks.track_done')}</Text>
+          </View>
+        )}
       </ScrollView>
     </View>
   );
@@ -168,46 +193,45 @@ export default function TrackDetailsScreen() {
 const s = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   errTitle: { color: '#fff', fontWeight: '800', fontSize: 18, marginBottom: 16 },
-  backBtnWrap: { borderRadius: 16, overflow: 'hidden' },
-  backBtn: { paddingVertical: 14, paddingHorizontal: 28 },
-  backBtnText: { color: '#fff', fontWeight: '900', fontSize: 15 },
 
-  hero: { borderRadius: 28, padding: 20, alignItems: 'flex-start', gap: 10 },
-  heroThumb: {
-    width: 72, height: 72, borderRadius: 20, alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
-    backgroundColor: 'rgba(255,255,255,0.18)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)',
+  progressCard: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 22, padding: 16 },
+  title: { color: '#fff', fontSize: 16, fontWeight: '900', flexShrink: 1 },
+  progressText: { color: 'rgba(255,255,255,0.8)', fontSize: 12.5, fontWeight: '600', marginTop: 2 },
+  desc: { color: 'rgba(255,255,255,0.78)', fontSize: 13, lineHeight: 19, marginTop: 12 },
+
+  dictionary: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 20, padding: 14, marginTop: 16 },
+  dictionaryIcon: {
+    width: 46, height: 46, borderRadius: 15, alignItems: 'center', justifyContent: 'center', borderWidth: 1,
   },
-  title: { color: '#fff', fontSize: 24, fontWeight: '900', marginTop: 4 },
-  underline: { width: 44, height: 3, borderRadius: 2 },
-  desc: { color: 'rgba(255,255,255,0.85)', fontSize: 14, lineHeight: 20 },
-
-  dictionary: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 20, padding: 14 },
-  dictionaryIcon: { width: 46, height: 46, borderRadius: 15, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,216,74,0.16)' },
-  dictionaryTitle: { color: '#fff', fontSize: 16, fontWeight: '900' },
+  dictionaryTitle: { color: '#fff', fontSize: 15.5, fontWeight: '900' },
   dictionaryText: { color: 'rgba(255,255,255,0.72)', fontSize: 12, marginTop: 3 },
   dictionaryArrow: { color: '#FFD84A', fontSize: 28, fontWeight: '900' },
 
-  section: { color: '#fff', fontSize: 18, fontWeight: '900' },
-  lesson: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 20 },
-  num: {
-    width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: 'rgba(255,216,74,0.25)', borderWidth: 1, borderColor: 'rgba(255,216,74,0.5)',
+  section: { color: '#fff', fontSize: 17, fontWeight: '800', marginTop: 22, marginBottom: 12 },
+
+  lesson: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 20, marginBottom: 10 },
+  lessonCurrent: { borderColor: 'rgba(255,216,74,0.55)', backgroundColor: 'rgba(255,216,74,0.10)' },
+  lessonThumb: {
+    width: 48, height: 48, borderRadius: 15, alignItems: 'center', justifyContent: 'center', borderWidth: 1,
   },
-  numText: { color: '#FFD84A', fontWeight: '900', fontSize: 15 },
+  lessonNum: { fontSize: 18, fontWeight: '900' },
   lessonTitle: { color: '#fff', fontSize: 15, fontWeight: '800' },
   lessonDesc: { color: 'rgba(255,255,255,0.8)', fontSize: 12, marginTop: 3 },
-  go: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
-  goText: { color: '#fff', fontSize: 20, fontWeight: '900', marginTop: -2 },
+  currentLabel: { fontSize: 11, fontWeight: '800', marginTop: 5, letterSpacing: 0.3 },
+  go: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
+  goDone: { color: 'rgba(255,255,255,0.55)', fontSize: 22, fontWeight: '900' },
+  goLocked: {
+    width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.08)',
+  },
 
   emptyCard: { borderRadius: 20, padding: 28, alignItems: 'center', gap: 10 },
   emptyText: { color: 'rgba(255,255,255,0.85)', fontWeight: '700', fontSize: 14 },
+  lockedText: { color: 'rgba(255,255,255,0.55)' },
 
-  lessonLocked: { opacity: 0.55 },
-  numDone: { backgroundColor: '#7CE2A0', borderColor: '#7CE2A0' },
-  numLocked: { backgroundColor: 'rgba(255,255,255,0.10)', borderColor: 'rgba(255,255,255,0.22)' },
-  lockedText: { color: 'rgba(255,255,255,0.6)' },
-  goLocked: {
-    width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.10)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.22)',
+  trophyCard: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
+    borderRadius: 20, padding: 16, marginTop: 6,
   },
+  trophyText: { color: '#FFD84A', fontSize: 15, fontWeight: '900' },
 });

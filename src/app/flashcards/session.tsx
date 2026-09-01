@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { View, Text, Pressable, ActivityIndicator } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { X } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 
 import { useTodayQueue, useReviewFlashcard } from '@/hooks/use-flashcards';
 import { FlashcardView } from '@/components/flashcards/FlashcardView';
@@ -20,6 +21,7 @@ import type { Flashcard } from '@/types/api';
  *  - прогресс считается по уникальным выученным словам.
  */
 export default function FlashcardSessionScreen() {
+  const { t } = useTranslation();
   const todayQueue = useTodayQueue(undefined, true);
   const review = useReviewFlashcard();
 
@@ -120,12 +122,12 @@ export default function FlashcardSessionScreen() {
   if (!total || !currentCard) {
     return (
       <View className="flex-1 items-center justify-center p-6">
-        <Stack.Screen options={{ title: 'Повторение' }} />
+        <Stack.Screen options={{ title: t('fc.session_title') }} />
         <Text className="text-white font-bold text-xl text-center">
-          Нет карточек на сегодня
+          {t('fc.no_cards')}
         </Text>
         <Pressable onPress={() => router.back()} className="bg-[#A8243F] rounded-2xl px-6 py-3 mt-4">
-          <Text className="text-white font-bold">Назад</Text>
+          <Text className="text-white font-bold">{t('common.back')}</Text>
         </Pressable>
       </View>
     );

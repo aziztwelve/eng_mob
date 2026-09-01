@@ -12,6 +12,7 @@ import { ArrowLeft, Check, Search, UserPlus, X } from 'lucide-react-native';
 import Toast from 'react-native-toast-message';
 
 import { Avatar } from '@/components/ui/avatar';
+import { useTranslation } from 'react-i18next';
 import {
   useFriendsSearch,
   useSendFriendRequest,
@@ -34,6 +35,7 @@ import {
  *   - blocked   → бейдж «Заблокировано»
  */
 export default function FriendsSearchScreen() {
+  const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const [debounced, setDebounced] = useState('');
 
@@ -52,16 +54,16 @@ export default function FriendsSearchScreen() {
       if (resp.auto_accepted) {
         Toast.show({
           type: 'success',
-          text1: `${friendDisplayName(f)} добавлен в друзья`,
-          text2: 'Был встречный запрос — авто-принят.',
+          text1: t('friends.added_toast', { name: friendDisplayName(f) }),
+          text2: t('friends.auto_accepted'),
         });
       } else {
-        Toast.show({ type: 'success', text1: 'Запрос отправлен' });
+        Toast.show({ type: 'success', text1: t('common.request_sent') });
       }
     } catch (err) {
       Toast.show({
         type: 'error',
-        text1: 'Не удалось отправить',
+        text1: t('common.send_failed'),
         text2: err instanceof Error ? err.message : undefined,
       });
     }
@@ -72,23 +74,23 @@ export default function FriendsSearchScreen() {
 
   return (
     <View className="flex-1 bg-background">
-      <Stack.Screen options={{ title: 'Поиск' }} />
+      <Stack.Screen options={{ title: t('friends.search') }} />
       <ScrollView contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 80 }}>
         <Pressable
           onPress={() => router.back()}
           className="flex-row items-center gap-1 self-start active:opacity-60"
         >
           <ArrowLeft size={16} color="#9ca3af" />
-          <Text className="text-muted-foreground font-bold">К друзьям</Text>
+          <Text className="text-muted-foreground font-bold">{t('friends.to_friends')}</Text>
         </Pressable>
 
         <View className="gap-2">
           <View className="flex-row items-center gap-2">
             <Search size={28} color="#00FFA3" />
-            <Text className="text-foreground font-black text-3xl">Поиск</Text>
+            <Text className="text-foreground font-black text-3xl">{t('friends.search')}</Text>
           </View>
           <Text className="text-muted-foreground font-medium">
-            Найдите друзей по username (минимум 2 символа). Поиск по префиксу.
+            {t('friends.search_desc')}
           </Text>
         </View>
 
@@ -98,7 +100,7 @@ export default function FriendsSearchScreen() {
           <TextInput
             value={query}
             onChangeText={setQuery}
-            placeholder="username…"
+            placeholder={t('friends.search_ph')}
             placeholderTextColor="#6b7280"
             autoCapitalize="none"
             autoCorrect={false}
@@ -116,10 +118,10 @@ export default function FriendsSearchScreen() {
         {trimmed.length < 2 ? (
           <View className="bg-card rounded-3xl border-4 border-border p-8 items-center gap-2">
             <Text className="text-foreground font-black text-xl">
-              Введите хотя бы 2 символа
+              {t('friends.min_chars')}
             </Text>
             <Text className="text-muted-foreground font-medium text-center">
-              Поиск работает по префиксу username.
+              {t('friends.prefix_hint')}
             </Text>
           </View>
         ) : results.isLoading ? (
@@ -129,10 +131,10 @@ export default function FriendsSearchScreen() {
         ) : list.length === 0 ? (
           <View className="bg-card rounded-3xl border-4 border-border p-8 items-center gap-2">
             <Text className="text-foreground font-black text-xl">
-              Никого не нашли
+              {t('friends.nobody_found')}
             </Text>
             <Text className="text-muted-foreground font-medium text-center">
-              По запросу «{trimmed}» ничего не найдено.
+              {t('friends.nothing_for', { q: trimmed })}
             </Text>
           </View>
         ) : (
@@ -175,6 +177,7 @@ function ResultAction({
   onSend: (f: FriendInfo) => void;
   pending: boolean;
 }) {
+  const { t } = useTranslation();
   const status = friendshipStatusToShort(friend.friendship_status);
 
   if (status === 'accepted') {
@@ -182,7 +185,7 @@ function ResultAction({
       <View className="flex-row items-center gap-1 border-2 border-border rounded-xl px-2 py-1">
         <Check size={12} color="#9ca3af" />
         <Text className="text-muted-foreground font-bold text-xs">
-          Уже друзья
+          {t('friends.already_friends')}
         </Text>
       </View>
     );
@@ -191,7 +194,7 @@ function ResultAction({
     return (
       <View className="border-2 border-border rounded-xl px-2 py-1">
         <Text className="text-muted-foreground font-bold text-xs">
-          {friend.is_incoming ? 'Хочет дружить' : 'Запрос отправлен'}
+          {friend.is_incoming ? t('friends.wants_friendship') : t('friends.request_sent_badge')}
         </Text>
       </View>
     );
@@ -199,7 +202,7 @@ function ResultAction({
   if (status === 'blocked') {
     return (
       <View className="border-2 border-rose-500/50 rounded-xl px-2 py-1">
-        <Text className="text-rose-400 font-bold text-xs">Заблокировано</Text>
+        <Text className="text-rose-400 font-bold text-xs">{t('friends.blocked')}</Text>
       </View>
     );
   }
@@ -212,7 +215,7 @@ function ResultAction({
     >
       <UserPlus size={14} color="#1a1a1a" />
       <Text className="text-primary-foreground font-bold text-xs">
-        Добавить
+        {t('friends.add')}
       </Text>
     </Pressable>
   );

@@ -18,6 +18,7 @@ import { Microphone } from "phosphor-react-native/src/icons/Microphone";
 import { Sparkle } from "phosphor-react-native/src/icons/Sparkle";
 import Svg, { Circle, Polyline, Defs, LinearGradient as SvgGradient, Stop } from "react-native-svg";
 
+import { useTranslation } from "react-i18next";
 import { useUserStats } from "@/hooks/use-user-stats";
 import { useStartConversation, useTranscribeAudio } from "@/hooks/use-ai";
 import { DEFAULT_TARGET_LANG } from "@/lib/ai-languages";
@@ -52,19 +53,19 @@ type Quick = { title: string; sub: string; Icon: PhosphorIcon; tint: string; hre
 
 // Быстрые категории из макета. Каждая ведёт на реальный существующий экран.
 const QUICK: Quick[] = [
-  { title: "Перевод", sub: "слов и фраз", Icon: Translate, tint: "#5B6BFF", href: "/ai/tutor" },
-  { title: "Объяснение", sub: "правил", Icon: Lightbulb, tint: "#F5A623", href: "/ai/tutor" },
-  { title: "Практика", sub: "с диалогами", Icon: ChatsCircle, tint: "#3FA9FF", href: "/ai/roleplay" },
-  { title: "Примеры", sub: "предложений", Icon: Books, tint: "#F2542D", href: "/ai/chat" },
+  { title: "ai.q_translate", sub: "ai.q_translate_sub", Icon: Translate, tint: "#5B6BFF", href: "/ai/tutor" },
+  { title: "ai.q_explain", sub: "ai.q_explain_sub", Icon: Lightbulb, tint: "#F5A623", href: "/ai/tutor" },
+  { title: "ai.q_practice", sub: "ai.q_practice_sub", Icon: ChatsCircle, tint: "#3FA9FF", href: "/ai/roleplay" },
+  { title: "ai.q_examples", sub: "ai.q_examples_sub", Icon: Books, tint: "#F2542D", href: "/ai/chat" },
 ];
 
 // Существующие инструменты — сохраняем доступ ко всем.
 type Tool = { title: string; desc: string; Icon: PhosphorIcon; tint: string; href: Href };
 const TOOLS: Tool[] = [
-  { title: "Свободный чат", desc: "Поговори с AI на изучаемом языке", Icon: ChatCircle, tint: "#3FA9FF", href: "/ai/chat" },
-  { title: "Roleplay", desc: "Ресторан, аэропорт, работа", Icon: MaskHappy, tint: "#F25B6E", href: "/ai/roleplay" },
-  { title: "Проверить эссе", desc: "Оценка, исправления и фидбэк", Icon: PencilLine, tint: "#F5A623", href: "/ai/writing" },
-  { title: "Произношение", desc: "Скажи фразу — AI оценит акцент", Icon: Microphone, tint: "#2EC4A0", href: "/ai/pronunciation" },
+  { title: "ai.t_chat", desc: "ai.t_chat_desc", Icon: ChatCircle, tint: "#3FA9FF", href: "/ai/chat" },
+  { title: "ai.t_roleplay", desc: "ai.t_roleplay_desc", Icon: MaskHappy, tint: "#F25B6E", href: "/ai/roleplay" },
+  { title: "ai.t_writing", desc: "ai.t_writing_desc", Icon: PencilLine, tint: "#F5A623", href: "/ai/writing" },
+  { title: "ai.t_pron", desc: "ai.t_pron_desc", Icon: Microphone, tint: "#2EC4A0", href: "/ai/pronunciation" },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -108,6 +109,7 @@ function ProgressRing({ pct, size = 66, stroke = 7 }: { pct: number; size?: numb
 /* ------------------------------------------------------------------ */
 function AskBar() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [text, setText] = useState("");
   const [recording, setRecording] = useState(false);
   const recRef = useRef<Audio.Recording | null>(null);
@@ -181,7 +183,7 @@ function AskBar() {
       <TextInput
         value={text}
         onChangeText={setText}
-        placeholder={transcribing ? "Распознаём речь…" : "Спроси меня о языке…"}
+        placeholder={transcribing ? t("ai.listening") : t("ai.ask_placeholder")}
         placeholderTextColor="#8B7F86"
         style={s.askInput}
         editable={!busy && !transcribing}
@@ -202,6 +204,7 @@ function AskBar() {
 /* ------------------------------------------------------------------ */
 export default function AIHubScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { data: stats } = useUserStats();
 
@@ -233,8 +236,8 @@ export default function AIHubScreen() {
         {/* Header + owl */}
         <View style={s.headerRow}>
           <View style={{ flex: 1, paddingRight: 8 }}>
-            <Text style={s.title}>AI-помощник</Text>
-            <Text style={s.subtitle}>Привет! Я LingoIQ, твой помощник на пути к знаниям 🚀</Text>
+            <Text style={s.title}>{t('ai.title')}</Text>
+            <Text style={s.subtitle}>{t('ai.subtitle')}</Text>
           </View>
           <View style={s.owlWrap}>
             <View style={s.owlGlow} />
@@ -255,22 +258,22 @@ export default function AIHubScreen() {
               <View style={[s.quickIcon, { backgroundColor: q.tint, shadowColor: q.tint }]}>
                 <q.Icon size={24} color="#fff" weight="fill" />
               </View>
-              <Text style={s.quickTitle} numberOfLines={1}>{q.title}</Text>
-              <Text style={s.quickSub} numberOfLines={1}>{q.sub}</Text>
+              <Text style={s.quickTitle} numberOfLines={1}>{t(q.title as never)}</Text>
+              <Text style={s.quickSub} numberOfLines={1}>{t(q.sub as never)}</Text>
             </Pressable>
           ))}
         </View>
 
         {/* Existing tools (kept) */}
-        <Text style={s.sectionTitle}>Инструменты</Text>
+        <Text style={s.sectionTitle}>{t('ai.tools')}</Text>
         <View style={s.toolsGrid}>
-          {TOOLS.map((t) => (
-            <Pressable key={t.href as string} onPress={() => go(t.href)} style={[s.toolCard, glass]}>
-              <View style={[s.toolThumb, { backgroundColor: `${t.tint}26`, borderColor: `${t.tint}66` }]}>
-                <t.Icon size={22} color={t.tint} weight="duotone" />
+          {TOOLS.map((tool) => (
+            <Pressable key={tool.href as string} onPress={() => go(tool.href)} style={[s.toolCard, glass]}>
+              <View style={[s.toolThumb, { backgroundColor: `${tool.tint}26`, borderColor: `${tool.tint}66` }]}>
+                <tool.Icon size={22} color={tool.tint} weight="duotone" />
               </View>
-              <Text style={s.toolTitle}>{t.title}</Text>
-              <Text style={s.toolDesc} numberOfLines={2}>{t.desc}</Text>
+              <Text style={s.toolTitle}>{t(tool.title as never)}</Text>
+              <Text style={s.toolDesc} numberOfLines={2}>{t(tool.desc as never)}</Text>
             </Pressable>
           ))}
         </View>
@@ -279,9 +282,9 @@ export default function AIHubScreen() {
         <View style={[s.progressCard, glass]}>
           <ProgressRing pct={75} />
           <View style={{ flex: 1 }}>
-            <Text style={s.progressTitle}>Твой прогресс с AI</Text>
-            <Text style={s.progressText}>Ты задал 15 вопросов</Text>
-            <Text style={s.progressText}>Продолжай в том же духе!</Text>
+            <Text style={s.progressTitle}>{t('ai.progress_title')}</Text>
+            <Text style={s.progressText}>{t('ai.progress_q', { count: 15 })}</Text>
+            <Text style={s.progressText}>{t('ai.keep')}</Text>
           </View>
           <View style={s.chartWrap}>
             <Svg width={84} height={46}>

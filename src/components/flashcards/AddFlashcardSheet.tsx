@@ -4,6 +4,7 @@ import Animated, { FadeIn, SlideInDown } from 'react-native-reanimated';
 import { X } from 'lucide-react-native';
 
 import { useCreateFlashcard } from '@/hooks/use-flashcards';
+import { useTranslation } from 'react-i18next';
 
 /**
  * <AddFlashcardSheet> — bottom sheet для добавления новой flashcard.
@@ -19,6 +20,8 @@ export interface AddFlashcardSheetProps {
 }
 
 export function AddFlashcardSheet({ visible, onDismiss }: AddFlashcardSheetProps) {
+
+  const { t } = useTranslation();
   const [word, setWord] = useState('');
   const [translation, setTranslation] = useState('');
   const [definition, setDefinition] = useState('');
@@ -64,7 +67,7 @@ export function AddFlashcardSheet({ visible, onDismiss }: AddFlashcardSheetProps
           <ScrollView contentContainerStyle={{ padding: 20, gap: 16 }}>
             {/* Header */}
             <View className="flex-row items-center justify-between">
-              <Text className="text-foreground font-black text-2xl">Добавить слово</Text>
+              <Text className="text-foreground font-black text-2xl">{t('cards.add_title')}</Text>
               <Pressable onPress={onDismiss} className="p-2">
                 <X size={24} color="#999" />
               </Pressable>
@@ -72,11 +75,11 @@ export function AddFlashcardSheet({ visible, onDismiss }: AddFlashcardSheetProps
 
             {/* Word input */}
             <View className="gap-2">
-              <Text className="text-foreground font-bold">Слово *</Text>
+              <Text className="text-foreground font-bold">{t('cards.add_word')} *</Text>
               <TextInput
                 value={word}
                 onChangeText={setWord}
-                placeholder="Например: hello"
+                placeholder={t('cards.word_ph')}
                 placeholderTextColor="#999"
                 className="bg-card border-2 border-border rounded-2xl p-4 text-foreground font-medium"
                 autoCapitalize="none"
@@ -86,11 +89,11 @@ export function AddFlashcardSheet({ visible, onDismiss }: AddFlashcardSheetProps
 
             {/* Translation input */}
             <View className="gap-2">
-              <Text className="text-foreground font-bold">Перевод *</Text>
+              <Text className="text-foreground font-bold">{t('cards.add_translation')} *</Text>
               <TextInput
                 value={translation}
                 onChangeText={setTranslation}
-                placeholder="Например: привет"
+                placeholder={t('cards.translation_ph')}
                 placeholderTextColor="#999"
                 className="bg-card border-2 border-border rounded-2xl p-4 text-foreground font-medium"
               />
@@ -100,7 +103,7 @@ export function AddFlashcardSheet({ visible, onDismiss }: AddFlashcardSheetProps
             {!showOptional && (
               <Pressable onPress={() => setShowOptional(true)}>
                 <Text className="text-primary font-bold text-center">
-                  + Добавить определение и пример
+                  {t('cards.add_optional')}
                 </Text>
               </Pressable>
             )}
@@ -109,11 +112,11 @@ export function AddFlashcardSheet({ visible, onDismiss }: AddFlashcardSheetProps
               <>
                 {/* Definition input */}
                 <View className="gap-2">
-                  <Text className="text-foreground font-bold">Определение</Text>
+                  <Text className="text-foreground font-bold">{t('cards.add_def2')}</Text>
                   <TextInput
                     value={definition}
                     onChangeText={setDefinition}
-                    placeholder="Краткое объяснение"
+                    placeholder={t('cards.def_ph')}
                     placeholderTextColor="#999"
                     className="bg-card border-2 border-border rounded-2xl p-4 text-foreground font-medium"
                     multiline
@@ -123,11 +126,11 @@ export function AddFlashcardSheet({ visible, onDismiss }: AddFlashcardSheetProps
 
                 {/* Example input */}
                 <View className="gap-2">
-                  <Text className="text-foreground font-bold">Пример</Text>
+                  <Text className="text-foreground font-bold">{t('cards.add_example')}</Text>
                   <TextInput
                     value={example}
                     onChangeText={setExample}
-                    placeholder="Предложение с этим словом"
+                    placeholder={t('cards.example_ph')}
                     placeholderTextColor="#999"
                     className="bg-card border-2 border-border rounded-2xl p-4 text-foreground font-medium"
                     multiline
@@ -148,7 +151,7 @@ export function AddFlashcardSheet({ visible, onDismiss }: AddFlashcardSheetProps
               {createMutation.isPending ? (
                 <ActivityIndicator color="white" />
               ) : (
-                <Text className="text-white font-bold text-lg">Добавить</Text>
+                <Text className="text-white font-bold text-lg">{t('cards.add')}</Text>
               )}
             </Pressable>
           </ScrollView>

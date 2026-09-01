@@ -1,5 +1,6 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { glass } from '@/components/sunset';
 import type { AILangOption } from '@/lib/ai-languages';
 
@@ -14,6 +15,7 @@ export function LangPills({
   onChange: (v: string) => void;
   variant?: 'compact' | 'full';
 }) {
+  const { t } = useTranslation();
   return (
     <View style={s.row}>
       {options.map((o) => {
@@ -34,7 +36,7 @@ export function LangPills({
             <Text style={[s.pillText, active && !disabled && s.pillTextActive]}>
               {label}
             </Text>
-            {disabled && <Text style={s.soonText}>Скоро</Text>}
+            {disabled && <Text style={s.soonText}>{t('ai.soon')}</Text>}
           </Pressable>
         );
       })}

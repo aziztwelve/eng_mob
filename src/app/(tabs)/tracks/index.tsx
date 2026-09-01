@@ -1,67 +1,67 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, TextInput, FlatList, Pressable, ActivityIndicator, StyleSheet } from 'react-native';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams } from 'expo-router';
+import { useQueries } from '@tanstack/react-query';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
+import {
+  Briefcase, TrendUp, Target, Airplane, ChatCircle, GraduationCap, Headphones,
+  type Icon as PhosphorIcon,
+} from 'phosphor-react-native';
+import { TracksApi } from '@/lib/api-client';
 import { useTracks } from '@/hooks/use-tracks';
 import { useOnboardingState } from '@/hooks/use-onboarding';
-import { TrackCard } from '@/components/tracks/track-card';
-import type { Track, TrackType } from '@/types/api';
+import { useCompletedLessons } from '@/lib/lesson-progress';
+import { TrackPathCard } from '@/components/tracks/track-path-card';
+import { ProgressRing, MiniChart } from '@/components/tracks/progress-bits';
+import { glass, GOLD } from '@/components/sunset';
+import type { Track } from '@/types/api';
 
-const GOLD = ['#FFDF5E', '#FFB338'] as const;
-const glass = {
-  backgroundColor: 'rgba(255,255,255,0.14)',
-  borderWidth: 1,
-  borderColor: 'rgba(255,255,255,0.22)',
-} as const;
+const GOALS: { key: string; Icon: PhosphorIcon; tint: string }[] = [
+  { key: 'work', Icon: Briefcase, tint: '#5B6BFF' },
+  { key: 'business_english', Icon: TrendUp, tint: '#2EC4A0' },
+  { key: 'exam', Icon: Target, tint: '#F2542D' },
+  { key: 'travel', Icon: Airplane, tint: '#3FA9FF' },
+  { key: 'speaking', Icon: ChatCircle, tint: '#F5A623' },
+  { key: 'study', Icon: GraduationCap, tint: '#CE82FF' },
+  { key: 'listening_shadowing', Icon: Headphones, tint: '#FF86B3' },
+];
 
-const GOALS = [
-  { key: 'work', title: 'Работа и карьера', emoji: '💼' },
-  { key: 'exam', title: 'Экзамен', emoji: '🎯' },
-  { key: 'travel', title: 'Путешествия', emoji: '✈️' },
-  { key: 'relocation', title: 'Переезд', emoji: '🏠' },
-  { key: 'speaking', title: 'Разговорная практика', emoji: '🗣️' },
-  { key: 'study', title: 'Учёба', emoji: '📚' },
-  { key: 'social', title: 'Друзья и общение', emoji: '🫂' },
-  { key: 'content', title: 'Фильмы и книги', emoji: '🎬' },
-  { key: 'listening_shadowing', title: 'Listening & Shadowing', emoji: '🎧' },
-] as const;
-
-type GoalKey = typeof GOALS[number]['key'];
+type GoalKey = string;
 const LEGACY_GOAL_ALIASES: Record<string, GoalKey> = {
   education: 'study',
   career: 'work',
-  hobby: 'content',
-  family: 'social',
   brain: 'listening_shadowing',
 };
 const LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1'];
 
 export default function TracksScreen() {
-  const params = useLocalSearchParams<{ goal?: string }>();
-  const router = useRouter();
+  const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
+  const params = useLocalSearchParams<{ goal?: string; level?: string }>();
   const [search, setSearch] = useState('');
-  const [trackType, setTrackType] = useState<TrackType | null>(null);
   const [selectedLevel, setSelectedLevel] = useState<string | null>(null);
   const [selectedGoal, setSelectedGoal] = useState<GoalKey | null>(null);
 
   useEffect(() => {
     if (params.goal && GOALS.some((goal) => goal.key === params.goal)) {
-      setSelectedGoal(params.goal as GoalKey);
+      setSelectedGoal(params.goal);
     }
-  }, [params.goal]);
+    if (params.level && LEVELS.includes(params.level)) {
+      setSelectedLevel(params.level);
+    }
+  }, [params.goal, params.level]);
 
   const onboarding = useOnboardingState();
   const language = onboarding.data?.target_language || undefined;
 
   const { data, isLoading, error } = useTracks({
     search: search || undefined,
-    track_type: trackType ?? undefined,
     language,
     level: selectedLevel?.toLowerCase(),
     // API добавляет к трекам выбранной цели универсальные (motivation: []).
-    // Они тоже должны быть доступны в каждой цели.
     motivation: selectedGoal ? [selectedGoal] : undefined,
-    // На уровне показываем все цели и их треки, а не только первую страницу.
     limit: 100,
   });
 
@@ -69,124 +69,182 @@ export default function TracksScreen() {
   const tracksByGoal = useMemo(() => {
     const byGoal = new Map<GoalKey, Track[]>();
     GOALS.forEach(({ key }) => byGoal.set(key, []));
-
     all.forEach((track) => {
       const goals = (track.motivation ?? []).map((goal) => LEGACY_GOAL_ALIASES[goal] ?? goal);
-      const matchingGoals = goals.filter((goal): goal is GoalKey => GOALS.some((item) => item.key === goal));
-      matchingGoals.forEach((goal) => byGoal.get(goal)?.push(track));
+      goals.forEach((goal) => byGoal.get(goal)?.push(track));
     });
-
     return byGoal;
   }, [all]);
-  // Сервис также возвращает технические персональные треки других пользователей.
-  // В каталоге целей показываем только опубликованные тематические программы.
+
   const selectedTracks = useMemo(
-    () => selectedGoal
-      ? (tracksByGoal.get(selectedGoal) ?? []).filter((track) => track.track_type === 'thematic')
-      : [],
+    () => (selectedGoal ? (tracksByGoal.get(selectedGoal) ?? []) : []),
     [selectedGoal, tracksByGoal],
   );
   const selectedGoalMeta = selectedGoal ? GOALS.find((goal) => goal.key === selectedGoal) : null;
+  const goalTitle = (key: string) => t(`tracks.goals.${key}` as never);
 
-  // Если у цели одна тематическая программа (как у «Путешествий»), не
-  // показываем пользователю промежуточный технический контейнер трека.
-  useEffect(() => {
-    if (selectedLevel && selectedGoal && !isLoading && selectedTracks.length === 1) {
-      const track = selectedTracks[0];
-      router.replace(`/(tabs)/tracks/${track.code || track.id}?goal=${selectedGoal}` as never);
-    }
-  }, [isLoading, router, selectedGoal, selectedLevel, selectedTracks]);
+  const { data: localCompleted } = useCompletedLessons();
+
+  // Уроки и серверный прогресс для карточек выбранной цели. Ключи совпадают
+  // с useTrack / useTrackProgress — кэш шарится с экраном трека.
+  const trackQueries = useQueries({
+    queries: selectedTracks.map((track) => ({
+      queryKey: ['track', track.code || track.id, true] as const,
+      queryFn: () => TracksApi.get(track.code || track.id, true),
+      staleTime: 5 * 60 * 1000,
+    })),
+  });
+  const progressQueries = useQueries({
+    queries: selectedTracks.map((track) => ({
+      queryKey: ['trackProgress', track.code || track.id] as const,
+      queryFn: () => TracksApi.progress(track.code || track.id),
+      staleTime: 30 * 1000,
+    })),
+  });
+
+  // Общий прогресс уровня: завершённые уроки по всем трекам цели.
+  const overall = useMemo(() => {
+    let total = 0;
+    let doneCount = 0;
+    trackQueries.forEach((query, i) => {
+      const lessons = query.data?.lessons ?? [];
+      const serverIds = progressQueries[i]?.data?.lessons.filter((l) => l.completed).map((l) => l.lesson_id) ?? [];
+      const doneSet = new Set<string>([...(localCompleted ?? []), ...serverIds]);
+      total += lessons.length;
+      doneCount += lessons.filter((lesson) => doneSet.has(lesson.id)).length;
+    });
+    return { total, doneCount, pct: total > 0 ? Math.round((doneCount / total) * 100) : 0 };
+  }, [trackQueries, progressQueries, localCompleted]);
+
+  const completedFor = (i: number) => {
+    const serverIds = progressQueries[i]?.data?.lessons.filter((l) => l.completed).map((l) => l.lesson_id) ?? [];
+    return new Set<string>([...(localCompleted ?? []), ...serverIds]);
+  };
+
+  const bottomPad = { paddingBottom: 78 + insets.bottom };
+
+  type Item = (typeof GOALS)[number] | string;
+  const items: Item[] = selectedLevel ? GOALS : LEVELS;
 
   return (
     <View style={{ flex: 1 }}>
-      <Stack.Screen options={{ title: 'Уроки' }} />
+      <Stack.Screen options={{ title: t('tracks.title') }} />
 
-      {/* Header */}
-      <View style={{ paddingHorizontal: 18, paddingTop: 12 }}>
-        <Text style={st.title}>Уроки</Text>
-        <LinearGradient colors={GOLD} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={st.underline} />
-        <View style={[st.levelNode, glass]}>
-          <Text style={st.levelNodeText}>
-            {selectedLevel ? `${selectedLevel} → ` : ''}Уровень → цель → треки
-          </Text>
-        </View>
-        <Text style={st.subtitle}>
-          {selectedGoal ? 'Выбери трек, затем урок' : selectedLevel ? 'Теперь выбери цель обучения' : 'Сначала выбери свой уровень'}
-        </Text>
-
-        {selectedLevel && <>
-          <Pressable onPress={() => {
-            if (selectedGoal) setSelectedGoal(null);
-            else setSelectedLevel(null);
-            setSearch('');
-            setTrackType(null);
-          }} style={st.backButton}>
-            <Text style={st.backButtonText}>{selectedGoal ? '‹ Все цели' : '‹ Все уровни'}</Text>
-          </Pressable>
-          {selectedGoal && <View style={[st.search, glass]}>
-            <Text style={{ fontSize: 16 }}>🔍</Text>
-            <TextInput style={st.searchInput} placeholder="Поиск треков..." placeholderTextColor="rgba(255,255,255,0.5)" value={search} onChangeText={setSearch} />
-          </View>}
-        </>}
-      </View>
-
-      {/* Content */}
-      {isLoading ? (
-        <View style={st.center}>
-          <ActivityIndicator size="large" color="#FFD84A" />
-        </View>
-      ) : error ? (
-        <View style={st.center}>
-          <Text style={{ fontSize: 40, marginBottom: 10 }}>😕</Text>
-          <Text style={st.msg}>Не удалось загрузить треки</Text>
-        </View>
-      ) : !selectedLevel ? (
-        <FlatList
-          key="levels-grid"
-          data={LEVELS}
-          numColumns={2}
-          keyExtractor={(levelItem) => levelItem}
-          contentContainerStyle={st.goalsGrid}
-          columnWrapperStyle={st.goalRow}
-          renderItem={({ item: levelItem }) => (
-            <Pressable onPress={() => setSelectedLevel(levelItem)} style={[st.goalCard, glass]}>
-              <Text style={st.levelEmoji}>{levelItem}</Text>
-              <Text style={st.goalTitle}>{levelItem === 'A1' ? 'Начальный' : levelItem === 'C1' ? 'Продвинутый' : 'Уровень CEFR'}</Text>
-              <Text style={st.goalCount}>Выбрать уровень</Text>
-            </Pressable>
-          )}
-        />
-      ) : !selectedGoal ? (
-        <FlatList
-          key="goals-grid"
-          data={GOALS}
-          numColumns={2}
-          keyExtractor={(goal) => goal.key}
-          contentContainerStyle={st.goalsGrid}
-          columnWrapperStyle={st.goalRow}
-          renderItem={({ item: goal }) => {
-            const count = (tracksByGoal.get(goal.key) ?? []).filter((track) => track.track_type === 'thematic').length;
-            return <Pressable onPress={() => setSelectedGoal(goal.key)} style={[st.goalCard, glass]}>
-              <Text style={st.goalEmoji}>{goal.emoji}</Text>
-              <Text style={st.goalTitle}>{goal.title}</Text>
-              <Text style={st.goalCount}>{count ? `${count} треков` : 'Скоро появятся'}</Text>
-            </Pressable>;
-          }}
-        />
-      ) : selectedTracks.length === 0 ? (
-        <View style={st.center}>
-          <Text style={{ fontSize: 40, marginBottom: 10 }}>🔍</Text>
-          <Text style={st.msg}>Для цели «{selectedGoalMeta?.title}» треков пока нет</Text>
-        </View>
-      ) : (
+      {selectedLevel && selectedGoal ? (
+        /* Просмотр уровня+цели: прогресс-карточка в стиле AI-hub */
         <FlatList
           key={`tracks-${selectedGoal}`}
           data={selectedTracks}
-          renderItem={({ item }) => <TrackCard track={item} />}
+          renderItem={({ item, index }) => (
+            <TrackPathCard
+              code={item.code || item.id}
+              title={item.title}
+              lessons={trackQueries[index]?.data?.lessons}
+              loading={trackQueries[index]?.isLoading}
+              completed={completedFor(index)}
+            />
+          )}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={{ paddingHorizontal: 18, paddingTop: 16, paddingBottom: 40 }}
+          contentContainerStyle={{ paddingHorizontal: 18, paddingTop: 12, ...bottomPad }}
           showsVerticalScrollIndicator={false}
+          ListHeaderComponent={
+            <View>
+              <View style={st.pathHeader}>
+                <Pressable
+                  onPress={() => { setSelectedGoal(null); setSearch(''); }}
+                  style={st.backCircle}
+                  hitSlop={8}
+                >
+                  <Text style={st.backCircleText}>‹</Text>
+                </Pressable>
+                <View style={{ flex: 1, marginLeft: 12, minWidth: 0 }}>
+                  <Text style={st.levelTitle} numberOfLines={1}>
+                    {selectedLevel} · {t(`tracks.level_titles.${selectedLevel}` as never)}
+                  </Text>
+                  <Text style={st.levelGoal} numberOfLines={1}>{selectedGoalMeta ? goalTitle(selectedGoalMeta.key) : ''}</Text>
+                </View>
+                <View style={[st.progressPill, glass]}>
+                  <Text style={st.progressPillText}>{t('tracks.tracks_count', { count: selectedTracks.length })}</Text>
+                </View>
+              </View>
+
+              {/* Прогресс уровня — карточка как «Твой прогресс с AI» */}
+              <View style={[st.progressCard, glass]}>
+                <ProgressRing pct={overall.pct} />
+                <View style={{ flex: 1 }}>
+                  <Text style={st.progressTitle}>{t('tracks.your_progress')}</Text>
+                  <Text style={st.progressText}>{t('tracks.lessons_done', { done: overall.doneCount, total: overall.total })}</Text>
+                  <Text style={st.progressText}>
+                    {overall.pct >= 100 ? t('tracks.level_done') : t('tracks.keep_going')}
+                  </Text>
+                </View>
+                <MiniChart pct={overall.pct} />
+              </View>
+
+              <View style={[st.search, glass]}>
+                <Text style={{ fontSize: 16 }}>🔍</Text>
+                <TextInput style={st.searchInput} placeholder={t('tracks.search')} placeholderTextColor="rgba(255,255,255,0.5)" value={search} onChangeText={setSearch} />
+              </View>
+            </View>
+          }
         />
+      ) : (
+        <FlatList
+          key={selectedLevel ? 'goals-grid' : 'levels-grid'}
+          data={items}
+          numColumns={2}
+          keyExtractor={(item) => (typeof item === 'string' ? item : item.key)}
+          contentContainerStyle={[st.goalsGrid, bottomPad]}
+          columnWrapperStyle={st.goalRow}
+          ListHeaderComponent={
+            <View style={{ paddingHorizontal: 0 }}>
+              <Text style={st.title}>{t('tracks.title')}</Text>
+              <LinearGradient colors={GOLD} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={st.underline} />
+              <Text style={st.subtitle}>
+                {selectedLevel ? t('tracks.level_then') : t('tracks.level_first')}
+              </Text>
+              {selectedLevel && (
+                <Pressable onPress={() => setSelectedLevel(null)} style={st.backButton}>
+                  <Text style={st.backButtonText}>{t('tracks.back_to_levels')}</Text>
+                </Pressable>
+              )}
+            </View>
+          }
+          renderItem={({ item }) =>
+            typeof item === 'string' ? (
+              <Pressable onPress={() => setSelectedLevel(item)} style={[st.goalCard, glass]}>
+                <Text style={st.levelEmoji}>{item}</Text>
+                <Text style={st.goalTitle}>{t(`tracks.level_titles.${item}` as never)}</Text>
+                <Text style={st.goalCount}>{t('tracks.choose_level')}</Text>
+              </Pressable>
+            ) : (
+              <Pressable onPress={() => setSelectedGoal(item.key)} style={[st.goalCard, glass]}>
+                <View style={[st.goalIcon, { backgroundColor: item.tint, shadowColor: item.tint }]}>
+                  <item.Icon size={24} color="#fff" weight="fill" />
+                </View>
+                <Text style={st.goalTitle}>{goalTitle(item.key)}</Text>
+                <Text style={st.goalCount}>
+                  {(tracksByGoal.get(item.key) ?? []).length
+                    ? t('tracks.tracks_count', { count: (tracksByGoal.get(item.key) ?? []).length })
+                    : t('tracks.soon')}
+                </Text>
+              </Pressable>
+            )
+          }
+        />
+      )}
+
+      {(isLoading || error) && !selectedGoal && (
+        <View style={st.center}>
+          {isLoading ? (
+            <ActivityIndicator size="large" color="#FFD84A" />
+          ) : (
+            <>
+              <Text style={{ fontSize: 40, marginBottom: 10 }}>😕</Text>
+              <Text style={st.msg}>{t('tracks.load_error')}</Text>
+            </>
+          )}
+        </View>
       )}
     </View>
   );
@@ -196,29 +254,40 @@ const st = StyleSheet.create({
   title: { color: '#fff', fontSize: 28, fontWeight: '900' },
   underline: { width: 44, height: 3, borderRadius: 2, marginTop: 6 },
   subtitle: { color: 'rgba(255,255,255,0.82)', fontSize: 13, fontWeight: '600', marginTop: 10 },
-  levelNode: { alignSelf: 'flex-start', borderRadius: 14, paddingHorizontal: 12, paddingVertical: 8, marginTop: 12 },
-  levelNodeText: { color: '#FFE69A', fontSize: 12, fontWeight: '900' },
+  backButton: { alignSelf: 'flex-start', marginTop: 14, paddingVertical: 4 },
+  backButtonText: { color: '#FFE69A', fontSize: 14, fontWeight: '900' },
   levelEmoji: { color: '#FFE69A', fontSize: 34, fontWeight: '900', letterSpacing: 1 },
   search: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 12, marginTop: 14 },
   searchInput: { flex: 1, color: '#fff', fontSize: 15, fontWeight: '600' },
-  backButton: { alignSelf: 'flex-start', marginTop: 14, paddingVertical: 4 },
-  backButtonText: { color: '#FFE69A', fontSize: 14, fontWeight: '900' },
-  goalsGrid: { paddingHorizontal: 18, paddingTop: 18, paddingBottom: 40 },
+
+  /* Шапка уровня */
+  pathHeader: { flexDirection: 'row', alignItems: 'center' },
+  backCircle: {
+    width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.14)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.22)',
+  },
+  backCircleText: { color: '#fff', fontSize: 24, fontWeight: '900', marginTop: -2 },
+  levelTitle: { color: '#fff', fontSize: 20, fontWeight: '900' },
+  levelGoal: { color: 'rgba(255,255,255,0.72)', fontSize: 13, fontWeight: '700', marginTop: 2 },
+  progressPill: { borderRadius: 14, paddingHorizontal: 12, paddingVertical: 8 },
+  progressPillText: { color: '#FFD84A', fontSize: 13, fontWeight: '900' },
+
+  /* Прогресс-карточка в стиле AI-hub */
+  progressCard: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 22, padding: 16, marginTop: 16 },
+  progressTitle: { color: '#fff', fontSize: 16, fontWeight: '900' },
+  progressText: { color: 'rgba(255,255,255,0.8)', fontSize: 12.5, fontWeight: '600', marginTop: 2 },
+
+  /* Сетки уровней / целей */
+  goalsGrid: { paddingHorizontal: 18, paddingTop: 4, paddingBottom: 40 },
   goalRow: { gap: 12, marginBottom: 12 },
   goalCard: { flex: 1, minHeight: 142, borderRadius: 20, padding: 16, justifyContent: 'space-between' },
-  goalEmoji: { fontSize: 30 },
+  goalIcon: {
+    width: 46, height: 46, borderRadius: 16, alignItems: 'center', justifyContent: 'center',
+    shadowOpacity: 0.55, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 6,
+  },
   goalTitle: { color: '#fff', fontSize: 16, fontWeight: '900', marginTop: 12 },
   goalCount: { color: 'rgba(255,255,255,0.64)', fontSize: 12, fontWeight: '700', marginTop: 6 },
-  filters: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
-  pill: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 16 },
-  pillActive: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 16 },
-  pillText: { color: 'rgba(255,255,255,0.85)', fontWeight: '800', fontSize: 13 },
-  pillTextActive: { color: '#fff', fontWeight: '800', fontSize: 13 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
+
+  center: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center', padding: 24 },
   msg: { color: 'rgba(255,255,255,0.85)', fontWeight: '700', fontSize: 15 },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 18, marginBottom: 10 },
-  sectionEyebrow: { color: 'rgba(255,223,94,0.75)', fontSize: 10, fontWeight: '900', letterSpacing: 1 },
-  sectionTitle: { color: '#fff', fontSize: 18, fontWeight: '900' },
-  sectionCount: { color: 'rgba(255,255,255,0.62)', fontSize: 13, fontWeight: '800' },
-  emptyGoal: { color: 'rgba(255,255,255,0.52)', fontSize: 13, fontWeight: '600', marginBottom: 6 },
 });

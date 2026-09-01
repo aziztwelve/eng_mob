@@ -1,11 +1,12 @@
 import React from 'react';
 import { View, Text, ScrollView, Pressable, ActivityIndicator } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { useCourse, useEnrollCourse } from '@/hooks/use-courses';
 
 export default function CourseDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const router = useRouter();
+  const { t } = useTranslation();
   const { data: course, isLoading, error } = useCourse(id);
   const enrollMutation = useEnrollCourse();
 
@@ -19,7 +20,7 @@ export default function CourseDetailScreen() {
     return (
       <View className="flex-1 bg-background items-center justify-center">
         <ActivityIndicator size="large" color="#FFD84A" />
-        <Text className="text-muted-foreground mt-4">Loading course...</Text>
+        <Text className="text-muted-foreground mt-4">{t('courses.loading_one')}</Text>
       </View>
     );
   }
@@ -29,10 +30,10 @@ export default function CourseDetailScreen() {
       <View className="flex-1 bg-background items-center justify-center px-6">
         <Text className="text-4xl mb-4">😕</Text>
         <Text className="text-foreground font-bold text-lg mb-2">
-          Course not found
+          {t('courses.not_found')}
         </Text>
         <Text className="text-muted-foreground text-center">
-          {(error as any)?.message || 'Unable to load course details'}
+          {(error as any)?.message || t('courses.not_found_desc')}
         </Text>
       </View>
     );
@@ -88,7 +89,7 @@ export default function CourseDetailScreen() {
                 <Text className="text-xl">👨‍🏫</Text>
               </View>
               <View>
-                <Text className="text-muted-foreground text-xs">Instructor</Text>
+                <Text className="text-muted-foreground text-xs">{t('courses.instructor')}</Text>
                 <Text className="text-foreground font-bold">{course.instructor}</Text>
               </View>
             </View>
@@ -99,7 +100,7 @@ export default function CourseDetailScreen() {
         {course.whatYouWillLearn && course.whatYouWillLearn.length > 0 && (
           <View className="p-6 border-b-2 border-border">
             <Text className="text-xl font-black text-foreground mb-4">
-              What you'll learn
+              {t('courses.what_learn')}
             </Text>
             {course.whatYouWillLearn.map((item, index) => (
               <View key={index} className="flex-row mb-3">
@@ -114,7 +115,7 @@ export default function CourseDetailScreen() {
         {course.modules && course.modules.length > 0 && (
           <View className="p-6">
             <Text className="text-xl font-black text-foreground mb-4">
-              Course Content
+              {t('courses.content')}
             </Text>
             {course.modules.map((module, moduleIndex) => (
               <View key={moduleIndex} className="bg-card rounded-2xl p-4 mb-3 border-2 border-border">
@@ -163,7 +164,7 @@ export default function CourseDetailScreen() {
           }}
         >
           <Text className="text-center text-primary-foreground font-black text-lg uppercase tracking-wide">
-            {enrollMutation.isPending ? 'Enrolling...' : 'Enroll Now'}
+            {enrollMutation.isPending ? t('courses.enrolling') : t('courses.enroll')}
           </Text>
         </Pressable>
       </View>

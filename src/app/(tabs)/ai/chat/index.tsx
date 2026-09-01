@@ -32,8 +32,10 @@ import {
   CTA,
 } from '@/components/sunset';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTranslation } from 'react-i18next';
 
 export default function ChatListScreen() {
+  const { t } = useTranslation();
   const [targetLang, setTargetLang] = useState(DEFAULT_TARGET_LANG);
   const insets = useSafeAreaInsets();
 
@@ -56,26 +58,26 @@ export default function ChatListScreen() {
     } catch (err) {
       Toast.show({
         type: 'error',
-        text1: 'Не удалось начать',
+        text1: t('ai.start_failed'),
         text2: err instanceof Error ? err.message : undefined,
       });
     }
   };
 
   const handleDelete = (id: string) => {
-    Alert.alert('Удалить диалог', 'Это действие нельзя отменить.', [
-      { text: 'Отмена', style: 'cancel' },
+    Alert.alert(t('ai.delete_dialog'), t('ai.delete_desc'), [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: 'Удалить',
+        text: t('common.remove'),
         style: 'destructive',
         onPress: async () => {
           try {
             await deleteMut.mutateAsync(id);
-            Toast.show({ type: 'success', text1: 'Диалог удалён' });
+            Toast.show({ type: 'success', text1: t('ai.dialog_deleted') });
           } catch (err) {
             Toast.show({
               type: 'error',
-              text1: 'Не удалось удалить',
+              text1: t('common.delete_failed'),
               text2: err instanceof Error ? err.message : undefined,
             });
           }
@@ -100,9 +102,9 @@ export default function ChatListScreen() {
         <View style={[s.card, glass, { marginTop: 18 }]}>
           <View style={s.cardHeader}>
             <MessageSquarePlus size={18} color="#FFD84A" />
-            <Text style={s.cardTitle}>Новый чат</Text>
+            <Text style={s.cardTitle}>{t('ai.new_chat')}</Text>
           </View>
-          <Text style={s.label}>Язык</Text>
+          <Text style={s.label}>{t('ai.lang')}</Text>
           <LangPills
             options={AI_TARGET_LANGS}
             value={targetLang}
@@ -133,8 +135,8 @@ export default function ChatListScreen() {
         ) : conversations.length === 0 ? (
           <View style={[s.emptyCard, glass]}>
             <Text style={{ fontSize: 36, marginBottom: 8 }}>💬</Text>
-            <Text style={s.emptyTitle}>Пока пусто</Text>
-            <Text style={s.emptyText}>Начните первый диалог кнопкой выше.</Text>
+            <Text style={s.emptyTitle}>{t('ai.empty')}</Text>
+            <Text style={s.emptyText}>{t('ai.start_first')}</Text>
           </View>
         ) : (
           <View style={{ gap: 10 }}>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Alert, View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
 import { Stack } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Snowflake } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -10,6 +11,7 @@ import { StreakCalendar } from '@/components/gamification';
 import { glass, GOLD } from '@/components/sunset';
 
 export default function StreakScreen() {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { data: stats } = useUserStats();
   const useFreeze = useUseFreeze();
@@ -18,28 +20,28 @@ export default function StreakScreen() {
 
   const onFreeze = () => {
     Alert.alert(
-      'Streak freeze',
-      'Активировать streak freeze? Будет потрачен 1 freeze.',
+      t('strk.freeze_title'),
+      t('strk.freeze_q'),
       [
-        { text: 'Отмена', style: 'cancel' },
-        { text: 'Активировать', onPress: () => useFreeze.mutate() },
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('strk.activate'), onPress: () => useFreeze.mutate() },
       ]
     );
   };
 
   return (
     <View style={{ flex: 1 }}>
-      <Stack.Screen options={{ title: 'Серия' }} />
+      <Stack.Screen options={{ title: t('profile.streak_title') }} />
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 40 + insets.bottom }}
       >
         <View style={s.headerRow}>
-          <Text style={s.title}>🔥 Серия</Text>
+          <Text style={s.title}>{t('strk.title')}</Text>
           <Pressable onPress={onFreeze} disabled={!canFreeze}>
             <View style={[glass, s.freezeBtn, !canFreeze && { opacity: 0.45 }]}>
               <Snowflake size={16} color="#9FE8FF" />
-              <Text style={s.freezeText}>Freeze · {stats?.streak_freezes ?? 0}</Text>
+              <Text style={s.freezeText}>{t('strk.freeze', { count: stats?.streak_freezes ?? 0 })}</Text>
             </View>
           </Pressable>
         </View>
@@ -52,28 +54,28 @@ export default function StreakScreen() {
           style={[glass, s.hero]}
         >
           <Text style={s.heroNum}>{stats?.current_streak ?? 0}🔥</Text>
-          <Text style={s.heroLabel}>дней подряд</Text>
+          <Text style={s.heroLabel}>{t('strk.days_in_row')}</Text>
         </LinearGradient>
 
         {/* Stats row */}
         <View style={[glass, s.statsCard]}>
-          <Stat label="Текущая" value={stats?.current_streak ?? 0} />
+          <Stat label={t('strk.current')} value={stats?.current_streak ?? 0} />
           <View style={s.divider} />
-          <Stat label="Рекорд" value={stats?.max_streak ?? 0} />
+          <Stat label={t('strk.record')} value={stats?.max_streak ?? 0} />
           <View style={s.divider} />
-          <Stat label="Freezes" value={stats?.streak_freezes ?? 0} />
+          <Stat label={t('strk.freezes')} value={stats?.streak_freezes ?? 0} />
         </View>
 
         {/* Calendar */}
         <View style={[glass, s.card]}>
-          <Text style={s.cardTitle}>Последние 30 дней</Text>
+          <Text style={s.cardTitle}>{t('strk.last30')}</Text>
           <View style={{ marginTop: 12 }}>
             <StreakCalendar days={30} />
           </View>
           <View style={s.legendRow}>
-            <Legend color="#34D399" label="выполнено" />
-            <Legend color="#22D3EE" label="freeze" />
-            <Legend color="rgba(255,255,255,0.18)" label="пропуск" />
+            <Legend color="#34D399" label={t('strk.legend_done')} />
+            <Legend color="#22D3EE" label={t('strk.legend_freeze')} />
+            <Legend color="rgba(255,255,255,0.18)" label={t('strk.legend_miss')} />
           </View>
         </View>
       </ScrollView>

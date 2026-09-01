@@ -56,11 +56,11 @@ export interface NavigationItem {
  * Флешкарты (CreditCard) намеренно не включены.
  */
 export const navigationConfig: NavigationItem[] = [
-  { id: 'home', title: 'Главная', icon: House },
-  { id: 'lessons', title: 'Уроки', icon: GraduationCap },
-  { id: 'ai', title: 'AI', icon: Bot },
-  { id: 'league', title: 'Лига', icon: Trophy },
-  { id: 'profile', title: 'Профиль', icon: User },
+  { id: 'home', title: 'tabs.home', icon: House },
+  { id: 'lessons', title: 'tabs.practice', icon: GraduationCap },
+  { id: 'ai', title: 'tabs.ai', icon: Bot },
+  { id: 'league', title: 'tabs.social', icon: Trophy },
+  { id: 'profile', title: 'tabs.profile', icon: User },
 ];
 
 /**

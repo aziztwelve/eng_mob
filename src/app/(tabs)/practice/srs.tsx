@@ -4,19 +4,21 @@ import { Stack, Link } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSrsStats, useMistakes } from '@/hooks/use-srs';
 import { GradientTitle, neon, neonStyles } from '@/components/neon-screen';
+import { useTranslation } from 'react-i18next';
 
 const S = {
   surface: neonStyles.surface,
 } as const;
 
-const MODES = [
-  { emoji: '🔤', title: 'Перевод',     sub: 'Translate',   bg: 'rgba(46,236,200,0.14)', href: '/practice/session?mode=translate' },
-  { emoji: '🔗', title: 'Пары',        sub: 'Match pairs', bg: 'rgba(40,220,233,0.14)', href: '/practice/session?mode=match' },
-  { emoji: '🎧', title: 'Аудирование', sub: 'Listening',   bg: 'rgba(255,213,79,0.14)', href: '/practice/session?mode=listening' },
-  { emoji: '✏️', title: 'Пропуски',    sub: 'Fill blank',  bg: 'rgba(255,147,68,0.14)', href: '/practice/session?mode=fill_blank' },
+const MODE_KEYS = [
+  { emoji: '🔤', key: 'mode_translate', bg: 'rgba(46,236,200,0.14)', href: '/practice/session?mode=translate' },
+  { emoji: '🔗', key: 'mode_match', bg: 'rgba(40,220,233,0.14)', href: '/practice/session?mode=match' },
+  { emoji: '🎧', key: 'mode_listening', bg: 'rgba(255,213,79,0.14)', href: '/practice/session?mode=listening' },
+  { emoji: '✏️', key: 'mode_fill', bg: 'rgba(255,147,68,0.14)', href: '/practice/session?mode=fill_blank' },
 ] as const;
 
 export default function PracticeLandingScreen() {
+  const { t } = useTranslation();
   const stats = useSrsStats();
   const mistakes = useMistakes({ resolved: 'unresolved', limit: 1 });
 
@@ -25,12 +27,12 @@ export default function PracticeLandingScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: 'transparent' }}>
-      <Stack.Screen options={{ title: 'Практика' }} />
+      <Stack.Screen options={{ title: t('practice.srs_title') }} />
       <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: 110, gap: 0 }}>
         {/* Title */}
-        <GradientTitle width={220}>Практика</GradientTitle>
+        <GradientTitle width={220}>{t('practice.srs_title')}</GradientTitle>
         <Text style={[neonStyles.subtitle, { marginBottom: 18 }]}>
-          Повторяй по SM-2 и подтягивай «ржавеющие» навыки
+          {t('practice.srs_sub')}
         </Text>
 
         {/* Hero card — due now */}
@@ -62,15 +64,15 @@ export default function PracticeLandingScreen() {
             paddingHorizontal: 10, paddingVertical: 5, marginBottom: 10,
           }}>
             <Text style={{ color: '#fff', fontWeight: '800', fontSize: 12 }}>
-              ⚡ {stats.isLoading ? '...' : `${dueNow} карточек на сегодня`}
+              ⚡ {stats.isLoading ? '...' : t('practice.cards_due', { count: dueNow })}
             </Text>
           </View>
 
           <Text style={{ color: neon.text, fontWeight: '900', fontSize: 22, marginBottom: 4 }}>
-            Время повторить
+            {t('practice.time_review')}
           </Text>
           <Text style={{ color: '#D7E2F0', fontWeight: '600', fontSize: 13, maxWidth: '65%', marginBottom: 14 }}>
-            Закрепи слова, пока они не «заржавели».
+            {t('practice.review_hint')}
           </Text>
 
           <Link href="/practice/session" asChild>
@@ -85,7 +87,7 @@ export default function PracticeLandingScreen() {
                 style={{ width: '100%', paddingVertical: 15, alignItems: 'center' }}
               >
                 <Text style={{ color: 'neon.ink', fontWeight: '900', fontSize: 16, textTransform: 'uppercase', letterSpacing: 0.3 }}>
-                  Начать повтор
+                  {t('practice.start_review')}
                 </Text>
               </LinearGradient>
             </Pressable>
@@ -103,12 +105,12 @@ export default function PracticeLandingScreen() {
             }}>
               <Text>✨</Text>
             </View>
-            <Text style={{ color: neon.text, fontWeight: '900', fontSize: 19 }}>Режимы</Text>
+            <Text style={{ color: neon.text, fontWeight: '900', fontSize: 19 }}>{t('practice.modes')}</Text>
           </View>
         </View>
 
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 22 }}>
-          {MODES.map((m) => (
+          {MODE_KEYS.map((m) => (
             <Link key={m.href} href={m.href as any} asChild>
               <Pressable style={{
                 ...S.surface,
@@ -121,8 +123,7 @@ export default function PracticeLandingScreen() {
                 }}>
                   <Text style={{ fontSize: 22 }}>{m.emoji}</Text>
                 </View>
-                <Text style={{ color: neon.text, fontWeight: '800', fontSize: 16 }}>{m.title}</Text>
-                <Text style={{ color: neon.muted, fontWeight: '400', fontSize: 13 }}>{m.sub}</Text>
+                <Text style={{ color: neon.text, fontWeight: '800', fontSize: 16 }}>{t(`practice.${m.key}` as never)}</Text>
               </Pressable>
             </Link>
           ))}
@@ -137,7 +138,7 @@ export default function PracticeLandingScreen() {
             }}>
               <Text>⚠️</Text>
             </View>
-            <Text style={{ color: neon.text, fontWeight: '900', fontSize: 19 }}>Работа над ошибками</Text>
+            <Text style={{ color: neon.text, fontWeight: '900', fontSize: 19 }}>{t('practice.mistakes_work')}</Text>
           </View>
           <Text style={[neonStyles.primaryText, { fontWeight: '800', fontSize: 14 }]}>→</Text>
         </View>
@@ -158,8 +159,8 @@ export default function PracticeLandingScreen() {
             <View style={{ flex: 1 }}>
               <Text style={{ color: neon.text, fontWeight: '900', fontSize: 15 }}>
                 {unresolvedMistakes > 0
-                  ? `${unresolvedMistakes} ${unresolvedMistakes === 1 ? 'шаг' : 'шага'}, где ты запнулся`
-                  : 'Ошибок нет — так держать!'}
+                  ? t('practice.mistakes_count', { count: unresolvedMistakes, unit: t(unresolvedMistakes === 1 ? 'practice.step_1' as never : 'practice.step_2' as never) })
+                  : t('practice.no_mistakes')}
               </Text>
               {unresolvedMistakes > 0 && (
                 <View style={{ height: 8, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 99, overflow: 'hidden', marginTop: 8, width: 200 }}>

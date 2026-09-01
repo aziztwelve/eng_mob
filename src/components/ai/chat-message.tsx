@@ -5,6 +5,7 @@ import Markdown from 'react-native-markdown-display';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Audio } from 'expo-av';
 import Toast from 'react-native-toast-message';
+import { useTranslation } from 'react-i18next';
 import { glass, CTA } from '@/components/sunset';
 import { getChatTTSUri } from '@/lib/tts';
 
@@ -110,11 +111,12 @@ function SpeechButton({
 // ── Corrections ──────────────────────────────────────────────────────────────
 
 function CorrectionsList({ corrections }: { corrections: NonNullable<AIMessage['corrections']> }) {
+  const { t } = useTranslation();
   return (
     <View style={s.corrections}>
       <View style={s.corrHeader}>
         <AlertCircle size={11} color="#f59e0b" />
-        <Text style={s.corrLabel}>Поправки</Text>
+        <Text style={s.corrLabel}>{t('ai.corrections')}</Text>
       </View>
       {corrections.map((c, i) => (
         <View key={i} style={{ gap: 2 }}>

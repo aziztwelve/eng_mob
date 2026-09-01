@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { View, Text, ScrollView, Pressable, ActivityIndicator, StyleSheet } from 'react-native';
 import { Stack } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useUserStats } from '@/hooks/use-user-stats';
@@ -37,6 +38,7 @@ function reasonLabel(r: XPTransaction['reason']): string {
 }
 
 export default function StatsScreen() {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { data: stats } = useUserStats();
   const { data: goal } = useDailyGoal();
@@ -79,7 +81,7 @@ export default function StatsScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-      <Stack.Screen options={{ title: 'Статистика' }} />
+      <Stack.Screen options={{ title: t('profile.stats_title') }} />
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 40 + insets.bottom }}
@@ -88,7 +90,7 @@ export default function StatsScreen() {
         <View style={[glass, s.card, { flexDirection: 'row', alignItems: 'center', gap: 16 }]}>
           <DailyGoalRing size={104} />
           <View style={{ flex: 1, gap: 12 }}>
-            <Text style={s.cardTitle}>Дневная цель</Text>
+            <Text style={s.cardTitle}>{t('profile.daily_goal')}</Text>
             <View style={s.presetRow}>
               {GOAL_PRESETS.map((target) => {
                 const active = goal?.target_xp === target;
@@ -137,7 +139,7 @@ export default function StatsScreen() {
 
         {/* XP за 14 дней */}
         <View style={[glass, s.card, { gap: 14 }]}>
-          <Text style={s.cardTitleLg}>XP за 14 дней</Text>
+          <Text style={s.cardTitleLg}>{t('profile.xp14')}</Text>
           <View style={s.chartRow}>
             {byDay.map((d) => {
               const pct = Math.max((d.xp / maxBar) * 100, 2);
@@ -169,9 +171,9 @@ export default function StatsScreen() {
 
         {/* XP история */}
         <View style={[glass, s.card, { gap: 8 }]}>
-          <Text style={[s.cardTitleLg, { marginBottom: 4 }]}>XP история</Text>
+          <Text style={[s.cardTitleLg, { marginBottom: 4 }]}>{t('profile.xp_history')}</Text>
           {transactions.length === 0 && !xp.isLoading ? (
-            <Text style={s.empty}>Пока нет транзакций.</Text>
+            <Text style={s.empty}>{t('profile.no_tx')}</Text>
           ) : (
             transactions.map((tx) => {
               const d = tsToDate(tx.created_at);
@@ -196,7 +198,7 @@ export default function StatsScreen() {
               {xp.isFetchingNextPage ? (
                 <ActivityIndicator color="#fff" />
               ) : (
-                <Text style={s.loadMoreText}>Загрузить ещё</Text>
+                <Text style={s.loadMoreText}>{t('profile.load_more')}</Text>
               )}
             </Pressable>
           )}

@@ -3,6 +3,7 @@ import { ActivityIndicator, Pressable, ScrollView, Text, View, StatusBar } from 
 import { Stack, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Line } from 'react-native-svg';
+import { useTranslation } from 'react-i18next';
 import { Avatar } from '@/components/ui/avatar';
 import { useMyLeaderboard, useMyLeague } from '@/hooks/use-leagues';
 import { useFriends, useFriendsLeaderboard } from '@/hooks/use-friends';
@@ -11,6 +12,7 @@ import { neon, neonStyles } from '@/components/neon-screen';
 import { glass, SunsetHeader, SunsetTabs, CTA } from '@/components/sunset';
 
 function PromoLine() {
+  const { t } = useTranslation();
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 4, paddingHorizontal: 8, position: 'relative', height: 20 }}>
       <Svg height="2" style={{ flex: 1 }}>
@@ -21,7 +23,7 @@ function PromoLine() {
         paddingHorizontal: 7, paddingVertical: 2, marginLeft: 6,
         shadowColor: neon.primary, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.6, shadowRadius: 12,
       }}>
-        <Text style={{ color: neon.ink, fontSize: 10, fontWeight: '900' }}>ЗОНА ПОВЫШЕНИЯ</Text>
+        <Text style={{ color: neon.ink, fontSize: 10, fontWeight: '900' }}>{t('social.promo_zone')}</Text>
       </View>
     </View>
   );
@@ -34,6 +36,7 @@ const S = {
 type Tab = 'leagues' | 'friends' | 'leaderboard';
 
 export default function SocialScreen() {
+  const { t } = useTranslation();
   const [tab, setTab] = useState<Tab>('leagues');
 
   return (
@@ -41,12 +44,12 @@ export default function SocialScreen() {
       <Stack.Screen options={{ headerShown: false }} />
       <StatusBar barStyle="light-content" />
       <View style={{ paddingHorizontal: 20, paddingTop: 6 }}>
-        <SunsetHeader title="Лиги" />
+        <SunsetHeader title={t('social.leagues')} />
         <SunsetTabs
           tabs={[
-            { key: 'leagues', label: '👑 Лиги' },
-            { key: 'friends', label: '👥 Друзья' },
-            { key: 'leaderboard', label: '📊 Топ' },
+            { key: 'leagues', label: `👑 ${t('social.leagues')}` },
+            { key: 'friends', label: `👥 ${t('social.friends')}` },
+            { key: 'leaderboard', label: `📊 ${t('social.top')}` },
           ]}
           active={tab}
           onChange={(k) => setTab(k as Tab)}
@@ -63,6 +66,7 @@ export default function SocialScreen() {
 
 function LeaguesView() {
   const router = useRouter();
+  const { t } = useTranslation();
   const myLeague = useMyLeague();
   const board = useMyLeaderboard();
 
@@ -87,17 +91,20 @@ function LeaguesView() {
       }]}>
         <Text style={{ fontSize: 44 }}>🥇</Text>
         <Text style={{ color: '#fff', fontWeight: '900', fontSize: 20, marginTop: 4 }}>
-          {league?.name ?? 'Золотая лига'}
+          {league?.name ?? t('social.gold_league')}
         </Text>
         {daysLeft !== null && (
           <Text style={{ color: 'rgba(255,255,255,0.75)', fontSize: 13, fontWeight: '600', marginTop: 2 }}>
-            Осталось {daysLeft} {daysLeft === 1 ? 'день' : 'дней'} · топ-10 проходят дальше
+            {t('social.days_left', {
+              count: daysLeft,
+              unit: t(daysLeft === 1 ? 'social.day_1' : 'social.day_5' as never),
+            })}
           </Text>
         )}
         <View style={{ flexDirection: 'row', gap: 34, marginTop: 14 }}>
           <View style={{ alignItems: 'center' }}>
             <Text style={{ color: '#FFD84A', fontWeight: '900', fontSize: 22 }}>#{myRank || '—'}</Text>
-            <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 11, fontWeight: '700', textTransform: 'uppercase' }}>Ранг</Text>
+            <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 11, fontWeight: '700', textTransform: 'uppercase' }}>{t('social.rank')}</Text>
           </View>
           <View style={{ alignItems: 'center' }}>
             <Text style={{ color: neon.xp, fontWeight: '900', fontSize: 22 }}>{myXp}</Text>
@@ -127,7 +134,7 @@ function LeaguesView() {
                 <Avatar uri={e.avatar_url} name={e.full_name} size={32} />
                 <Text style={{ flex: 1, color: '#fff', fontWeight: isMe ? '900' : '700', fontSize: 14 }} numberOfLines={1}>
                   {e.full_name || `User ${(e.user_id ?? '').slice(0, 6)}`}
-                  {isMe ? ' (Ты)' : ''}
+                  {isMe ? ` ${t('social.you')}` : ''}
                 </Text>
                 <Text style={{ color: '#FFD54F', fontWeight: '900', fontSize: 14 }}>
                   {(e.weekly_xp ?? 0)} XP
@@ -151,7 +158,7 @@ function LeaguesView() {
           style={{ width: '100%', paddingVertical: 15, alignItems: 'center' }}
         >
           <Text style={{ color: '#fff', fontWeight: '900', fontSize: 15, letterSpacing: 0.3 }}>
-            Открыть лигу полностью →
+            {t('social.open_league')}
           </Text>
         </LinearGradient>
       </Pressable>
@@ -161,6 +168,7 @@ function LeaguesView() {
 
 function FriendsView() {
   const router = useRouter();
+  const { t } = useTranslation();
   const friends = useFriends();
   const list = friends.data?.friends ?? [];
 
@@ -172,14 +180,14 @@ function FriendsView() {
           style={[glass, { flex: 1, borderRadius: 16, padding: 14, alignItems: 'center' }]}
         >
           <Text style={{ fontSize: 24 }}>🔍</Text>
-          <Text style={{ color: '#fff', fontWeight: '800', fontSize: 13, marginTop: 4 }}>Найти</Text>
+          <Text style={{ color: '#fff', fontWeight: '800', fontSize: 13, marginTop: 4 }}>{t('social.find')}</Text>
         </Pressable>
         <Pressable
           onPress={() => router.push('/friends/pending')}
           style={[glass, { flex: 1, borderRadius: 16, padding: 14, alignItems: 'center' }]}
         >
           <Text style={{ fontSize: 24 }}>📩</Text>
-          <Text style={{ color: '#fff', fontWeight: '800', fontSize: 13, marginTop: 4 }}>Заявки</Text>
+          <Text style={{ color: '#fff', fontWeight: '800', fontSize: 13, marginTop: 4 }}>{t('friends.requests')}</Text>
         </Pressable>
       </View>
 
@@ -189,7 +197,7 @@ function FriendsView() {
         <View style={[glass, { borderRadius: 20, padding: 32, alignItems: 'center' }]}>
           <Text style={{ fontSize: 48 }}>🦉</Text>
           <Text style={{ color: 'rgba(255,255,255,0.75)', fontWeight: '700', textAlign: 'center', marginTop: 12 }}>
-            Пока нет друзей.{'\n'}Найди первых!
+            {t('social.no_friends_short', { nl: '\n' })}
           </Text>
         </View>
       ) : (
@@ -211,20 +219,21 @@ function FriendsView() {
 
 function LeaderboardView() {
   const router = useRouter();
+  const { t } = useTranslation();
   const lb = useFriendsLeaderboard(10);
   const entries = lb.data?.entries ?? [];
 
   return (
     <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 84 }}>
       <Text style={{ color: 'rgba(255,255,255,0.75)', fontSize: 14, fontWeight: '600', marginBottom: 14 }}>
-        Друзья по XP за эту неделю
+        {t('social.friends_weekly')}
       </Text>
       {lb.isLoading ? (
         <ActivityIndicator color="#FFD84A" />
       ) : entries.length === 0 ? (
         <View style={[glass, { borderRadius: 20, padding: 32, alignItems: 'center' }]}>
           <Text style={{ color: 'rgba(255,255,255,0.75)', fontWeight: '700', textAlign: 'center' }}>
-            Добавь друзей, чтобы соревноваться
+            {t('social.add_to_compete')}
           </Text>
         </View>
       ) : (
@@ -240,7 +249,7 @@ function LeaderboardView() {
               </Text>
               <Avatar uri={e.avatar_url} name={e.full_name} size={36} />
               <Text style={{ flex: 1, color: '#fff', fontWeight: e.is_me ? '900' : '700', fontSize: 14 }} numberOfLines={1}>
-                {e.full_name}{e.is_me ? ' (Ты)' : ''}
+                {e.full_name}{e.is_me ? ` ${t('social.you')}` : ''}
               </Text>
               <Text style={{ color: '#FFD54F', fontWeight: '900' }}>{e.weekly_xp ?? 0} XP</Text>
             </View>
@@ -251,7 +260,7 @@ function LeaderboardView() {
         onPress={() => router.push('/friends/leaderboard')}
         style={[glass, { borderRadius: 16, padding: 14, alignItems: 'center', marginTop: 12 }]}
       >
-        <Text style={{ color: '#FFD84A', fontWeight: '900' }}>Открыть полный лидерборд →</Text>
+        <Text style={{ color: '#FFD84A', fontWeight: '900' }}>{t('social.open_lb')}</Text>
       </Pressable>
     </ScrollView>
   );

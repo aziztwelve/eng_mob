@@ -21,6 +21,7 @@ import { Avatar } from '@/components/ui/avatar';
 import { useMyLeaderboard, useMyLeague } from '@/hooks/use-leagues';
 import { tsToDate } from '@/lib/api-client';
 import type { LeaderboardEntry, League } from '@/types/api';
+import { useTranslation } from 'react-i18next';
 
 /**
  * /leagues — главный экран лиг (mirror web /leagues).
@@ -37,6 +38,7 @@ import type { LeaderboardEntry, League } from '@/types/api';
  * Gateway автоматически делает EnsureUserInLeague перед чтением.
  */
 export default function LeaguesScreen() {
+  const { t } = useTranslation();
   const myLeague = useMyLeague();
   const board = useMyLeaderboard();
 
@@ -55,14 +57,14 @@ export default function LeaguesScreen() {
 
   return (
     <View className="flex-1 bg-background">
-      <Stack.Screen options={{ title: 'Лиги' }} />
+      <Stack.Screen options={{ title: t('social.leagues') }} />
       <ScrollView contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 80 }}>
         <Pressable
           onPress={() => router.back()}
           className="flex-row items-center gap-1 self-start active:opacity-60"
         >
           <ArrowLeft size={16} color="#9ca3af" />
-          <Text className="text-muted-foreground font-bold">Назад</Text>
+          <Text className="text-muted-foreground font-bold">{t('social.back')}</Text>
         </Pressable>
 
         <View className="flex-row items-start justify-between gap-3 flex-wrap">
@@ -81,7 +83,7 @@ export default function LeaguesScreen() {
           <Link href="/leagues/history" asChild>
             <Pressable className="bg-card rounded-2xl border-2 border-border px-3 py-2 flex-row items-center gap-1 active:opacity-80">
               <History size={16} color="#fff" />
-              <Text className="text-foreground font-bold">История</Text>
+              <Text className="text-foreground font-bold">{t('social.history')}</Text>
             </Pressable>
           </Link>
         </View>
@@ -299,6 +301,7 @@ function ZoneHints({
 // ----------------------------------------------------------------------------
 
 function Leaderboard({
+
   entries,
   promotionCount,
   demotionCount,
@@ -307,6 +310,7 @@ function Leaderboard({
   promotionCount: number;
   demotionCount: number;
 }) {
+  const { t } = useTranslation();
   if (entries.length === 0) {
     return (
       <View className="bg-card rounded-3xl border-4 border-border p-8 items-center">
@@ -320,7 +324,7 @@ function Leaderboard({
   return (
     <View className="bg-card rounded-3xl border-4 border-border overflow-hidden">
       <View className="px-5 py-3 border-b-2 border-border bg-muted/30">
-        <Text className="text-foreground font-black text-lg">Топ когорты</Text>
+        <Text className="text-foreground font-black text-lg">{t('social.top_cohort')}</Text>
       </View>
       {entries.map((e, idx) => (
         <LeaderboardRow

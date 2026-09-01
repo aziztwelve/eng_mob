@@ -1,16 +1,18 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { glass } from '@/components/sunset';
 import type { AIWritingFeedback, AssessWritingResponse } from '@/types/api';
 
 export function AssessmentResult({ data }: { data: AssessWritingResponse }) {
+  const { t } = useTranslation();
   return (
     <View style={{ gap: 12 }}>
       {/* Overall */}
       <View style={[s.card, glass]}>
         <View style={s.overallRow}>
           <View>
-            <Text style={s.label}>Общая оценка</Text>
+            <Text style={s.label}>{t('ai.overall')}</Text>
             <Text style={[s.bigScore, { color: scoreColor(data.overall_score) }]}>
               {data.overall_score}
               <Text style={s.bigScoreDenom}> /100</Text>
@@ -18,22 +20,22 @@ export function AssessmentResult({ data }: { data: AssessWritingResponse }) {
           </View>
           <View style={[s.badgeWrap, { backgroundColor: scoreBadgeBg(data.overall_score), borderColor: scoreBorder(data.overall_score) }]}>
             <Text style={[s.badgeText, { color: scoreColor(data.overall_score) }]}>
-              {scoreLabel(data.overall_score)}
+              {t(scoreLabelKey(data.overall_score))}
             </Text>
           </View>
         </View>
         <View style={s.barsGrid}>
-          <ScoreBar label="Грамматика" value={data.grammar_score} />
-          <ScoreBar label="Лексика" value={data.vocabulary_score} />
-          <ScoreBar label="Связность" value={data.coherence_score} />
-          <ScoreBar label="Стиль" value={data.style_score} />
+          <ScoreBar label={t('ai.grammar')} value={data.grammar_score} />
+          <ScoreBar label={t('ai.vocabulary')} value={data.vocabulary_score} />
+          <ScoreBar label={t('ai.coherence')} value={data.coherence_score} />
+          <ScoreBar label={t('ai.style')} value={data.style_score} />
         </View>
       </View>
 
       {/* Corrected text */}
       {data.corrected_text ? (
         <View style={[s.card, glass]}>
-          <Text style={s.sectionTitle}>Исправленный текст</Text>
+          <Text style={s.sectionTitle}>{t('ai.corrected')}</Text>
           <View style={s.correctedBox}>
             <Text style={s.correctedText}>{data.corrected_text}</Text>
           </View>
@@ -43,7 +45,7 @@ export function AssessmentResult({ data }: { data: AssessWritingResponse }) {
       {/* Feedback */}
       {data.feedback && data.feedback.length > 0 ? (
         <View style={[s.card, glass]}>
-          <Text style={s.sectionTitle}>Подробный фидбэк</Text>
+          <Text style={s.sectionTitle}>{t('ai.feedback_title')}</Text>
           <View style={{ gap: 8 }}>
             {data.feedback.map((f, i) => <FeedbackRow key={i} item={f} />)}
           </View>
@@ -87,7 +89,7 @@ function scoreColor(v: number) { return v >= 80 ? '#10b981' : v >= 60 ? '#f59e0b
 function scoreBarColor(v: number) { return v >= 80 ? '#10b981' : v >= 60 ? '#f59e0b' : '#f87171'; }
 function scoreBadgeBg(v: number) { return v >= 80 ? 'rgba(16,185,129,0.12)' : v >= 60 ? 'rgba(245,158,11,0.12)' : 'rgba(248,113,113,0.12)'; }
 function scoreBorder(v: number) { return v >= 80 ? 'rgba(16,185,129,0.3)' : v >= 60 ? 'rgba(245,158,11,0.3)' : 'rgba(248,113,113,0.3)'; }
-function scoreLabel(v: number) { return v >= 90 ? 'Отлично' : v >= 75 ? 'Хорошо' : v >= 60 ? 'Норм' : v >= 40 ? 'Слабо' : 'Плохо'; }
+function scoreLabelKey(v: number) { return v >= 90 ? 'ai.score_great' : v >= 75 ? 'ai.score_good' : v >= 60 ? 'ai.score_ok' : v >= 40 ? 'ai.score_weak' : 'ai.score_bad'; }
 function categoryLabel(c: string) { return c === 'grammar' ? 'Грамматика' : c === 'vocabulary' ? 'Лексика' : c === 'coherence' ? 'Связность' : c === 'style' ? 'Стиль' : c; }
 function categoryBg(c: string) { return c === 'grammar' ? 'rgba(244,63,94,0.15)' : c === 'vocabulary' ? 'rgba(59,130,246,0.15)' : c === 'coherence' ? 'rgba(139,92,246,0.15)' : c === 'style' ? 'rgba(245,158,11,0.15)' : 'rgba(255,255,255,0.1)'; }
 function categoryColor(c: string) { return c === 'grammar' ? '#f43f5e' : c === 'vocabulary' ? '#3b82f6' : c === 'coherence' ? '#8b5cf6' : c === 'style' ? '#f59e0b' : '#fff'; }

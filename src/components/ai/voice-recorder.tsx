@@ -5,6 +5,7 @@ import { Audio } from 'expo-av';
 import { LinearGradient } from 'expo-linear-gradient';
 import { glass, CTA } from '@/components/sunset';
 import type { PronunciationAudioInput } from '@/lib/ai-api';
+import { useTranslation } from 'react-i18next';
 
 const MAX_DURATION_SEC = 60;
 type State = 'idle' | 'recording' | 'recorded' | 'denied';
@@ -18,6 +19,7 @@ export function VoiceRecorder({
   minDurationSec?: number;
   onSubmit: (input: PronunciationAudioInput, durationSec: number) => void | Promise<void>;
 }) {
+  const { t } = useTranslation();
   const [state, setState] = useState<State>('idle');
   const [seconds, setSeconds] = useState(0);
   const [audio, setAudio] = useState<PronunciationAudioInput | null>(null);
@@ -107,10 +109,10 @@ export function VoiceRecorder({
   if (state === 'denied') {
     return (
       <View style={[s.card, glass]}>
-        <Text style={s.deniedTitle}>Нет доступа к микрофону</Text>
-        <Text style={s.deniedText}>Разрешите доступ в настройках устройства.</Text>
+        <Text style={s.deniedTitle}>{t('voice.mic_denied')}</Text>
+        <Text style={s.deniedText}>{t('voice.mic_denied_desc')}</Text>
         <Pressable onPress={() => setState('idle')} style={[s.retryBtn, glass]}>
-          <Text style={s.retryText}>Попробовать снова</Text>
+          <Text style={s.retryText}>{t('voice.retry')}</Text>
         </Pressable>
       </View>
     );
@@ -125,7 +127,7 @@ export function VoiceRecorder({
               <Mic size={28} color="#fff" />
             </LinearGradient>
           </Pressable>
-          <Text style={s.hint}>Нажмите и говорите. Максимум {MAX_DURATION_SEC} с.</Text>
+          <Text style={s.hint}>{t('voice.hint', { sec: MAX_DURATION_SEC })}</Text>
         </View>
       )}
 
@@ -152,22 +154,22 @@ export function VoiceRecorder({
                 ? <Pause size={22} color="#FFD84A" fill="#FFD84A" />
                 : <Play size={22} color="#FFD84A" fill="#FFD84A" />}
             </Pressable>
-            <Text style={s.duration}>Длительность: {formatSeconds(seconds)}</Text>
+            <Text style={s.duration}>{t('voice.duration', { dur: formatSeconds(seconds) })}</Text>
           </View>
           <View style={s.actionsRow}>
             <Pressable onPress={reset} disabled={loading} style={[s.rerecBtn, glass]}>
               <Trash2 size={14} color="rgba(255,255,255,0.6)" />
-              <Text style={s.rerecText}>Перезаписать</Text>
+              <Text style={s.rerecText}>{t('voice.rerec')}</Text>
             </Pressable>
             <Pressable onPress={submit} disabled={loading || !canSubmit} style={s.submitWrap}>
               <LinearGradient colors={loading || !canSubmit ? ['rgba(255,255,255,0.12)', 'rgba(255,255,255,0.12)'] : CTA} style={s.submitBtn}>
                 {loading
                   ? <ActivityIndicator size="small" color="rgba(255,255,255,0.6)" />
-                  : <Text style={s.submitText}>Проверить →</Text>}
+                  : <Text style={s.submitText}>{t('voice.check_btn')}</Text>}
               </LinearGradient>
             </Pressable>
           </View>
-          {!canSubmit && <Text style={s.minDuration}>Запишите минимум {formatSeconds(minDurationSec)}.</Text>}
+          {!canSubmit && <Text style={s.minDuration}>{t('voice.min_dur', { dur: formatSeconds(minDurationSec) })}</Text>}
         </View>
       )}
     </View>

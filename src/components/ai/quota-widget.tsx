@@ -1,11 +1,13 @@
 import React from 'react';
 import { ActivityIndicator, StyleSheet, View, Text } from 'react-native';
 import { Crown, Sparkles } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 import { useAIQuota } from '@/hooks/use-ai';
 import type { AIQuotaStatus } from '@/types/api';
 import { glass } from '@/components/sunset';
 
 export function QuotaWidget({ compact = false }: { compact?: boolean }) {
+  const { t } = useTranslation();
   const { data, isLoading } = useAIQuota();
 
   if (isLoading) {
@@ -33,9 +35,9 @@ export function QuotaWidget({ compact = false }: { compact?: boolean }) {
         </View>
         {!isPremium && (
           <>
-            <Pill label="Чаты" used={data.chat_used} limit={data.chat_limit} />
-            <Pill label="Письмо" used={data.writing_used} limit={data.writing_limit} />
-            <Pill label="Голос" used={Math.round(data.voice_minutes_used * 10) / 10} limit={data.voice_minutes_limit} suffix="м" />
+            <Pill label={t('ai.chats')} used={data.chat_used} limit={data.chat_limit} />
+            <Pill label={t('ai.writing')} used={data.writing_used} limit={data.writing_limit} />
+            <Pill label={t('ai.voice_short')} used={Math.round(data.voice_minutes_used * 10) / 10} limit={data.voice_minutes_limit} suffix={t('ai.min_short')} />
           </>
         )}
       </View>
@@ -47,7 +49,7 @@ export function QuotaWidget({ compact = false }: { compact?: boolean }) {
       <View style={s.fullHeader}>
         <View style={s.fullHeaderLeft}>
           <Sparkles size={16} color="#FFD84A" />
-          <Text style={s.fullTitle}>AI-лимиты сегодня</Text>
+          <Text style={s.fullTitle}>{t('ai.quota_title')}</Text>
         </View>
         <View style={[s.planPill, isPremium ? s.planPillGold : { backgroundColor: 'rgba(255,255,255,0.1)' }]}>
           {isPremium && <Crown size={11} color="#f59e0b" />}
@@ -57,12 +59,12 @@ export function QuotaWidget({ compact = false }: { compact?: boolean }) {
         </View>
       </View>
       <View style={s.countersRow}>
-        <Counter label="Чаты" used={data.chat_used} limit={data.chat_limit} />
-        <Counter label="Голос (мин)" used={Math.round(data.voice_minutes_used * 10) / 10} limit={data.voice_minutes_limit} />
-        <Counter label="Письмо" used={data.writing_used} limit={data.writing_limit} />
+        <Counter label={t('ai.chats')} used={data.chat_used} limit={data.chat_limit} />
+        <Counter label={t('ai.voice_min')} used={Math.round(data.voice_minutes_used * 10) / 10} limit={data.voice_minutes_limit} />
+        <Counter label={t('ai.writing')} used={data.writing_used} limit={data.writing_limit} />
       </View>
       {data.resets_at && !isPremium && (
-        <Text style={s.resetsText}>Сбросится: {fmtResetsAt(data.resets_at)}</Text>
+        <Text style={s.resetsText}>{t('ai.resets', { time: fmtResetsAt(data.resets_at) })}</Text>
       )}
     </View>
   );

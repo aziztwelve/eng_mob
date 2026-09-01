@@ -16,6 +16,7 @@ import { ScenarioCard } from '@/components/ai/scenario-card';
 import { QuotaWidget, hasQuotaLeft } from '@/components/ai/quota-widget';
 import { useAIQuota, useAIScenarios, useStartConversation } from '@/hooks/use-ai';
 import { glass, SunsetHeader, SunsetSubhead } from '@/components/sunset';
+import { useTranslation } from 'react-i18next';
 
 const LANG_OPTIONS: { value: string; label: string; disabled?: boolean }[] = [
   { value: '', label: 'Все' },
@@ -35,6 +36,7 @@ const LEVEL_OPTIONS = [
 ];
 
 export default function RoleplayScreen() {
+  const { t } = useTranslation();
   const [language, setLanguage] = useState('');
   const [level, setLevel] = useState('');
   const [pendingId, setPendingId] = useState<string | null>(null);
@@ -84,13 +86,13 @@ export default function RoleplayScreen() {
 
         {!canChat && (
           <View style={s.warnCard}>
-            <Text style={s.warnText}>Лимит чатов на сегодня исчерпан. Попробуйте завтра.</Text>
+            <Text style={s.warnText}>{t('ai.limit_chats')}</Text>
           </View>
         )}
 
         {/* Фильтры */}
         <View style={[s.filterCard, glass]}>
-          <Text style={s.filterLabel}>Язык</Text>
+          <Text style={s.filterLabel}>{t('ai.lang')}</Text>
           <View style={s.pillRow}>
             {LANG_OPTIONS.map((o) => (
               <FilterPill
@@ -102,7 +104,7 @@ export default function RoleplayScreen() {
               />
             ))}
           </View>
-          <Text style={[s.filterLabel, { marginTop: 12 }]}>Уровень</Text>
+          <Text style={[s.filterLabel, { marginTop: 12 }]}>{t('ai.level')}</Text>
           <View style={s.pillRow}>
             {LEVEL_OPTIONS.map((o) => (
               <FilterPill
@@ -124,8 +126,8 @@ export default function RoleplayScreen() {
         ) : scenarios.length === 0 ? (
           <View style={[s.emptyCard, glass]}>
             <Text style={{ fontSize: 36, marginBottom: 8 }}>🎭</Text>
-            <Text style={s.emptyTitle}>Сценарии не найдены</Text>
-            <Text style={s.emptyText}>Попробуйте другие фильтры или сбросьте их.</Text>
+            <Text style={s.emptyTitle}>{t('ai.no_scenarios')}</Text>
+            <Text style={s.emptyText}>{t('ai.no_scenarios_sub')}</Text>
           </View>
         ) : (
           <View style={{ gap: 10 }}>
@@ -155,6 +157,7 @@ function FilterPill({
   onPress: () => void;
   disabled?: boolean;
 }) {
+  const { t } = useTranslation();
   return (
     <Pressable
       onPress={() => !disabled && onPress()}
@@ -168,7 +171,7 @@ function FilterPill({
       <Text style={[s.pillText, active && !disabled && s.pillTextActive]}>
         {label}
       </Text>
-      {disabled && <Text style={s.soonText}>Скоро</Text>}
+      {disabled && <Text style={s.soonText}>{t('ai.soon')}</Text>}
     </Pressable>
   );
 }

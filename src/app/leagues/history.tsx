@@ -7,6 +7,7 @@ import {
   View,
 } from 'react-native';
 import { Stack, router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import {
   ArrowDown,
   ArrowLeft,
@@ -27,6 +28,7 @@ const PAGE_SIZE = 20;
  * (mirror web /leagues/history). Каждая запись = (user, week).
  */
 export default function LeagueHistoryScreen() {
+  const { t } = useTranslation();
   const [offset, setOffset] = useState(0);
 
   const history = useLeagueHistory({ limit: PAGE_SIZE, offset });
@@ -42,26 +44,25 @@ export default function LeagueHistoryScreen() {
 
   return (
     <View className="flex-1 bg-background">
-      <Stack.Screen options={{ title: 'История лиг' }} />
+      <Stack.Screen options={{ title: t('lg.history_title') }} />
       <ScrollView contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 80 }}>
         <Pressable
           onPress={() => router.back()}
           className="flex-row items-center gap-1 self-start active:opacity-60"
         >
           <ArrowLeft size={16} color="#9ca3af" />
-          <Text className="text-muted-foreground font-bold">К лигам</Text>
+          <Text className="text-muted-foreground font-bold">{t('lg.to_leagues')}</Text>
         </Pressable>
 
         <View className="gap-2">
           <View className="flex-row items-center gap-2">
             <History size={28} color="#00FFA3" />
             <Text className="text-foreground font-black text-3xl">
-              История лиг
+              {t('lg.history_title')}
             </Text>
           </View>
           <Text className="text-muted-foreground font-medium">
-            Все ваши еженедельные итоги: финальное место, заработанные XP и
-            gems, переходы между лигами.
+            {t('lg.history_desc')}
           </Text>
         </View>
 
@@ -73,10 +74,10 @@ export default function LeagueHistoryScreen() {
           <View className="bg-card rounded-3xl border-4 border-border p-8 items-center gap-2">
             <History size={42} color="#9ca3af" />
             <Text className="text-foreground font-black text-xl">
-              Истории пока нет
+              {t('lg.no_history')}
             </Text>
             <Text className="text-muted-foreground font-medium text-center">
-              Завершите первый еженедельный цикл, и итог появится здесь.
+              {t('lg.no_history_desc')}
             </Text>
           </View>
         ) : (
@@ -114,6 +115,7 @@ function HistoryRow({
   entry: LeagueHistoryEntry;
   league?: League;
 }) {
+  const { t } = useTranslation();
   const accent = league?.color || '#94a3b8';
   const startDate = tsToDate(entry.cycle_start_at);
   const endDate = tsToDate(entry.cycle_end_at);
@@ -143,7 +145,7 @@ function HistoryRow({
         <View className="flex-1 min-w-0">
           <View className="flex-row items-center gap-2 flex-wrap">
             <Text className="text-foreground font-black text-base flex-shrink" numberOfLines={1}>
-              {league?.name ?? `League ${entry.league_id}`}
+              {league?.name ?? t('lg.league_n', { n: entry.league_id })}
             </Text>
             <Outcome promoted={entry.promoted} demoted={entry.demoted} />
           </View>
@@ -178,12 +180,13 @@ function Outcome({
   promoted: boolean;
   demoted: boolean;
 }) {
+  const { t } = useTranslation();
   if (promoted) {
     return (
       <View className="flex-row items-center gap-1 bg-emerald-500 rounded-lg px-2 py-0.5">
         <ArrowUp size={12} color="#fff" />
         <Text className="text-white font-bold text-[10px] uppercase tracking-wider">
-          Промо
+          {t('lg.promoted')}
         </Text>
       </View>
     );
@@ -193,7 +196,7 @@ function Outcome({
       <View className="flex-row items-center gap-1 bg-rose-500 rounded-lg px-2 py-0.5">
         <ArrowDown size={12} color="#fff" />
         <Text className="text-white font-bold text-[10px] uppercase tracking-wider">
-          Демо
+          {t('lg.demoted')}
         </Text>
       </View>
     );
@@ -202,7 +205,7 @@ function Outcome({
     <View className="flex-row items-center gap-1 border-2 border-border rounded-lg px-2 py-0.5">
       <Minus size={12} color="#9ca3af" />
       <Text className="text-muted-foreground font-bold text-[10px] uppercase tracking-wider">
-        Остались
+        {t('lg.stayed')}
       </Text>
     </View>
   );
@@ -233,13 +236,14 @@ function Pagination({
   pageSize: number;
   onChange: (next: number) => void;
 }) {
+  const { t } = useTranslation();
   const page = Math.floor(offset / pageSize) + 1;
   const pages = Math.max(1, Math.ceil(total / pageSize));
   const canPrev = offset > 0;
   const canNext = offset + pageSize < total;
 
   return (
-    <View className="flex-row items-center justify-between gap-3">
+    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
       <Pressable
         disabled={!canPrev}
         onPress={() => onChange(Math.max(0, offset - pageSize))}
@@ -247,10 +251,10 @@ function Pagination({
           canPrev ? 'active:opacity-80' : 'opacity-40'
         }`}
       >
-        <Text className="text-foreground font-bold">← Назад</Text>
+        <Text className="text-foreground font-bold">{t('lg.prev')}</Text>
       </Pressable>
       <Text className="text-muted-foreground font-medium text-sm tabular-nums">
-        Стр. {page} из {pages}
+        {t('lg.page_of', { page, pages })}
       </Text>
       <Pressable
         disabled={!canNext}
@@ -259,7 +263,7 @@ function Pagination({
           canNext ? 'active:opacity-80' : 'opacity-40'
         }`}
       >
-        <Text className="text-foreground font-bold">Вперёд →</Text>
+        <Text className="text-foreground font-bold">{t('lg.next')}</Text>
       </Pressable>
     </View>
   );

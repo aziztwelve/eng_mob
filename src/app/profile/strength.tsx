@@ -8,6 +8,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { Stack, router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Layers, TrendingDown, TrendingUp } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -24,9 +25,9 @@ import { glass, CtaButton, SunsetTabs } from '@/components/sunset';
 type Filter = 'all' | 'module' | 'lesson';
 
 const TABS = [
-  { key: 'all', label: 'Все' },
-  { key: 'module', label: 'Модули' },
-  { key: 'lesson', label: 'Уроки' },
+  { key: 'all', label: 'stw.tab_all' },
+  { key: 'module', label: 'stw.tab_module' },
+  { key: 'lesson', label: 'stw.tab_lesson' },
 ];
 
 /**
@@ -37,6 +38,7 @@ const TABS = [
  * current_strength по decay_rate (default 0.05/day).
  */
 export default function StrengthScreen() {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const [filter, setFilter] = useState<Filter>('all');
   const skillType: SkillTypeShort | undefined =
@@ -52,7 +54,7 @@ export default function StrengthScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-      <Stack.Screen options={{ title: 'Сила навыков' }} />
+      <Stack.Screen options={{ title: t('profile.strength_title') }} />
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 40 + insets.bottom }}
@@ -60,16 +62,15 @@ export default function StrengthScreen() {
         <View style={{ gap: 8 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <Layers size={28} color="#FFD84A" />
-            <Text style={s.title}>Сила навыков</Text>
+            <Text style={s.title}>{t('profile.strength')}</Text>
           </View>
           <Text style={s.subtitle}>
-            Каждый завершённый урок и модуль становятся «навыком». Без практики
-            навык медленно «ржавеет» — практикуйтесь, чтобы сохранить силу.
+            {t('stw.subtitle')}
           </Text>
         </View>
 
         <SunsetTabs
-          tabs={TABS}
+          tabs={TABS.map((tab) => ({ ...tab, label: t(tab.label) }))}
           active={filter}
           onChange={(k) => setFilter(k as Filter)}
         />
@@ -79,16 +80,16 @@ export default function StrengthScreen() {
           <View style={s.cardHead}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <TrendingDown size={18} color="#FFB338" />
-              <Text style={s.cardTitle}>Слабые навыки</Text>
+              <Text style={s.cardTitle}>{t('stw.weak')}</Text>
             </View>
             <View style={{ width: 130 }}>
-              <CtaButton label="Подтянуть" onPress={() => router.push('/practice/session')} />
+              <CtaButton label={t('stw.boost')} onPress={() => router.push('/practice/session')} />
             </View>
           </View>
           {weak.isLoading ? (
             <ActivityIndicator color="#FFD84A" style={{ marginVertical: 12 }} />
           ) : (weak.data?.skills?.length ?? 0) === 0 ? (
-            <Text style={s.empty}>Слабых навыков нет — отлично!</Text>
+            <Text style={s.empty}>{t('stw.no_weak')}</Text>
           ) : (
             <View style={{ gap: 12, marginTop: 4 }}>
               {weak.data?.skills?.map((sk) => (
@@ -102,7 +103,7 @@ export default function StrengthScreen() {
         <View style={[glass, s.card]}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <TrendingUp size={18} color="#34D399" />
-            <Text style={s.cardTitle}>Все навыки</Text>
+            <Text style={s.cardTitle}>{t('stw.all')}</Text>
             {sorted.length > 0 && (
               <Text style={s.count}>· {sorted.length}</Text>
             )}
@@ -112,7 +113,7 @@ export default function StrengthScreen() {
             <ActivityIndicator color="#FFD84A" style={{ marginVertical: 12 }} />
           ) : sorted.length === 0 ? (
             <Text style={s.empty}>
-              Здесь будут навыки, когда вы пройдёте первый урок.
+              {t('stw.empty')}
             </Text>
           ) : (
             <View style={{ gap: 12, marginTop: 8 }}>
@@ -128,6 +129,7 @@ export default function StrengthScreen() {
 }
 
 function SkillBar({ skill }: { skill: SkillDecay }) {
+  const { t } = useTranslation();
   const pct = Math.round(Math.max(0, Math.min(1, skill.current_strength)) * 100);
   const last = tsToDate(skill.last_practiced_at ?? null);
   const kind = skillTypeShort(skill.skill_type);
@@ -139,7 +141,7 @@ function SkillBar({ skill }: { skill: SkillDecay }) {
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           {kind && (
             <View style={s.kindPill}>
-              <Text style={s.kindText}>{kind === 'module' ? 'Модуль' : 'Урок'}</Text>
+              <Text style={s.kindText}>{kind === 'module' ? t('stw.module') : t('stw.lesson')}</Text>
             </View>
           )}
           <Text style={s.skillId} numberOfLines={1}>{skill.skill_id}</Text>

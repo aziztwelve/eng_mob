@@ -21,8 +21,10 @@ import type { AIWordScore, CheckPronunciationResponse } from '@/types/api';
 import type { PronunciationAudioInput } from '@/lib/ai-api';
 import { AI_TARGET_LANGS, DEFAULT_TARGET_LANG } from '@/lib/ai-languages';
 import { glass, SunsetHeader, SunsetSubhead, CtaButton } from '@/components/sunset';
+import { useTranslation } from 'react-i18next';
 
 export default function PronunciationScreen() {
+  const { t } = useTranslation();
   const [target, setTarget] = useState('');
   const [language, setLanguage] = useState(DEFAULT_TARGET_LANG);
   const [resetSignal, setResetSignal] = useState(0);
@@ -37,7 +39,7 @@ export default function PronunciationScreen() {
     try {
       await mut.mutateAsync({ audio, target_text: target.trim(), language });
     } catch (err) {
-      Toast.show({ type: 'error', text1: 'Ошибка проверки', text2: err instanceof Error ? err.message : undefined });
+      Toast.show({ type: 'error', text1: t('ai.check_failed'), text2: err instanceof Error ? err.message : undefined });
     }
   };
 
@@ -57,7 +59,7 @@ export default function PronunciationScreen() {
 
         {/* Ввод фразы */}
         <View style={[s.card, glass, { marginTop: 12 }]}>
-          <Text style={s.label}>Фраза для произношения</Text>
+          <Text style={s.label}>{t('ai.phrase')}</Text>
           <TextInput
             value={target}
             onChangeText={setTarget}
@@ -65,10 +67,10 @@ export default function PronunciationScreen() {
             placeholderTextColor="rgba(255,255,255,0.35)"
             style={s.input}
           />
-          <Text style={[s.label, { marginTop: 14 }]}>Язык</Text>
+          <Text style={[s.label, { marginTop: 14 }]}>{t('ai.lang')}</Text>
           <LangPills options={AI_TARGET_LANGS} value={language} onChange={setLanguage} />
           {!canVoice && (
-            <Text style={s.limitText}>Лимит голосовых минут исчерпан. Сбрасывается завтра.</Text>
+            <Text style={s.limitText}>{t('ai.limit_voice')}</Text>
           )}
         </View>
 
@@ -80,13 +82,13 @@ export default function PronunciationScreen() {
         ) : (
           <View style={[s.hintCard, glass, { marginTop: 14 }]}>
             <Text style={{ fontSize: 28, marginBottom: 8 }}>🎤</Text>
-            <Text style={s.hintText}>Введите фразу выше, чтобы появилась кнопка записи.</Text>
+            <Text style={s.hintText}>{t('ai.enter_phrase')}</Text>
           </View>
         )}
 
         {mut.isError && (
           <View style={s.errCard}>
-            <Text style={s.errText}>Ошибка проверки. Попробуйте ещё раз.</Text>
+            <Text style={s.errText}>{t('ai.check_err')}</Text>
           </View>
         )}
 
@@ -99,6 +101,7 @@ export default function PronunciationScreen() {
 }
 
 function Result({ targetText, data, onReset }: { targetText: string; data: CheckPronunciationResponse; onReset: () => void }) {
+  const { t } = useTranslation();
   const overall = Number.isFinite(data.accuracy_score) ? Math.round(data.accuracy_score * 100) : 0;
   const isGood = overall >= 75;
 
@@ -108,7 +111,7 @@ function Result({ targetText, data, onReset }: { targetText: string; data: Check
       <View style={[s.card, glass]}>
         <View style={s.scoreRow}>
           <View>
-            <Text style={s.label}>Точность</Text>
+            <Text style={s.label}>{t('ai.accuracy')}</Text>
             <Text style={[s.scoreBig, { color: isGood ? '#10b981' : '#f59e0b' }]}>
               {overall}<Text style={s.scoreDenom}> /100</Text>
             </Text>
@@ -129,11 +132,11 @@ function Result({ targetText, data, onReset }: { targetText: string; data: Check
 
       {/* Фразы */}
       <View style={[s.card, glass]}>
-        <Text style={s.sectionTitle}>Целевая фраза</Text>
+        <Text style={s.sectionTitle}>{t('ai.target_phrase')}</Text>
         <View style={s.phraseBox}>
           <Text style={s.phraseText}>{targetText}</Text>
         </View>
-        <Text style={[s.sectionTitle, { marginTop: 12 }]}>Распознано</Text>
+        <Text style={[s.sectionTitle, { marginTop: 12 }]}>{t('ai.recognized')}</Text>
         <View style={s.phraseBox}>
           <Text style={[s.phraseText, { fontStyle: 'italic', color: 'rgba(255,255,255,0.8)' }]}>
             {data.transcribed_text}
@@ -141,7 +144,7 @@ function Result({ targetText, data, onReset }: { targetText: string; data: Check
         </View>
         {data.word_scores && data.word_scores.length > 0 && (
           <>
-            <Text style={[s.sectionTitle, { marginTop: 12 }]}>По словам</Text>
+            <Text style={[s.sectionTitle, { marginTop: 12 }]}>{t('ai.by_words')}</Text>
             <View style={s.wordsRow}>
               {data.word_scores.map((w, i) => <WordScoreBadge key={i} item={w} />)}
             </View>
@@ -151,7 +154,7 @@ function Result({ targetText, data, onReset }: { targetText: string; data: Check
 
       <Pressable onPress={onReset} style={[s.resetBtn, glass]}>
         <RotateCcw size={15} color="rgba(255,255,255,0.7)" />
-        <Text style={s.resetText}>Попробовать ещё раз</Text>
+        <Text style={s.resetText}>{t('ai.try_again')}</Text>
       </Pressable>
     </View>
   );

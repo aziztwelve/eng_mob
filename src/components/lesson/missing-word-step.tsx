@@ -13,13 +13,13 @@ interface MissingWordContent {
 }
 
 export function MissingWordStep({ step, onSubmit, onContinue, isLast }: StepComponentProps) {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const content = parseStepContent<MissingWordContent>(step);
   const [suffix, setSuffix] = useState('');
   const [state, setState] = useState<FeedbackState>({ kind: 'idle' });
 
   if (!content?.sentence_template || !content.hint_prefix) {
-    return <Text className="p-6 text-muted-foreground">Invalid missing_word content.</Text>;
+    return <Text className="p-6 text-muted-foreground">{t('lesson.parse_error')}</Text>;
   }
 
   const locked = state.kind !== 'idle';

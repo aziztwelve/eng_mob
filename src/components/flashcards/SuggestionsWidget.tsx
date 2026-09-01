@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, Pressable, ScrollView, ActivityIndicator } from 'react-native';
 import { Sparkles } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 
 import { useFlashcardSuggestions, useBulkCreateFlashcards } from '@/hooks/use-flashcards';
 import type { FlashcardSuggestion } from '@/types/api';
@@ -18,6 +19,7 @@ export interface SuggestionsWidgetProps {
 }
 
 export function SuggestionsWidget({ level, goal, targetLanguage }: SuggestionsWidgetProps) {
+  const { t } = useTranslation();
   const suggestions = useFlashcardSuggestions({
     level,
     goal,
@@ -65,7 +67,7 @@ export function SuggestionsWidget({ level, goal, targetLanguage }: SuggestionsWi
       <View className="flex-row items-center justify-between">
         <View className="flex-row items-center gap-2">
           <Sparkles size={20} color="#FFD84A" />
-          <Text className="text-foreground font-bold text-lg">AI рекомендует</Text>
+          <Text className="text-foreground font-bold text-lg">{t('cards.suggested')}</Text>
         </View>
         <Pressable
           onPress={handleAddAll}
@@ -75,7 +77,7 @@ export function SuggestionsWidget({ level, goal, targetLanguage }: SuggestionsWi
           {bulkCreate.isPending ? (
             <ActivityIndicator size="small" color="white" />
           ) : (
-            <Text className="text-white font-bold text-sm">Добавить все</Text>
+            <Text className="text-white font-bold text-sm">{t('cards.add_all')}</Text>
           )}
         </Pressable>
       </View>

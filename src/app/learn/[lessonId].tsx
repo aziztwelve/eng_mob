@@ -107,7 +107,7 @@ export default function LessonPlayerScreen() {
         }
         if (result.dailyGoalCompleted) {
           fx.onDailyGoal();
-          Toast.show({ type: 'success', text1: '🎯 Цель дня выполнена!' });
+          Toast.show({ type: 'success', text1: t('common.daily_goal_done') });
         }
         if (result.newAchievements.length) {
           fx.onAchievement();
@@ -211,9 +211,9 @@ export default function LessonPlayerScreen() {
           return (
             <View style={styles.fallback}>
               <Text style={styles.fallbackEmoji}>🎬</Text>
-              <Text style={styles.fallbackTitle}>Видео урок</Text>
+              <Text style={styles.fallbackTitle}>{t('common.video_lesson')}</Text>
               <Text style={styles.fallbackBody}>
-                Видео временно недоступно
+                {t('lesson.video_unavailable')}
               </Text>
               <Pressable onPress={() => handleStepComplete()}>
                 <LinearGradient colors={CTA_GRADIENT} style={styles.fallbackCta}>

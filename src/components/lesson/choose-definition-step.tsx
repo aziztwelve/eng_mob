@@ -12,13 +12,13 @@ interface ChooseDefinitionContent {
 }
 
 export function ChooseDefinitionStep({ step, onSubmit, onContinue, isLast }: StepComponentProps) {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const content = parseStepContent<ChooseDefinitionContent>(step);
   const [picked, setPicked] = useState<number | null>(null);
   const [state, setState] = useState<FeedbackState>({ kind: 'idle' });
 
   if (!content?.word || !content.options?.length) {
-    return <Text className="p-6 text-muted-foreground">Invalid choose_definition content.</Text>;
+    return <Text className="p-6 text-muted-foreground">{t('lesson.parse_error')}</Text>;
   }
 
   const locked = state.kind !== 'idle';
@@ -40,7 +40,7 @@ export function ChooseDefinitionStep({ step, onSubmit, onContinue, isLast }: Ste
     <ScrollView className="flex-1 px-4 pt-4" contentContainerClassName="pb-4">
       <Text className="text-muted-foreground text-sm font-bold mb-3">{stepInstruction(step.type, i18n.language)}</Text>
       <View className="rounded-2xl border border-[rgba(255,255,255,0.22)] bg-[rgba(255,255,255,0.10)] p-5 mb-5 items-center">
-        <Text className="text-muted-foreground text-sm font-bold">Word</Text>
+        <Text className="text-muted-foreground text-sm font-bold">{t('lesson.word_col')}</Text>
         <Text className="text-foreground text-3xl font-black mt-1">{content.word}</Text>
       </View>
       <View className="gap-2 mb-5">

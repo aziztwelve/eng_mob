@@ -9,17 +9,16 @@ import { motivationPatch } from '@/lib/onboarding-patches';
 const TOTAL_STEPS = 12;
 
 type Goal =
-  | 'work' | 'exam' | 'travel' | 'relocation' | 'speaking' | 'study'
-  | 'social' | 'content' | 'listening_shadowing';
+  | 'work' | 'exam' | 'travel' | 'speaking' | 'study'
+  | 'listening_shadowing' | 'business_english';
 
 const GOAL_EMOJI: Record<Goal, string> = {
-  work: '💼', exam: '🎯', travel: '✈️', relocation: '🏠', speaking: '🗣️', study: '📚',
-  social: '🫂', content: '🎬', listening_shadowing: '🎧',
+  work: '💼', exam: '🎯', travel: '✈️', speaking: '🗣️', study: '📚',
+  listening_shadowing: '🎧', business_english: '📈',
 };
 
 const GOAL_ORDER: Goal[] = [
-  'work', 'exam', 'travel', 'relocation', 'speaking', 'study',
-  'social', 'content', 'listening_shadowing',
+  'work', 'business_english', 'exam', 'travel', 'speaking', 'study', 'listening_shadowing',
 ];
 
 export default function GoalScreen() {

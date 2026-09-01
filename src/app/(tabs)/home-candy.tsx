@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
+import { useTranslation } from "react-i18next";
 
 import { LearningStartIllustration } from "@/components/LearningStartIllustration";
 import { useUserStats } from "@/hooks/use-user-stats";
@@ -63,6 +64,7 @@ function TrackRow({ track, icon, colors }: { track: Track; icon: string; colors:
 }
 
 export default function SunsetLavaHome() {
+  const { t } = useTranslation();
   const { data: stats } = useUserStats();
   const { data: hearts } = useHearts();
   const { data: dailyGoal } = useDailyGoal();
@@ -90,7 +92,7 @@ export default function SunsetLavaHome() {
   const memoryPct = srs && srs.total_items > 0 ? Math.round(((srs.mastered ?? 0) / srs.total_items) * 100) : 0;
 
   // Имя
-  const name = user?.name || user?.username || "друг";
+  const name = user?.name || user?.username || t('home.friend');
 
   const tracks = tracksResp?.tracks ?? [];
 
@@ -112,10 +114,10 @@ export default function SunsetLavaHome() {
         <View style={s.brandRow}>
           <View style={{ flex: 1 }}>
             <Text style={s.brand}>LingoIQ</Text>
-            <Text style={s.hello}>Привет, {name} 👋 Сегодня цель — {goalXp} XP</Text>
+            <Text style={s.hello}>{t('home.hello', { name, xp: goalXp })}</Text>
           </View>
           <View style={s.todayMini}>
-            <Text style={s.todayLabel}>План</Text>
+            <Text style={s.todayLabel}>{t('home.plan')}</Text>
             <Text style={s.todayValue}>{planPct}%</Text>
           </View>
         </View>
@@ -123,16 +125,16 @@ export default function SunsetLavaHome() {
         {/* Hero */}
         <View style={s.heroCard}>
           <View style={s.heroTop}>
-            <View style={s.pill}><Text style={s.pillText}>🧠 Память растёт</Text></View>
+            <View style={s.pill}><Text style={s.pillText}>{t('home.memory_pill')}</Text></View>
             <LinearGradient colors={["#FFDF5E", "#FFB338"]} style={s.xpBadge}>
               <Text style={s.xpText}>+{goalXp} XP</Text>
             </LinearGradient>
           </View>
-          <Text style={s.heroTitle}>Сегодня: повторить {dueNow} карт</Text>
-          <Text style={s.heroDesc}>Сначала флешкарты, потом короткий трек на 5 минут.</Text>
+          <Text style={s.heroTitle}>{t('home.hero_title', { count: dueNow })}</Text>
+          <Text style={s.heroDesc}>{t('home.hero_desc')}</Text>
           <Pressable onPress={() => router.push('/flashcards' as any)}>
             <LinearGradient colors={["#A8243F", "#CC5A1F"]} style={s.cta}>
-              <Text style={s.ctaText}>НАЧАТЬ</Text>
+              <Text style={s.ctaText}>{t('home.start')}</Text>
             </LinearGradient>
           </Pressable>
           <View style={s.heroArtWrap}>
@@ -142,50 +144,50 @@ export default function SunsetLavaHome() {
 
         {/* Быстрый старт */}
         <View style={s.section}>
-          <SectionHead icon="⚡" title="Быстрый старт" />
+          <SectionHead icon="⚡" title={t('home.quick_title')} />
           <View style={s.quickGrid}>
             <Pressable style={s.quickCard} onPress={() => router.push('/flashcards' as any)}>
               <View style={s.quickBadge}><Text style={s.quickBadgeText}>{dueNow}</Text></View>
               <Text style={s.quickIcon}>🃏</Text>
-              <Text style={s.quickTitle}>Флешкарты</Text>
-              <Text style={s.quickSub}>Повтори слова, которые скоро забудутся</Text>
+              <Text style={s.quickTitle}>{t('home.flashcards')}</Text>
+              <Text style={s.quickSub}>{t('home.flashcards_sub')}</Text>
             </Pressable>
             <View style={s.quickCard}>
               <View style={s.quickBadge}><Text style={s.quickBadgeText}>{memoryPct}%</Text></View>
               <Text style={s.quickIcon}>🧠</Text>
-              <Text style={s.quickTitle}>Память</Text>
-              <Text style={s.quickSub}>Сильные и слабые слова за неделю</Text>
+              <Text style={s.quickTitle}>{t('home.memory')}</Text>
+              <Text style={s.quickSub}>{t('home.memory_sub')}</Text>
             </View>
           </View>
         </View>
 
         {/* Повторение */}
         <View style={s.section}>
-          <SectionHead icon="🔁" title="Повторение" action="Все →" />
+          <SectionHead icon="🔁" title={t('home.review_title')} action={t('home.all')} />
           <View style={s.memStrip}>
             <View style={[s.reviewCard, { flex: 1.5 }]}>
               <View style={s.reviewTop}>
-                <Text style={s.reviewTitle}>К повтору</Text>
+                <Text style={s.reviewTitle}>{t('home.to_review')}</Text>
                 <View style={s.reviewCount}><Text style={s.reviewCountText}>{dueNow}</Text></View>
               </View>
-              <Text style={s.reviewText}>Новые слова из последних уроков. Лучше пройти сейчас.</Text>
+              <Text style={s.reviewText}>{t('home.review_text')}</Text>
               <Pressable onPress={() => router.push('/flashcards' as any)}>
                 <LinearGradient colors={["#A8243F", "#CC5A1F"]} style={s.smallBtn}>
-                  <Text style={s.smallBtnText}>Открыть карты</Text>
+                  <Text style={s.smallBtnText}>{t('home.open_cards')}</Text>
                 </LinearGradient>
               </Pressable>
             </View>
             <View style={[s.streakCard, { flex: 1 }]}>
               <Text style={s.streakNum}>{streak}🔥</Text>
-              <Text style={s.streakLabel}>дней серия</Text>
-              <Text style={s.streakSub}>Осталось {remainingXp} XP до цели дня</Text>
+              <Text style={s.streakLabel}>{t('home.days_streak')}</Text>
+              <Text style={s.streakSub}>{t('home.remaining_xp', { xp: remainingXp })}</Text>
             </View>
           </View>
         </View>
 
         {/* Треки */}
         <View style={s.section}>
-          <SectionHead icon="🧭" title="Треки" action="Все →" />
+          <SectionHead icon="🧭" title={t('home.tracks')} action={t('home.all')} />
           {tracks.map((track, i) => {
             const skin = TRACK_SKINS[i % TRACK_SKINS.length];
             return <TrackRow key={track.id} track={track} icon={skin.icon} colors={skin.colors} />;

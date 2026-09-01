@@ -6,6 +6,7 @@ import Toast from 'react-native-toast-message';
 import { LinearGradient } from 'expo-linear-gradient';
 import { glass, CTA } from '@/components/sunset';
 import { useTranscribeAudio } from '@/hooks/use-ai';
+import { useTranslation } from 'react-i18next';
 
 const MAX_STT_SEC = 60;
 const STT_SAMPLE_RATE = 16000;
@@ -62,7 +63,7 @@ function sttFormatMeta(): {
 export function ChatInput({
   onSend,
   loading = false,
-  placeholder = 'Напишите сообщение…',
+  placeholder,
   showMic = true,
   language,
 }: {
@@ -74,6 +75,7 @@ export function ChatInput({
   /** Язык распознавания (target_language конверсации): 'en' | 'ru' | ... */
   language?: string;
 }) {
+  const { t } = useTranslation();
   const [text, setText] = useState('');
   // Локальный ref — блокирует повторный тап до завершения отправки
   const submittingRef = useRef(false);
@@ -114,8 +116,8 @@ export function ChatInput({
       if (!perm.granted) {
         Toast.show({
           type: 'error',
-          text1: 'Нет доступа к микрофону',
-          text2: 'Разрешите доступ в настройках устройства.',
+          text1: t('voice.mic_denied'),
+          text2: t('voice.mic_denied_desc'),
         });
         return;
       }
@@ -154,7 +156,7 @@ export function ChatInput({
       });
       const recognized = out.text?.trim();
       if (!recognized) {
-        Toast.show({ type: 'info', text1: 'Речь не распознана', text2: 'Попробуйте сказать чётче.' });
+        Toast.show({ type: 'info', text1: t('voice.speech_unrecognized'), text2: t('voice.speak_clearer') });
         return;
       }
       setText((prev) => (prev.trim() ? `${prev.trim()} ${recognized}` : recognized));

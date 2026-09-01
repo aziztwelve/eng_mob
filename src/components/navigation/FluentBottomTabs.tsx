@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import { useTranslation } from 'react-i18next';
 
 import {
   FluentTheme,
@@ -29,6 +30,7 @@ import {
  */
 export function FluentBottomTabs({ state, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const { colors, tabBar, font } = FluentTheme;
 
   // id → конфиг (иконка/заголовок), чтобы не искать линейно на каждый таб.
@@ -112,7 +114,7 @@ export function FluentBottomTabs({ state, navigation }: BottomTabBarProps) {
                   },
                 ]}
               >
-                {item.title}
+                {t(item.title)}
               </Text>
             </Pressable>
           );
