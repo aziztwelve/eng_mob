@@ -246,7 +246,7 @@ function LevelGoals() {
   return <View style={{ gap: 10 }}>
     {TRACK_GOALS.map((goal) => {
       const count = tracks.filter((track) => track.motivation?.includes(goal.key)).length;
-      return <Pressable key={goal.key} onPress={() => router.push(`/tracks?level=${cefrLevel}&goal=${goal.key}` as never)} style={[trk.card, glass]}>
+      return <Pressable key={goal.key} onPress={() => router.push(`/tracks?level=${cefrLevel}` as never)} style={[trk.card, glass]}>
         <View style={trk.thumb}><Text style={{ fontSize: 22 }}>{goal.emoji}</Text></View>
         <View style={{ flex: 1 }}>
           <Text style={trk.title}>{t(`onboarding.goal.options.${goal.key}.title` as never)}</Text>
