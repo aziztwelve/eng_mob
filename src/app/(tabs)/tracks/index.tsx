@@ -38,15 +38,21 @@ const LEGACY_GOAL_ALIASES: Record<string, GoalKey> = {
 export default function TracksScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const params = useLocalSearchParams<{ goal?: string }>();
+  const params = useLocalSearchParams<{ goal?: string; level?: string }>();
   const [search, setSearch] = useState('');
   const [selectedGoal, setSelectedGoal] = useState<GoalKey | null>(null);
+  // Уровень приходит deep-link'ом из Practice (сетка уровней) и живёт
+  // до закрытия экрана; используется только как фильтр запроса.
+  const [level, setLevel] = useState<string | null>(null);
 
   useEffect(() => {
     if (params.goal && GOALS.some((goal) => goal.key === params.goal)) {
       setSelectedGoal(params.goal);
     }
-  }, [params.goal]);
+    if (params.level) {
+      setLevel(params.level.toUpperCase());
+    }
+  }, [params.goal, params.level]);
 
   const onboarding = useOnboardingState();
   const language = onboarding.data?.target_language || undefined;
@@ -54,6 +60,7 @@ export default function TracksScreen() {
   const { data, isLoading, error } = useTracks({
     search: search || undefined,
     language,
+    level: level?.toLowerCase(),
     // API добавляет к трекам выбранной цели универсальные (motivation: []).
     motivation: selectedGoal ? [selectedGoal] : undefined,
     limit: 100,
@@ -152,6 +159,11 @@ export default function TracksScreen() {
                   <Text style={st.levelTitle} numberOfLines={1}>
                     {selectedGoalMeta ? goalTitle(selectedGoalMeta.key) : ''}
                   </Text>
+                  {level && (
+                    <Text style={st.levelSub} numberOfLines={1}>
+                      {level} · {t(`tracks.level_titles.${level}` as never)}
+                    </Text>
+                  )}
                 </View>
                 <View style={[st.progressPill, glass]}>
                   <Text style={st.progressPillText}>{t('tracks.tracks_count', { count: selectedTracks.length })}</Text>
@@ -240,6 +252,7 @@ const st = StyleSheet.create({
   },
   backCircleText: { color: '#fff', fontSize: 24, fontWeight: '900', marginTop: -2 },
   levelTitle: { color: '#fff', fontSize: 20, fontWeight: '900' },
+  levelSub: { color: 'rgba(255,255,255,0.72)', fontSize: 13, fontWeight: '700', marginTop: 2 },
   progressPill: { borderRadius: 14, paddingHorizontal: 12, paddingVertical: 8 },
   progressPillText: { color: '#FFD84A', fontSize: 13, fontWeight: '900' },
 

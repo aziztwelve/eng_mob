@@ -608,6 +608,7 @@ const ru = {
     lessons: 'Уроки',
     search: 'Поиск',
     goals_tracks: 'Цели и треки',
+    levels_tracks: 'Уровни и треки',
     keep_learning: 'Продолжай учиться!',
     keep_learning_text: 'Учись каждый день и достигай своих целей вместе с LingoIQ!',
     reminder: 'Напоминание 🔔',

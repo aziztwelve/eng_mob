@@ -606,6 +606,7 @@ const en = {
     lessons: 'Lessons',
     search: 'Search',
     goals_tracks: 'Goals & tracks',
+    levels_tracks: 'Levels & tracks',
     keep_learning: 'Keep learning!',
     keep_learning_text: 'Learn every day and reach your goals with LingoIQ!',
     reminder: 'Reminder 🔔',

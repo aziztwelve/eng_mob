@@ -606,6 +606,7 @@ const kk = {
     lessons: 'Сабақтар',
     search: 'Іздеу',
     goals_tracks: 'Мақсаттар мен тректер',
+    levels_tracks: 'Деңгейлер мен тректер',
     keep_learning: 'Оқуды жалғастыр!',
     keep_learning_text: 'Күн сайын оқып, LingoIQ-пен мақсаттарыңа жет!',
     reminder: 'Еске салту 🔔',

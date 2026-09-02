@@ -46,17 +46,8 @@ const TABS: { key: TabName; labelKey: string }[] = [
   { key: "words", labelKey: "practice.tab_words" },
 ];
 
-// Валидные цели (как в onboarding): work, business_english, exam, travel,
-// speaking, study, listening_shadowing.
-const TRACK_GOALS: { key: string; emoji: string }[] = [
-  { key: "work", emoji: "💼" },
-  { key: "business_english", emoji: "📈" },
-  { key: "exam", emoji: "🎯" },
-  { key: "travel", emoji: "✈️" },
-  { key: "speaking", emoji: "🗣️" },
-  { key: "study", emoji: "📚" },
-  { key: "listening_shadowing", emoji: "🎧" },
-];
+// Уровни CEFR — вход в каталог треков.
+const LEVELS = ["A1", "A2", "B1", "B2", "C1"] as const;
 
 /** Русская плюрализация «N трек(а/ов)». */
 function nTracksKey(count: number): string {
@@ -166,7 +157,7 @@ export default function LessonsScreen() {
             {/* subhead */}
             <View style={s.subhead}>
               <View>
-                <Text style={s.subheadTitle}>{t('practice.goals_tracks')}</Text>
+                <Text style={s.subheadTitle}>{t('practice.levels_tracks')}</Text>
                 <LinearGradient colors={GOLD} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.subheadUnderline} />
               </View>
             </View>
@@ -224,17 +215,25 @@ function LevelGoals() {
     );
   }
 
-  return <View style={{ gap: 10 }}>
-    {TRACK_GOALS.map((goal) => {
-      const count = tracks.filter((track) => track.motivation?.includes(goal.key)).length;
-      return <Pressable key={goal.key} onPress={() => router.push(`/tracks?goal=${goal.key}` as never)} style={[trk.card, glass]}>
-        <View style={trk.thumb}><Text style={{ fontSize: 22 }}>{goal.emoji}</Text></View>
-        <View style={{ flex: 1 }}>
-          <Text style={trk.title}>{t(`onboarding.goal.options.${goal.key}.title` as never)}</Text>
-          <Text style={trk.desc}>{count ? t(nTracksKey(count), { count }) : t('tracks.lessons_soon')}</Text>
-        </View>
-        <Text style={trk.goText}>›</Text>
-      </Pressable>;
+  const countByLevel = new Map<string, number>();
+  tracks.forEach((track) => {
+    const lvl = (track.level ?? "").toUpperCase();
+    if (lvl) countByLevel.set(lvl, (countByLevel.get(lvl) ?? 0) + 1);
+  });
+
+  // 2-колоночная сетка уровней (стиль goals-grid из /tracks).
+  return <View style={s.levelGrid}>
+    {LEVELS.map((lvl) => {
+      const count = countByLevel.get(lvl) ?? 0;
+      return (
+        <Pressable key={lvl} onPress={() => router.push(`/tracks?level=${lvl}` as never)} style={[s.levelCard, glass]}>
+          <Text style={s.levelEmoji}>{lvl}</Text>
+          <Text style={s.levelTitle}>{t(`tracks.level_titles.${lvl}` as never)}</Text>
+          <Text style={s.levelCount}>
+            {count ? t(nTracksKey(count), { count }) : t('tracks.soon')}
+          </Text>
+        </Pressable>
+      );
     })}
   </View>;
 }
@@ -518,4 +517,11 @@ const s = StyleSheet.create({
   empty: { alignItems: "center", justifyContent: "center", paddingVertical: 56, gap: 10 },
   emptyEmoji: { fontSize: 48 },
   emptyText: { color: "rgba(255,255,255,0.85)", fontSize: 15, fontWeight: "700" },
+
+  /* levels grid */
+  levelGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
+  levelCard: { flexBasis: "47%", flexGrow: 1, minHeight: 132, borderRadius: 20, padding: 16, justifyContent: "space-between" },
+  levelEmoji: { color: "#FFE69A", fontSize: 32, fontWeight: "900", letterSpacing: 1 },
+  levelTitle: { color: "#fff", fontSize: 15, fontWeight: "900", marginTop: 10 },
+  levelCount: { color: "rgba(255,255,255,0.64)", fontSize: 12, fontWeight: "700", marginTop: 6 },
 });
