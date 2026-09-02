@@ -99,6 +99,48 @@ function isAuthEndpoint(endpoint: string): boolean {
   );
 }
 
+/**
+ * Refresh-интерсептор: при 401 на protected-роуте пробуем обновить пару
+ * токенов через POST /auth/refresh (single-flight — параллельные 401 ждут
+ * один refresh) и повторяем исходный запрос один раз.
+ *
+ * Backend ротирует refresh-токен (скользящее окно 7 дней): активный юзер
+ * не разлогинивается, пока открывает app хотя бы раз в неделю.
+ * Если refresh не удался (истёк/отозван) — handleUnauthorized().
+ */
+let refreshing: Promise<boolean> | null = null;
+
+async function tryRefreshTokens(): Promise<boolean> {
+  if (refreshing) return refreshing;
+  refreshing = (async () => {
+    try {
+      // Прямой fetch, минуя ApiClient.request — иначе рекурсия.
+      const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: await AuthService.getRefreshToken() }),
+      });
+      if (!response.ok) return false;
+      const data = (await response.json()) as {
+        access_token: string;
+        refresh_token?: string;
+      };
+      if (!data.access_token) return false;
+      const newRefresh = data.refresh_token || (await AuthService.getRefreshToken());
+      if (!newRefresh) return false;
+      await AuthService.setTokens(data.access_token, newRefresh);
+      return true;
+    } catch {
+      return false;
+    } finally {
+      setTimeout(() => {
+        refreshing = null;
+      }, 100);
+    }
+  })();
+  return refreshing;
+}
+
 /** Sentinel чтобы не дёргать redirect/clear много раз подряд. */
 let unauthorizedHandling: Promise<void> | null = null;
 
@@ -144,10 +186,11 @@ export class ApiClient {
 
   private static async request<T>(
     endpoint: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
+    retried = false
   ): Promise<T> {
     const url = `${this.baseURL}${endpoint}`;
-    
+
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       // Язык контента (треки/уроки/шаги): course-service резолвит
@@ -181,9 +224,22 @@ export class ApiClient {
       const isJson = contentType?.includes('application/json');
 
       if (!response.ok) {
-        // Global 401 handler: токен невалиден / истёк / отсутствует на
-        // protected роуте. Чистим хранилище и кидаем юзера на root —
-        // index.tsx сам решит, куда (welcome/login/tabs).
+        // Refresh-интерсептор: access истёк (401) на protected-роуте —
+        // пробуем обновить токены и повторить запрос один раз.
+        if (
+          response.status === 401 &&
+          !isAuthEndpoint(endpoint) &&
+          !retried &&
+          token
+        ) {
+          if (await tryRefreshTokens()) {
+            return this.request<T>(endpoint, options, true);
+          }
+        }
+
+        // Global 401 handler: refresh не помог (токен отозван / refresh
+        // истёк). Чистим хранилище и кидаем юзера на root — index.tsx
+        // сам решит, куда (welcome/login/tabs).
         // Не делаем редирект для auth-эндпоинтов (claim/login/refresh)
         // и для /auth/guest, чтобы caller сам обработал ошибку без петли.
         if (response.status === 401 && !isAuthEndpoint(endpoint)) {
