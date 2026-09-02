@@ -38,20 +38,34 @@ const glass = {
 /* ------------------------------------------------------------------ */
 /* Data                                                                */
 /* ------------------------------------------------------------------ */
-const TABS = ["Треки", "Курсы", "Мои слова"] as const;
-type TabName = (typeof TABS)[number];
+type TabName = "tracks" | "courses" | "words";
 
-const TRACK_GOALS = [
-  { key: "work", title: "Работа и карьера", emoji: "💼" },
-  { key: "exam", title: "Экзамен", emoji: "🎯" },
-  { key: "travel", title: "Путешествия", emoji: "✈️" },
-  { key: "relocation", title: "Переезд", emoji: "🏠" },
-  { key: "speaking", title: "Разговорная практика", emoji: "🗣️" },
-  { key: "study", title: "Учёба", emoji: "📚" },
-  { key: "social", title: "Друзья и общение", emoji: "🫂" },
-  { key: "content", title: "Фильмы и книги", emoji: "🎬" },
-  { key: "listening_shadowing", title: "Listening & Shadowing", emoji: "🎧" },
-] as const;
+const TABS: { key: TabName; labelKey: string }[] = [
+  { key: "tracks", labelKey: "practice.tab_tracks" },
+  { key: "courses", labelKey: "practice.tab_courses" },
+  { key: "words", labelKey: "practice.tab_words" },
+];
+
+// Валидные цели (как в onboarding): work, business_english, exam, travel,
+// speaking, study, listening_shadowing.
+const TRACK_GOALS: { key: string; emoji: string }[] = [
+  { key: "work", emoji: "💼" },
+  { key: "business_english", emoji: "📈" },
+  { key: "exam", emoji: "🎯" },
+  { key: "travel", emoji: "✈️" },
+  { key: "speaking", emoji: "🗣️" },
+  { key: "study", emoji: "📚" },
+  { key: "listening_shadowing", emoji: "🎧" },
+];
+
+/** Русская плюрализация «N трек(а/ов)». */
+function nTracksKey(count: number): string {
+  const mod10 = count % 10;
+  const mod100 = count % 100;
+  if (mod10 === 1 && mod100 !== 11) return "practice.n_tracks_1";
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return "practice.n_tracks_2";
+  return "practice.n_tracks_5";
+}
 
 /* ------------------------------------------------------------------ */
 /* Small parts                                                         */
@@ -88,7 +102,7 @@ export default function LessonsScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const [activeTab, setActiveTab] = useState<TabName>("Треки");
+  const [activeTab, setActiveTab] = useState<TabName>("tracks");
 
   // Геймификация: реальные данные с бэкенда (как на главной).
   const { data: stats } = useUserStats();
@@ -130,16 +144,16 @@ export default function LessonsScreen() {
         {/* tabs */}
         <View style={s.tabs}>
           {TABS.map((tab) => {
-            const active = tab === activeTab;
+            const active = tab.key === activeTab;
             return (
-              <Pressable key={tab} onPress={() => setActiveTab(tab)}>
+              <Pressable key={tab.key} onPress={() => setActiveTab(tab.key)}>
                 {active ? (
                   <LinearGradient colors={["#A8243F", "#CC5A1F"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[s.tab, s.tabActive]}>
-                    <Text style={[s.tabText, s.tabTextActive]}>{tab}</Text>
+                    <Text style={[s.tabText, s.tabTextActive]}>{t(tab.labelKey)}</Text>
                   </LinearGradient>
                 ) : (
                   <View style={[s.tab, glass]}>
-                    <Text style={s.tabText}>{tab}</Text>
+                    <Text style={s.tabText}>{t(tab.labelKey)}</Text>
                   </View>
                 )}
               </Pressable>
@@ -147,7 +161,7 @@ export default function LessonsScreen() {
           })}
         </View>
 
-        {activeTab === "Треки" ? (
+        {activeTab === "tracks" ? (
           <>
             {/* subhead */}
             <View style={s.subhead}>
@@ -174,7 +188,7 @@ export default function LessonsScreen() {
               </View>
             </View>
           </>
-        ) : activeTab === "Мои слова" ? (
+        ) : activeTab === "words" ? (
           <MyWordsTab />
         ) : (
           <View style={s.empty}>
@@ -217,8 +231,8 @@ function LevelGoals() {
       return <Pressable key={goal.key} onPress={() => router.push(`/tracks?goal=${goal.key}` as never)} style={[trk.card, glass]}>
         <View style={trk.thumb}><Text style={{ fontSize: 22 }}>{goal.emoji}</Text></View>
         <View style={{ flex: 1 }}>
-          <Text style={trk.title}>{goal.title}</Text>
-          <Text style={trk.desc}>{count ? `${count} треков` : "Треки скоро появятся"}</Text>
+          <Text style={trk.title}>{t(`onboarding.goal.options.${goal.key}.title` as never)}</Text>
+          <Text style={trk.desc}>{count ? t(nTracksKey(count), { count }) : t('tracks.lessons_soon')}</Text>
         </View>
         <Text style={trk.goText}>›</Text>
       </Pressable>;
@@ -321,7 +335,7 @@ function MyWordsTab() {
         <Text style={{ fontSize: 48 }}>🎴</Text>
         <Text style={mw.emptyTitle}>{t('practice.your_words')}</Text>
         <Text style={mw.emptyText}>
-          Загрузи стартовый набор для повторения или проходи уроки — слова добавятся сами.
+          {t('practice.your_words_desc')}
         </Text>
         <Pressable
           onPress={() => seedStarter.mutate("en")}

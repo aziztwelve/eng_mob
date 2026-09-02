@@ -654,6 +654,13 @@ const en = {
     stat_today: 'For today',
     due_today2: '{{count}} for today',
     all_words: 'All words →',
+    tab_tracks: 'Tracks',
+    tab_courses: 'Courses',
+    tab_words: 'My words',
+    n_tracks_1: '{{count}} track',
+    n_tracks_2: '{{count}} tracks',
+    n_tracks_5: '{{count}} tracks',
+    your_words_desc: 'Load the starter set for review or take lessons — words are added automatically.',
   },
   profile: {
     stats_title: 'Statistics',

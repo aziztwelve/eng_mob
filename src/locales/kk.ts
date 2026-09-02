@@ -654,6 +654,13 @@ const kk = {
     stat_today: 'Бүгінге',
     due_today2: 'Бүгінге {{count}}',
     all_words: 'Барлық сөз →',
+    tab_tracks: 'Тректер',
+    tab_courses: 'Курстар',
+    tab_words: 'Менің сөздерім',
+    n_tracks_1: '{{count}} трек',
+    n_tracks_2: '{{count}} трек',
+    n_tracks_5: '{{count}} трек',
+    your_words_desc: 'Қайталау үшін бастапқы жиынтықты жүктеп алыңыз немесе сабақтарды өтіңіз — сөздер автоматты қосылады.',
   },
   profile: {
     stats_title: 'Статистика',

@@ -656,6 +656,13 @@ const ru = {
     stat_today: 'На сегодня',
     due_today2: '{{count}} на сегодня',
     all_words: 'Все слова →',
+    tab_tracks: 'Треки',
+    tab_courses: 'Курсы',
+    tab_words: 'Мои слова',
+    n_tracks_1: '{{count}} трек',
+    n_tracks_2: '{{count}} трека',
+    n_tracks_5: '{{count}} треков',
+    your_words_desc: 'Загрузи стартовый набор для повторения или проходи уроки — слова добавятся сами.',
   },
   profile: {
     stats_title: 'Статистика',
