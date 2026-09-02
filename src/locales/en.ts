@@ -465,6 +465,7 @@ const en = {
   tracks: {
     title: 'Lessons',
     title_deep: 'Tracks',
+    pick_goal: 'Pick a goal — we will show all its tracks',
     level_first: 'First, pick your level',
     level_then: 'Now pick a learning goal',
     back_to_levels: '‹ All levels',

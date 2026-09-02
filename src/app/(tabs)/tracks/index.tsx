@@ -34,24 +34,19 @@ const LEGACY_GOAL_ALIASES: Record<string, GoalKey> = {
   career: 'work',
   brain: 'listening_shadowing',
 };
-const LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1'];
 
 export default function TracksScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const params = useLocalSearchParams<{ goal?: string; level?: string }>();
+  const params = useLocalSearchParams<{ goal?: string }>();
   const [search, setSearch] = useState('');
-  const [selectedLevel, setSelectedLevel] = useState<string | null>(null);
   const [selectedGoal, setSelectedGoal] = useState<GoalKey | null>(null);
 
   useEffect(() => {
     if (params.goal && GOALS.some((goal) => goal.key === params.goal)) {
       setSelectedGoal(params.goal);
     }
-    if (params.level && LEVELS.includes(params.level)) {
-      setSelectedLevel(params.level);
-    }
-  }, [params.goal, params.level]);
+  }, [params.goal]);
 
   const onboarding = useOnboardingState();
   const language = onboarding.data?.target_language || undefined;
@@ -59,7 +54,6 @@ export default function TracksScreen() {
   const { data, isLoading, error } = useTracks({
     search: search || undefined,
     language,
-    level: selectedLevel?.toLowerCase(),
     // API добавляет к трекам выбранной цели универсальные (motivation: []).
     motivation: selectedGoal ? [selectedGoal] : undefined,
     limit: 100,
@@ -102,7 +96,7 @@ export default function TracksScreen() {
     })),
   });
 
-  // Общий прогресс уровня: завершённые уроки по всем трекам цели.
+  // Общий прогресс цели: завершённые уроки по всем её трекам.
   const overall = useMemo(() => {
     let total = 0;
     let doneCount = 0;
@@ -123,15 +117,12 @@ export default function TracksScreen() {
 
   const bottomPad = { paddingBottom: 78 + insets.bottom };
 
-  type Item = (typeof GOALS)[number] | string;
-  const items: Item[] = selectedLevel ? GOALS : LEVELS;
-
   return (
     <View style={{ flex: 1 }}>
       <Stack.Screen options={{ title: t('tracks.title_deep') }} />
 
-      {selectedLevel && selectedGoal ? (
-        /* Просмотр уровня+цели: прогресс-карточка в стиле AI-hub */
+      {selectedGoal ? (
+        /* Треки выбранной цели: прогресс-карточка в стиле AI-hub */
         <FlatList
           key={`tracks-${selectedGoal}`}
           data={selectedTracks}
@@ -151,7 +142,7 @@ export default function TracksScreen() {
             <View>
               <View style={st.pathHeader}>
                 <Pressable
-                  onPress={() => { setSelectedGoal(null); setSelectedLevel(null); setSearch(''); }}
+                  onPress={() => { setSelectedGoal(null); setSearch(''); }}
                   style={st.backCircle}
                   hitSlop={8}
                 >
@@ -159,16 +150,15 @@ export default function TracksScreen() {
                 </Pressable>
                 <View style={{ flex: 1, marginLeft: 12, minWidth: 0 }}>
                   <Text style={st.levelTitle} numberOfLines={1}>
-                    {selectedLevel} · {t(`tracks.level_titles.${selectedLevel}` as never)}
+                    {selectedGoalMeta ? goalTitle(selectedGoalMeta.key) : ''}
                   </Text>
-                  <Text style={st.levelGoal} numberOfLines={1}>{selectedGoalMeta ? goalTitle(selectedGoalMeta.key) : ''}</Text>
                 </View>
                 <View style={[st.progressPill, glass]}>
                   <Text style={st.progressPillText}>{t('tracks.tracks_count', { count: selectedTracks.length })}</Text>
                 </View>
               </View>
 
-              {/* Прогресс уровня — карточка как «Твой прогресс с AI» */}
+              {/* Прогресс цели — карточка как «Твой прогресс с AI» */}
               <View style={[st.progressCard, glass]}>
                 <ProgressRing pct={overall.pct} />
                 <View style={{ flex: 1 }}>
@@ -190,47 +180,32 @@ export default function TracksScreen() {
         />
       ) : (
         <FlatList
-          key={selectedLevel ? 'goals-grid' : 'levels-grid'}
-          data={items}
+          key="goals-grid"
+          data={GOALS}
           numColumns={2}
-          keyExtractor={(item) => (typeof item === 'string' ? item : item.key)}
+          keyExtractor={(item) => item.key}
           contentContainerStyle={[st.goalsGrid, bottomPad]}
           columnWrapperStyle={st.goalRow}
           ListHeaderComponent={
             <View style={{ paddingHorizontal: 0 }}>
               <Text style={st.title}>{t('tracks.title')}</Text>
               <LinearGradient colors={GOLD} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={st.underline} />
-              <Text style={st.subtitle}>
-                {selectedLevel ? t('tracks.level_then') : t('tracks.level_first')}
-              </Text>
-              {selectedLevel && (
-                <Pressable onPress={() => setSelectedLevel(null)} style={st.backButton}>
-                  <Text style={st.backButtonText}>{t('tracks.back_to_levels')}</Text>
-                </Pressable>
-              )}
+              <Text style={st.subtitle}>{t('tracks.pick_goal')}</Text>
             </View>
           }
-          renderItem={({ item }) =>
-            typeof item === 'string' ? (
-              <Pressable onPress={() => setSelectedLevel(item)} style={[st.goalCard, glass]}>
-                <Text style={st.levelEmoji}>{item}</Text>
-                <Text style={st.goalTitle}>{t(`tracks.level_titles.${item}` as never)}</Text>
-                <Text style={st.goalCount}>{t('tracks.choose_level')}</Text>
-              </Pressable>
-            ) : (
-              <Pressable onPress={() => setSelectedGoal(item.key)} style={[st.goalCard, glass]}>
-                <View style={[st.goalIcon, { backgroundColor: item.tint, shadowColor: item.tint }]}>
-                  <item.Icon size={24} color="#fff" weight="fill" />
-                </View>
-                <Text style={st.goalTitle}>{goalTitle(item.key)}</Text>
-                <Text style={st.goalCount}>
-                  {(tracksByGoal.get(item.key) ?? []).length
-                    ? t('tracks.tracks_count', { count: (tracksByGoal.get(item.key) ?? []).length })
-                    : t('tracks.soon')}
-                </Text>
-              </Pressable>
-            )
-          }
+          renderItem={({ item }) => (
+            <Pressable onPress={() => setSelectedGoal(item.key)} style={[st.goalCard, glass]}>
+              <View style={[st.goalIcon, { backgroundColor: item.tint, shadowColor: item.tint }]}>
+                <item.Icon size={24} color="#fff" weight="fill" />
+              </View>
+              <Text style={st.goalTitle}>{goalTitle(item.key)}</Text>
+              <Text style={st.goalCount}>
+                {(tracksByGoal.get(item.key) ?? []).length
+                  ? t('tracks.tracks_count', { count: (tracksByGoal.get(item.key) ?? []).length })
+                  : t('tracks.soon')}
+              </Text>
+            </Pressable>
+          )}
         />
       )}
 
@@ -254,9 +229,6 @@ const st = StyleSheet.create({
   title: { color: '#fff', fontSize: 28, fontWeight: '900' },
   underline: { width: 44, height: 3, borderRadius: 2, marginTop: 6 },
   subtitle: { color: 'rgba(255,255,255,0.82)', fontSize: 13, fontWeight: '600', marginTop: 10 },
-  backButton: { alignSelf: 'flex-start', marginTop: 14, paddingVertical: 4 },
-  backButtonText: { color: '#FFE69A', fontSize: 14, fontWeight: '900' },
-  levelEmoji: { color: '#FFE69A', fontSize: 34, fontWeight: '900', letterSpacing: 1 },
   search: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 12, marginTop: 14 },
   searchInput: { flex: 1, color: '#fff', fontSize: 15, fontWeight: '600' },
 
@@ -268,7 +240,6 @@ const st = StyleSheet.create({
   },
   backCircleText: { color: '#fff', fontSize: 24, fontWeight: '900', marginTop: -2 },
   levelTitle: { color: '#fff', fontSize: 20, fontWeight: '900' },
-  levelGoal: { color: 'rgba(255,255,255,0.72)', fontSize: 13, fontWeight: '700', marginTop: 2 },
   progressPill: { borderRadius: 14, paddingHorizontal: 12, paddingVertical: 8 },
   progressPillText: { color: '#FFD84A', fontSize: 13, fontWeight: '900' },
 
