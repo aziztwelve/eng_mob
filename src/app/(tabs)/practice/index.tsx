@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -213,6 +213,24 @@ function LevelGoals() {
   const { data, isLoading } = useTracks({ level, language, limit: 100 });
   const tracks = data?.tracks ?? [];
 
+  // CEFR-уровень для deep-link в /tracks (beginner → A1, как на бэкенде).
+  const cefrLevel = useMemo(() => {
+    switch (level) {
+      case "beginner":
+      case "just_for_fun":
+      case "a1":
+        return "A1";
+      case "a2":
+        return "A2";
+      case "b1":
+        return "B1";
+      case "b2":
+        return "B2";
+      default:
+        return "A1";
+    }
+  }, [level]);
+
   if (isLoading) {
     return <ActivityIndicator color="#FFD84A" style={{ marginVertical: 24 }} />;
   }
@@ -228,7 +246,7 @@ function LevelGoals() {
   return <View style={{ gap: 10 }}>
     {TRACK_GOALS.map((goal) => {
       const count = tracks.filter((track) => track.motivation?.includes(goal.key)).length;
-      return <Pressable key={goal.key} onPress={() => router.push(`/tracks?goal=${goal.key}` as never)} style={[trk.card, glass]}>
+      return <Pressable key={goal.key} onPress={() => router.push(`/tracks?level=${cefrLevel}&goal=${goal.key}` as never)} style={[trk.card, glass]}>
         <View style={trk.thumb}><Text style={{ fontSize: 22 }}>{goal.emoji}</Text></View>
         <View style={{ flex: 1 }}>
           <Text style={trk.title}>{t(`onboarding.goal.options.${goal.key}.title` as never)}</Text>

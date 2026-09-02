@@ -464,6 +464,7 @@ const en = {
   },
   tracks: {
     title: 'Lessons',
+    title_deep: 'Tracks',
     level_first: 'First, pick your level',
     level_then: 'Now pick a learning goal',
     back_to_levels: '‹ All levels',

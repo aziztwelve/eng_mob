@@ -466,6 +466,7 @@ const ru = {
   },
   tracks: {
     title: 'Уроки',
+    title_deep: 'Треки',
     level_first: 'Сначала выбери свой уровень',
     level_then: 'Теперь выбери цель обучения',
     back_to_levels: '‹ Все уровни',

@@ -464,6 +464,7 @@ const kk = {
   },
   tracks: {
     title: 'Сабақтар',
+    title_deep: 'Тректер',
     level_first: 'Алдымен деңгейіңді таңда',
     level_then: 'Енді оқу мақсатын таңда',
     back_to_levels: '‹ Барлық деңгейлер',

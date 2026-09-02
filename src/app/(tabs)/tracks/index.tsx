@@ -128,7 +128,7 @@ export default function TracksScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-      <Stack.Screen options={{ title: t('tracks.title') }} />
+      <Stack.Screen options={{ title: t('tracks.title_deep') }} />
 
       {selectedLevel && selectedGoal ? (
         /* Просмотр уровня+цели: прогресс-карточка в стиле AI-hub */
@@ -151,7 +151,7 @@ export default function TracksScreen() {
             <View>
               <View style={st.pathHeader}>
                 <Pressable
-                  onPress={() => { setSelectedGoal(null); setSearch(''); }}
+                  onPress={() => { setSelectedGoal(null); setSelectedLevel(null); setSearch(''); }}
                   style={st.backCircle}
                   hitSlop={8}
                 >
