@@ -63,7 +63,7 @@ export default function TracksScreen() {
     level: level?.toLowerCase(),
     // API добавляет к трекам выбранной цели универсальные (motivation: []).
     motivation: selectedGoal ? [selectedGoal] : undefined,
-    limit: 100,
+    limit: 500,
   });
 
   const all = useMemo<Track[]>(() => data?.tracks ?? [], [data?.tracks]);

@@ -200,7 +200,7 @@ function LevelGoals() {
   const router = useRouter();
   const onboarding = useOnboardingState();
   const language = onboarding.data?.target_language || undefined;
-  const { data, isLoading } = useTracks({ language, limit: 100 });
+  const { data, isLoading } = useTracks({ language, limit: 500 });
   const tracks = data?.tracks ?? [];
 
   if (isLoading) {
