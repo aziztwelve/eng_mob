@@ -63,7 +63,16 @@ import {
 import { Platform } from 'react-native';
 
 import { AuthService, ensureGuestSession } from './auth-service';
+import Constants from 'expo-constants';
 import { getCurrentLang } from './i18n';
+
+/** Версия приложения для X-App-Version: сервер различает старые и новые
+ *  APK (compat-шимы / adoption-аналитика). В собранном APK — нативная
+ *  версия (app.json version), в Expo Go — expoConfig.version. */
+const APP_VERSION: string =
+  Constants.nativeApplicationVersion ||
+  Constants.expoConfig?.version ||
+  'unknown';
 
 /**
  * Resolve base URL with platform-aware host rewrite.
@@ -196,6 +205,7 @@ export class ApiClient {
       // Язык контента (треки/уроки/шаги): course-service резолвит
       // локаль с фолбэками ru → en.
       'Accept-Language': getCurrentLang(),
+      'X-App-Version': APP_VERSION,
       ...(options.headers as Record<string, string>),
     };
 
