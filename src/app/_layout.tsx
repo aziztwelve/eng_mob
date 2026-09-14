@@ -15,10 +15,12 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { PaperProvider } from 'react-native-paper';
 import Toast from 'react-native-toast-message';
 import NetInfo from '@react-native-community/netinfo';
+import { AppState } from 'react-native';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { queryClient } from '@/lib/query-client';
 import { setupPushHandler } from '@/lib/push-registration';
+import { reschedule as rescheduleLockscreenWords } from '@/lib/lockscreen-words';
 import { initI18n } from '@/lib/i18n';
 import { drainOnboardingQueue } from '@/hooks/use-onboarding';
 
@@ -68,6 +70,30 @@ export default function TabLayout() {
   // Phase 3: глобальный handler для push-уведомлений.
   useEffect(() => {
     setupPushHandler();
+  }, []);
+
+  // Lock Screen Words: пересобираем очередь уведомлений при старте и каждом
+  // возвращении в foreground (свежие слова + пополнение слотов, см.
+  // docs/tasks/mob/lockscreen-words.md). reschedule() сам знает, включена ли
+  // фича (нет — выйдет после cancel).
+  useEffect(() => {
+    let rescheduling = false;
+    const run = async () => {
+      if (rescheduling) return;
+      rescheduling = true;
+      try {
+        await rescheduleLockscreenWords();
+      } catch (err) {
+        if (__DEV__) console.warn('[lockscreen-words] reschedule failed:', err);
+      } finally {
+        rescheduling = false;
+      }
+    };
+    void run();
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') void run();
+    });
+    return () => sub.remove();
   }, []);
 
   // Offline-mutation-queue: дренируем накопленные patch'и при boot

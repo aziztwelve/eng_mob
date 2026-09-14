@@ -35,6 +35,8 @@ export interface PushRegistrationResult {
  * Глобальный handler — как показывать push, когда приложение открыто.
  *
  * Должен быть установлен ОДИН раз при старте app (RootLayout effect).
+ * Также навешивает response-listener: тап по lockscreen-word уведомлению
+ * ведёт в библиотеку слов.
  */
 export function setupPushHandler() {
   Notifications.setNotificationHandler({
@@ -45,7 +47,27 @@ export function setupPushHandler() {
       shouldSetBadge: true,
     }),
   });
+
+  // Lock Screen Words: тап по уведомлению → библиотека слов (/flashcards).
+  // Listener навешивается один раз (модульный singleton), как требует expo-notifications.
+  if (!responseListenerAttached) {
+    responseListenerAttached = true;
+    Notifications.addNotificationResponseReceivedListener(async (response) => {
+      const data = response.notification.request.content.data as {
+        kind?: string;
+      } | undefined;
+      if (data?.kind !== 'lockscreen_word') return;
+      try {
+        const { router } = await import('expo-router');
+        router.push('/flashcards' as never);
+      } catch (err) {
+        if (__DEV__) console.warn('[push] lockscreen deep link failed:', err);
+      }
+    });
+  }
 }
+
+let responseListenerAttached = false;
 
 /**
  * Запрашивает permission (если ещё не).

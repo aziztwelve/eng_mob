@@ -43,6 +43,7 @@ const MENU = [
   { emoji: '🔥', label: 'profile.streak',       href: '/profile/streak' },
   { emoji: '💪', label: 'profile.strength',     href: '/profile/strength' },
   { emoji: '🔔', label: 'profile.notifications', href: '/profile/notifications' },
+  { emoji: '📖', label: 'profile.lockscreen_words', href: '/profile/lockscreen-words' },
   { emoji: '⚙️', label: 'profile.settings',     href: '/profile/settings' },
 ] as const;
 
