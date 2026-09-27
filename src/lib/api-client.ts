@@ -56,6 +56,12 @@ import {
   UserAchievementsResponse,
   UserStats,
   VocabularyEntry,
+  VocabularyBankListResponse,
+  VocabularyBankWordDetail,
+  VocabularyBankProgress,
+  VocabularyBankAttemptRequest,
+  VocabularyBankAttemptResponse,
+  VocabularyBankFeedResponse,
   VocabularyListResponse,
   WeakSkillsResponse,
   XPHistoryResponse,
@@ -543,6 +549,35 @@ export const VocabularyApi = {
     ApiClient.get<{ entry: VocabularyEntry }>(
       `/vocabulary/${encodeURIComponent(id)}`,
     ),
+};
+
+export const VocabularyBankApi = {
+  list: (filter: { cefr_level?: string; search?: string; locale?: string; limit?: number; offset?: number } = {}) => {
+    const qs = new URLSearchParams();
+    Object.entries(filter).forEach(([key, value]) => {
+      if (value !== undefined && value !== '') qs.set(key, String(value));
+    });
+    const query = qs.toString();
+    return ApiClient.get<VocabularyBankListResponse>(`/vocabulary-bank${query ? `?${query}` : ''}`);
+  },
+  get: (externalId: string, locale = 'ru') =>
+    ApiClient.get<{ entry: VocabularyBankWordDetail }>(
+      `/vocabulary-bank/${encodeURIComponent(externalId)}?locale=${encodeURIComponent(locale)}`,
+    ),
+  getProgress: (externalId: string) =>
+    ApiClient.get<{ progress: VocabularyBankProgress }>(
+      `/vocabulary-bank/${encodeURIComponent(externalId)}/progress`,
+    ),
+  recordAttempt: (externalId: string, step: number, body: VocabularyBankAttemptRequest) =>
+    ApiClient.post<VocabularyBankAttemptResponse>(
+      `/vocabulary-bank/${encodeURIComponent(externalId)}/activities/${step}/attempts`, body,
+    ),
+  feed: (filter: { cefr_level?: string; locale?: string; new_limit?: number; in_progress_limit?: number } = {}) => {
+    const qs = new URLSearchParams();
+    Object.entries(filter).forEach(([key, value]) => { if (value !== undefined && value !== '') qs.set(key, String(value)); });
+    const query = qs.toString();
+    return ApiClient.get<VocabularyBankFeedResponse>(`/vocabulary-bank/feed${query ? `?${query}` : ''}`);
+  },
 };
 
 export const TTSApi = {

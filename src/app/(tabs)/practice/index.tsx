@@ -18,6 +18,7 @@ import { useTracks, useTrack } from "@/hooks/use-tracks";
 import { useOnboardingState } from "@/hooks/use-onboarding";
 import { useUserStats } from "@/hooks/use-user-stats";
 import { useHearts } from "@/hooks/use-hearts";
+import VocabularyBankTab from "@/components/vocabulary/VocabularyBankTab";
 import type { Flashcard, Track } from "@/types/api";
 import { useTranslation } from 'react-i18next';
 
@@ -38,12 +39,13 @@ const glass = {
 /* ------------------------------------------------------------------ */
 /* Data                                                                */
 /* ------------------------------------------------------------------ */
-type TabName = "tracks" | "courses" | "words";
+type TabName = "tracks" | "courses" | "words" | "bank";
 
 const TABS: { key: TabName; labelKey: string }[] = [
   { key: "tracks", labelKey: "practice.tab_tracks" },
   { key: "courses", labelKey: "practice.tab_courses" },
   { key: "words", labelKey: "practice.tab_words" },
+  { key: "bank", labelKey: "practice.tab_bank" },
 ];
 
 // Уровни CEFR — вход в каталог треков.
@@ -133,7 +135,12 @@ export default function LessonsScreen() {
         </View>
 
         {/* tabs */}
-        <View style={s.tabs}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={s.tabs}
+          accessibilityRole="tablist"
+        >
           {TABS.map((tab) => {
             const active = tab.key === activeTab;
             return (
@@ -150,7 +157,7 @@ export default function LessonsScreen() {
               </Pressable>
             );
           })}
-        </View>
+        </ScrollView>
 
         {activeTab === "tracks" ? (
           <>
@@ -181,6 +188,8 @@ export default function LessonsScreen() {
           </>
         ) : activeTab === "words" ? (
           <MyWordsTab />
+        ) : activeTab === "bank" ? (
+          <VocabularyBankTab />
         ) : (
           <View style={s.empty}>
             <Text style={s.emptyEmoji}>📚</Text>
@@ -438,9 +447,14 @@ const mw = StyleSheet.create({
   badge: { backgroundColor: "#FF9600", borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4 },
   badgeText: { color: "#fff", fontSize: 11, fontWeight: "800" },
   emptyTitle: { color: "#fff", fontSize: 18, fontWeight: "900", textAlign: "center" },
+  sectionTitle: { color: "#fff", fontSize: 16, fontWeight: "900", marginTop: 6 },
   emptyText: { color: "rgba(255,255,255,0.8)", fontSize: 14, textAlign: "center", lineHeight: 20 },
   allLink: { color: "#FFD84A", fontWeight: "800", fontSize: 14 },
 });
+
+/* ------------------------------------------------------------------ */
+/* Vocabulary Bank                                                     */
+
 
 
 /* ------------------------------------------------------------------ */
@@ -467,6 +481,7 @@ const s = StyleSheet.create({
   title: { color: "#fff", fontSize: 25, fontWeight: "900" },
   search: { flexDirection: "row", alignItems: "center", gap: 7, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 16 },
   searchText: { color: "#fff", fontSize: 14, fontWeight: "700" },
+  searchInput: { flex: 1, color: "#fff", fontSize: 14, fontWeight: "700" },
 
   /* tabs */
   tabs: { flexDirection: "row", gap: 10, marginTop: 12 },

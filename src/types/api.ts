@@ -342,6 +342,80 @@ export interface VocabularyListResponse {
   total: number;
 }
 
+/** Canonical learner-facing Vocabulary Bank; distinct from lesson vocabulary. */
+export interface VocabularyBankWord {
+  external_id: string;
+  word: string;
+  translation: string;
+  part_of_speech: string;
+  cefr_level: string;
+  has_audio: boolean;
+  /** new | in_progress | completed; пусто для анонимного запроса. */
+  status?: string;
+  current_step?: number;
+}
+
+export interface VocabularyBankListResponse {
+  entries: VocabularyBankWord[];
+  total: number;
+}
+
+export interface VocabularyBankWordDetail {
+  word: VocabularyBankWord;
+  lemma: string;
+  meaning: string;
+  activities: VocabularyBankActivity[];
+}
+
+/** Activity content is authored in the immutable Vocabulary Bank import. */
+export interface VocabularyBankActivity {
+  step: number;
+  type: string;
+  instruction: string;
+  payload: Record<string, unknown>;
+}
+
+export interface VocabularyBankProgress {
+  external_id: string;
+  current_step: number;
+  completed_at?: ProtoTimestamp | string;
+  last_activity_at?: ProtoTimestamp | string;
+}
+
+export interface VocabularyBankAttemptRequest {
+  answer?: Record<string, unknown>;
+  is_correct: boolean;
+  score?: number;
+  time_spent_ms?: number;
+  pronunciation_score?: number;
+}
+
+/** XP, начисленный за завершение слова (gateway, при just_completed). */
+export interface VocabularyBankXPAward {
+  amount: number;
+  leveled_up: boolean;
+  new_level: number;
+}
+
+export interface VocabularyBankAttemptResponse {
+  progress: VocabularyBankProgress;
+  /** true только если эта попытка завершила слово. */
+  just_completed?: boolean;
+  xp?: VocabularyBankXPAward;
+}
+
+export interface VocabularyBankFeedEntry {
+  word: VocabularyBankWord;
+  status: 'in_progress' | 'new';
+  current_step: number;
+  last_activity_at?: ProtoTimestamp | string;
+}
+
+export interface VocabularyBankFeedResponse {
+  in_progress: VocabularyBankFeedEntry[];
+  new_words: VocabularyBankFeedEntry[];
+}
+
 export interface TTSCacheEntry {
   id: string;
   text: string;
