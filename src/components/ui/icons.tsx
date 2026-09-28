@@ -139,6 +139,35 @@ export function IconArrowRight(p: IconProps) {
   return <Base {...p}><Line x1={4} y1={12} x2={20} y2={12} /><Polyline points="13,5 20,12 13,19" /></Base>;
 }
 
+export function IconFlame(p: IconProps) {
+  return (
+    <Base {...p}>
+      <Path d="M12 2c1 3-2 4.5-2 7a2 2 0 0 0 4 .5C15.5 11 17 12.6 17 15a5 5 0 0 1-10 0c0-2 1-3.4 2-4.5" />
+      <Path d="M12 22a5 5 0 0 0 5-5" />
+    </Base>
+  );
+}
+
+export function IconHeart(p: IconProps) {
+  return (
+    <Base {...p}>
+      <Path d="M12 21s-7.5-4.6-9.5-9A5.4 5.4 0 0 1 12 6.4 5.4 5.4 0 0 1 21.5 12c-2 4.4-9.5 9-9.5 9z" />
+    </Base>
+  );
+}
+
+export function IconGem(p: IconProps) {
+  return (
+    <Base {...p}>
+      <Path d="M7 3h10l4 6-9 12L3 9z" />
+      <Path d="M3 9h18" />
+      <Path d="M7 3l5 6 5-6" />
+      <Path d="M12 21l-5-12" />
+      <Path d="M12 21l5-12" />
+    </Base>
+  );
+}
+
 export function IconGraduation(p: IconProps) {
   return (
     <Base {...p}>

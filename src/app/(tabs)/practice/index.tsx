@@ -11,7 +11,7 @@ import { useRouter, Stack } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { LinearGradient } from "expo-linear-gradient";
-import Svg, { Path, Circle, Ellipse, Line } from "react-native-svg";
+import Svg, { Path, Circle, Ellipse } from "react-native-svg";
 import { ActivityIndicator } from "react-native";
 
 import { useFlashcards, useFlashcardStats, useSeedStarter } from "@/hooks/use-flashcards";
@@ -20,6 +20,7 @@ import { useOnboardingState } from "@/hooks/use-onboarding";
 import { useUserStats } from "@/hooks/use-user-stats";
 import { useHearts } from "@/hooks/use-hearts";
 import VocabularyBankTab from "@/components/vocabulary/VocabularyBankTab";
+import { IconFlame, IconGem, IconHeart } from "@/components/ui/icons";
 import type { Flashcard, Track } from "@/types/api";
 import { useTranslation } from 'react-i18next';
 
@@ -64,14 +65,6 @@ function nTracksKey(count: number): string {
 /* ------------------------------------------------------------------ */
 /* Small parts                                                         */
 /* ------------------------------------------------------------------ */
-function SearchIcon() {
-  return (
-    <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={2.2} strokeLinecap="round">
-      <Circle cx={11} cy={11} r={7} />
-      <Line x1={21} y1={21} x2={16.5} y2={16.5} />
-    </Svg>
-  );
-}
 
 function Owl() {
   return (
@@ -114,25 +107,24 @@ export default function LessonsScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[s.scroll, { paddingBottom: 20 + tabBarHeight + insets.bottom }]}
       >
-        {/* top: stats + avatar */}
+        {/* top: stats + avatar (line icons, no emoji) */}
         <View style={s.top}>
           <View style={s.stats}>
-            <View style={[s.stat, glass]}><Text style={s.statText}>🔥 {streak}</Text></View>
-            <View style={[s.stat, glass]}><Text style={s.statText}>♥ {heartsCount}</Text></View>
-            <View style={[s.stat, glass]}><Text style={s.statText}>💎 {xp}</Text></View>
+            <View style={[s.stat, glass]}>
+              <IconFlame size={13} color="#FF9F45" />
+              <Text style={s.statText}>{streak}</Text>
+            </View>
+            <View style={[s.stat, glass]}>
+              <IconHeart size={13} color="#FF6B81" />
+              <Text style={s.statText}>{heartsCount}</Text>
+            </View>
+            <View style={[s.stat, glass]}>
+              <IconGem size={13} color="#7ED7FF" />
+              <Text style={s.statText}>{xp}</Text>
+            </View>
           </View>
           <View style={s.avatar}>
-            <Text style={{ fontSize: 24 }}>🧒</Text>
-            <Text style={s.crown}>👑</Text>
-          </View>
-        </View>
-
-        {/* title + search */}
-        <View style={s.titleRow}>
-          <Text style={s.title}>{t('practice.lessons')}</Text>
-          <View style={[s.search, glass]}>
-            <SearchIcon />
-            <Text style={s.searchText}>{t('practice.search')}</Text>
+            <Text style={s.avatarLetter}>K</Text>
           </View>
         </View>
 
@@ -467,26 +459,19 @@ const s = StyleSheet.create({
   scroll: { paddingHorizontal: 20, paddingTop: 8 },
 
   /* top */
-  top: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 4 },
-  stats: { flexDirection: "row", gap: 8, flex: 1 },
-  stat: { paddingHorizontal: 11, paddingVertical: 6, borderRadius: 14 },
-  statText: { color: "#fff", fontWeight: "800", fontSize: 13 },
+  top: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 6 },
+  stats: { flexDirection: "row", gap: 7, flex: 1 },
+  stat: { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 13 },
+  statText: { color: "#fff", fontWeight: "800", fontSize: 12.5 },
   avatar: {
-    width: 42, height: 42, borderRadius: 21, backgroundColor: "#FFD16A",
-    borderWidth: 2, borderColor: "rgba(255,255,255,0.7)",
+    width: 38, height: 38, borderRadius: 19, backgroundColor: "#FFD16A",
+    borderWidth: 1.5, borderColor: "rgba(255,255,255,0.5)",
     alignItems: "center", justifyContent: "center",
   },
-  crown: { position: "absolute", top: -9, right: -6, fontSize: 14, transform: [{ rotate: "18deg" }] },
-
-  /* title + search */
-  titleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 12 },
-  title: { color: "#fff", fontSize: 25, fontWeight: "900" },
-  search: { flexDirection: "row", alignItems: "center", gap: 7, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 16 },
-  searchText: { color: "#fff", fontSize: 14, fontWeight: "700" },
-  searchInput: { flex: 1, color: "#fff", fontSize: 14, fontWeight: "700" },
+  avatarLetter: { color: "#3D0A1A", fontSize: 16, fontWeight: "900" },
 
   /* tabs */
-  tabs: { flexDirection: "row", gap: 10, marginTop: 12 },
+  tabs: { flexDirection: "row", gap: 10, marginTop: 14 },
   tab: { paddingHorizontal: 16, paddingVertical: 7, borderRadius: 14 },
   tabActive: { borderWidth: 0, shadowColor: "#A8243F", shadowOpacity: 0.4, shadowRadius: 12, shadowOffset: { width: 0, height: 8 }, elevation: 4 },
   tabText: { fontSize: 13, fontWeight: "800", color: "rgba(255,255,255,0.8)" },

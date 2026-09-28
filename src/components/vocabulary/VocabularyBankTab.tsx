@@ -94,20 +94,55 @@ export default function VocabularyBankTab() {
   const newWords = feed.data?.new_words ?? [];
 
   return (
-    <View style={{ marginTop: 20, gap: 18 }}>
-      {/* hero */}
-      <View style={vb.hero}>
-        <LinearGradient colors={GOLD as unknown as [string, string]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={vb.heroIcon}>
-          <IconBookOpen size={24} color="#3D0A1A" strokeWidth={2} />
-        </LinearGradient>
-        <View style={{ flex: 1 }}>
-          <Text style={vb.heroTitle}>{t('practice.bank_title')}</Text>
-          <Text style={vb.heroSub}>{t('practice.bank_sub')}</Text>
-        </View>
-        <View style={[vb.countTile, glass]}>
-          <Text style={vb.countNum}>{total}</Text>
-          <Text style={vb.countLabel}>{t('practice.bank_count_short')}</Text>
-        </View>
+    <View style={{ marginTop: 16, gap: 14 }}>
+      {/* compact header: count inline, no big hero tile */}
+      <View style={vb.headRow}>
+        <IconBookOpen size={16} color="#FFD84A" />
+        <Text style={vb.headTitle}>{t('practice.bank_title')}</Text>
+        <View style={vb.headCount}><Text style={vb.headCountText}>{total}</Text></View>
+      </View>
+
+      {/* search + levels: primary tools right at the top */}
+      <View style={[vb.search, glass]}>
+        <IconSearch size={16} color="rgba(255,255,255,0.6)" />
+        <TextInput
+          value={search}
+          onChangeText={setSearch}
+          placeholder={t('practice.bank_search')}
+          placeholderTextColor="rgba(255,255,255,0.45)"
+          style={vb.searchInput}
+          accessibilityLabel={t('practice.bank_search')}
+          returnKeyType="search"
+        />
+        {search.length > 0 ? (
+          <Pressable onPress={() => setSearch('')} hitSlop={10} accessibilityLabel={t('practice.bank_clear')} style={vb.clearBtn}>
+            <IconX size={14} color="rgba(255,255,255,0.7)" />
+          </Pressable>
+        ) : null}
+      </View>
+      <View style={vb.levelRow}>
+        {LEVELS.map((item) => {
+          const active = level === item;
+          return (
+            <Pressable
+              key={item}
+              onPress={() => setLevel(item)}
+              style={vb.levelChipWrap}
+              accessibilityRole="button"
+              accessibilityState={{ selected: active }}
+            >
+              {active ? (
+                <LinearGradient colors={GOLD as unknown as [string, string]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={vb.levelChip}>
+                  <Text style={[vb.levelChipText, vb.levelChipTextActive]}>{item}</Text>
+                </LinearGradient>
+              ) : (
+                <View style={[vb.levelChip, glass]}>
+                  <Text style={vb.levelChipText}>{item}</Text>
+                </View>
+              )}
+            </Pressable>
+          );
+        })}
       </View>
 
       {/* continue learning */}
@@ -184,51 +219,6 @@ export default function VocabularyBankTab() {
         </View>
       ) : null}
 
-      {/* search */}
-      <View style={[vb.search, glass]}>
-        <IconSearch size={16} color="rgba(255,255,255,0.6)" />
-        <TextInput
-          value={search}
-          onChangeText={setSearch}
-          placeholder={t('practice.bank_search')}
-          placeholderTextColor="rgba(255,255,255,0.45)"
-          style={vb.searchInput}
-          accessibilityLabel={t('practice.bank_search')}
-          returnKeyType="search"
-        />
-        {search.length > 0 ? (
-          <Pressable onPress={() => setSearch('')} hitSlop={10} accessibilityLabel={t('practice.bank_clear')} style={vb.clearBtn}>
-            <IconX size={14} color="rgba(255,255,255,0.7)" />
-          </Pressable>
-        ) : null}
-      </View>
-
-      {/* level chips */}
-      <View style={vb.levelRow}>
-        {LEVELS.map((item) => {
-          const active = level === item;
-          return (
-            <Pressable
-              key={item}
-              onPress={() => setLevel(item)}
-              style={vb.levelChipWrap}
-              accessibilityRole="button"
-              accessibilityState={{ selected: active }}
-            >
-              {active ? (
-                <LinearGradient colors={GOLD as unknown as [string, string]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={vb.levelChip}>
-                  <Text style={[vb.levelChipText, vb.levelChipTextActive]}>{item}</Text>
-                </LinearGradient>
-              ) : (
-                <View style={[vb.levelChip, glass]}>
-                  <Text style={vb.levelChipText}>{item}</Text>
-                </View>
-              )}
-            </Pressable>
-          );
-        })}
-      </View>
-
       {/* word list */}
       {bank.isLoading ? (
         <ActivityIndicator color="#FFD84A" style={{ marginVertical: 30 }} />
@@ -287,16 +277,10 @@ export default function VocabularyBankTab() {
 }
 
 const vb = StyleSheet.create({
-  hero: { flexDirection: "row", alignItems: "center", gap: 12 },
-  heroIcon: {
-    width: 46, height: 46, borderRadius: 15, alignItems: "center", justifyContent: "center",
-    shadowColor: "#FFB338", shadowOpacity: 0.35, shadowRadius: 10, shadowOffset: { width: 0, height: 6 }, elevation: 4,
-  },
-  heroTitle: { color: "#fff", fontSize: 21, fontWeight: "900", letterSpacing: 0.2 },
-  heroSub: { color: "rgba(255,255,255,0.65)", fontSize: 12, fontWeight: "600", lineHeight: 16, marginTop: 2 },
-  countTile: { borderRadius: 14, paddingHorizontal: 12, paddingVertical: 7, alignItems: "center" },
-  countNum: { color: "#FFD84A", fontSize: 18, fontWeight: "900" },
-  countLabel: { color: "rgba(255,255,255,0.55)", fontSize: 9, fontWeight: "800", letterSpacing: 0.8, marginTop: 1 },
+  headRow: { flexDirection: "row", alignItems: "center", gap: 7 },
+  headTitle: { color: "#fff", fontSize: 16, fontWeight: "900", letterSpacing: 0.2, flex: 1 },
+  headCount: { backgroundColor: "rgba(255,216,74,0.14)", borderWidth: 1, borderColor: "rgba(255,216,74,0.35)", borderRadius: 10, paddingHorizontal: 9, paddingVertical: 3 },
+  headCountText: { color: "#FFD84A", fontSize: 12, fontWeight: "900" },
 
   sectionRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   sectionTitle: { color: "rgba(255,255,255,0.85)", fontSize: 13, fontWeight: "900", letterSpacing: 0.4, textTransform: "uppercase" },
