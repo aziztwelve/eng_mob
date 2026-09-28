@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { useRouter, Stack } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Path, Circle, Ellipse, Line } from "react-native-svg";
 import { ActivityIndicator } from "react-native";
@@ -95,6 +96,7 @@ export default function LessonsScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const tabBarHeight = useBottomTabBarHeight();
   const [activeTab, setActiveTab] = useState<TabName>("tracks");
 
   // Геймификация: реальные данные с бэкенда (как на главной).
@@ -110,7 +112,7 @@ export default function LessonsScreen() {
       <StatusBar barStyle="light-content" />
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[s.scroll, { paddingBottom: 78 + insets.bottom }]}
+        contentContainerStyle={[s.scroll, { paddingBottom: 20 + tabBarHeight + insets.bottom }]}
       >
         {/* top: stats + avatar */}
         <View style={s.top}>

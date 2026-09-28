@@ -5,12 +5,12 @@ import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useTranslation } from 'react-i18next';
 
 import type { VocabularyBankActivity, VocabularyBankXPAward } from '@/types/api';
 import { VocabularyBankApi } from '@/lib/api-client';
 import { useVocabularyBankFeed, useVocabularyBankProgress, useVocabularyBankWord } from '@/hooks/use-vocabulary-bank';
-import { getCurrentLang } from '@/lib/i18n';
 import {
   IconArrowRight,
   IconMic,
@@ -28,10 +28,14 @@ const asRecord = (value: unknown): Record<string, unknown> => value !== null && 
 export default function VocabularyBankLessonScreen() {
   const { externalId } = useLocalSearchParams<{ externalId: string }>();
   const router = useRouter();
-  const { t } = useTranslation();
-  const query = useVocabularyBankWord(externalId);
+  const { t, i18n } = useTranslation();
+  const tabBarHeight = useBottomTabBarHeight();
+  // Live app language: the feed (and its "next word" candidates) must match
+  // the language the user sees, even if it changed after this screen mounted.
+  const locale = (i18n.resolvedLanguage ?? 'ru').slice(0, 2).toLowerCase();
+  const query = useVocabularyBankWord(externalId, locale);
   const progressQuery = useVocabularyBankProgress(externalId);
-  const feed = useVocabularyBankFeed({ locale: getCurrentLang(), new_limit: 5, in_progress_limit: 5 });
+  const feed = useVocabularyBankFeed({ locale, new_limit: 5, in_progress_limit: 5 });
   const entry = query.data?.entry;
   const activities = useMemo(() => entry?.activities.slice().sort((a, b) => a.step - b.step) ?? [], [entry?.activities]);
   const [index, setIndex] = useState<number | null>(null);
@@ -54,7 +58,7 @@ export default function VocabularyBankLessonScreen() {
     return pool.find((candidate) => candidate.word.external_id !== externalId)?.word ?? null;
   }, [feed.data, externalId]);
 
-  const submitAttempt = (step: number, isCorrect: boolean, score: number, onDone?: (xp: VocabularyBankXPAward | null) => void) => {
+  const submitAttempt = (step: number, isCorrect: boolean, score: number) => {
     // Network sync is non-blocking: the local checkpoint guarantees resume
     // during an offline session, and the protected API records the attempt
     // as soon as the connection is available.
@@ -62,21 +66,19 @@ export default function VocabularyBankLessonScreen() {
       answer: { source: 'mobile_player' }, is_correct: isCorrect, score,
     }).then((response) => {
       if (response?.xp) setXpAward(response.xp);
-      onDone?.(response?.xp ?? null);
-    }).catch(() => onDone?.(null));
+    }).catch(() => undefined);
   };
 
   const advance = (result: { is_correct: boolean; score?: number }) => {
     if (index === null) return;
     const completedActivity = activities[index];
     const next = index + 1;
+    submitAttempt(completedActivity.step, result.is_correct, result.score ?? (result.is_correct ? 100 : 0));
     if (next >= activities.length) {
-      submitAttempt(completedActivity.step, result.is_correct, result.score ?? (result.is_correct ? 100 : 0));
       void AsyncStorage.removeItem(progressKey(externalId));
       setFinished(true);
       return;
     }
-    submitAttempt(completedActivity.step, result.is_correct, result.score ?? (result.is_correct ? 100 : 0));
     void AsyncStorage.setItem(progressKey(externalId), String(activities[next].step));
     setIndex(next);
   };
@@ -88,7 +90,7 @@ export default function VocabularyBankLessonScreen() {
   };
 
   if (query.isLoading || index === null) return <ActivityIndicator color="#FFD84A" style={{ marginTop: 56 }} />;
-  if (query.error || !entry || !activities.length) return <Text style={s.message}>Не удалось загрузить урок.</Text>;
+  if (query.error || !entry || !activities.length) return <Text style={s.message}>{t('practice.bank_player.load_error')}</Text>;
   if (finished) {
     return <View style={s.finish}>
       <Stack.Screen options={{ title: entry.word.word }} />
@@ -125,7 +127,7 @@ export default function VocabularyBankLessonScreen() {
   }
 
   const activity = activities[index];
-  return <ScrollView style={{ flex: 1 }} contentContainerStyle={s.content} keyboardShouldPersistTaps="handled" nestedScrollEnabled showsVerticalScrollIndicator={false}>
+  return <ScrollView style={{ flex: 1 }} contentContainerStyle={[s.content, { paddingBottom: 24 + tabBarHeight }]} keyboardShouldPersistTaps="handled" nestedScrollEnabled showsVerticalScrollIndicator={false}>
     <Stack.Screen options={{ title: entry.word.word }} />
     <View style={s.progressRow}>
       <Text style={s.progressText}>{activity.step} / {activities.length}</Text>
@@ -149,6 +151,7 @@ export default function VocabularyBankLessonScreen() {
 }
 
 function ActivityBody({ activity, word, translation, meaning, onAdvance, onWrong }: { activity: VocabularyBankActivity; word: string; translation: string; meaning: string; onAdvance: (result: { is_correct: boolean; score?: number }) => void; onWrong: () => void }) {
+  const { t } = useTranslation();
   const payload = activity.payload ?? {};
   const [selected, setSelected] = useState<string | null>(null);
   const [answer, setAnswer] = useState('');
@@ -182,30 +185,33 @@ function ActivityBody({ activity, word, translation, meaning, onAdvance, onWrong
       }
     };
     return <View style={s.card}>
-      {activity.type === 'meaning_choice' ? <Text style={s.word}>{word}</Text> : <Text style={s.prompt}>Выберите слово</Text>}
-      {feedback === 'wrong' ? <Text style={s.tryAgain}>Попробуйте ещё раз</Text> : null}
+      {activity.type === 'meaning_choice' ? <Text style={s.word}>{word}</Text> : <Text style={s.prompt}>{t('practice.bank_player.choose_word')}</Text>}
+      {feedback === 'wrong' ? <Text style={s.tryAgain}>{t('practice.bank_player.try_again')}</Text> : null}
       {options.map((option) => <Pressable key={option} disabled={feedback === 'correct'} onPress={() => choose(option)} style={[s.option, selected === option && s.selected, feedback === 'correct' && selected === option && s.correct, feedback === 'wrong' && selected === option && s.wrong]}><Text style={s.optionText}>{option}</Text></Pressable>)}
     </View>;
   }
-  if (activity.type === 'fill_the_blank') return <View style={s.card}><Text style={s.prompt}>{asText(payload.prompt)}</Text><TextInput value={answer} onChangeText={setAnswer} editable={feedback === null} autoCapitalize="characters" placeholder="Введите слово" placeholderTextColor="rgba(255,255,255,0.48)" style={s.input} /><Pressable disabled={!answer.trim() || feedback !== null} onPress={() => check(answer)} style={[s.primary, (!answer.trim() || feedback !== null) && s.disabled]}><Text style={s.primaryText}>Проверить</Text></Pressable><Feedback feedback={feedback} answer={target} onAdvance={next} /></View>;
+  if (activity.type === 'fill_the_blank') return <View style={s.card}><Text style={s.prompt}>{asText(payload.prompt)}</Text><TextInput value={answer} onChangeText={setAnswer} editable={feedback === null} autoCapitalize="characters" placeholder={t('practice.bank_player.type_word')} placeholderTextColor="rgba(255,255,255,0.48)" style={s.input} /><Pressable disabled={!answer.trim() || feedback !== null} onPress={() => check(answer)} style={[s.primary, (!answer.trim() || feedback !== null) && s.disabled]}><Text style={s.primaryText}>{t('practice.bank_player.check')}</Text></Pressable><Feedback feedback={feedback} answer={target} onAdvance={next} /></View>;
   if (activity.type === 'sentence_builder') return <SentenceBuilder tokens={asOptions(payload.tokens)} answer={target} onAdvance={next} onWrong={onWrong} />;
   if (['present_question', 'past_question', 'future_question', 'wh_question'].includes(activity.type)) return <QuestionPractice content={asRecord(payload.content)} onAdvance={next} />;
   if (activity.type === 'positive_answer' || activity.type === 'negative_answer') return <ModelAnswerPractice question={asText(payload.question)} modelAnswer={asRecord(payload.model_answer)} positive={activity.type === 'positive_answer'} onAdvance={next} />;
   if (activity.type === 'speak_and_review') return <SpeakAndReview word={word} onAdvance={next} />;
-  return <View style={s.centerCard}><Text style={s.word}>{word}</Text><Text style={s.muted}>Этот тип упражнения пока не поддерживается.</Text><Pressable style={s.secondary} onPress={next}><Text style={s.secondaryText}>Пропустить</Text></Pressable></View>;
+  return <View style={s.centerCard}><Text style={s.word}>{word}</Text><Text style={s.muted}>{t('practice.bank_player.unsupported')}</Text><Pressable style={s.secondary} onPress={next}><Text style={s.secondaryText}>{t('practice.bank_player.skip')}</Text></Pressable></View>;
 }
 
 function RevealCard({ word, translation, meaning, onAdvance }: { word: string; translation: string; meaning: string; onAdvance: () => void }) {
+  const { t } = useTranslation();
   const [revealed, setRevealed] = useState(false);
-  return <View style={s.centerCard}><Pressable onPress={() => setRevealed(true)} style={s.reveal}><Text style={s.word}>{word}</Text><Text style={s.muted}>{revealed ? translation : 'Нажмите, чтобы увидеть значение'}</Text>{revealed && <Text style={s.definition}>{meaning}</Text>}</Pressable>{revealed && <Pressable style={s.primary} onPress={onAdvance}><Text style={s.primaryText}>Продолжить</Text></Pressable>}</View>;
+  return <View style={s.centerCard}><Pressable onPress={() => setRevealed(true)} style={s.reveal}><Text style={s.word}>{word}</Text><Text style={s.muted}>{revealed ? translation : t('practice.bank_player.tap_to_reveal')}</Text>{revealed && <Text style={s.definition}>{meaning}</Text>}</Pressable>{revealed && <Pressable style={s.primary} onPress={onAdvance}><Text style={s.primaryText}>{t('practice.bank_player.next')}</Text></Pressable>}</View>;
 }
 
 function Feedback({ feedback, answer, onAdvance }: { feedback: 'correct' | 'wrong' | null; answer: string; onAdvance: () => void }) {
+  const { t } = useTranslation();
   if (!feedback) return null;
-  return <View style={[s.feedback, feedback === 'correct' ? s.correct : s.wrong]}><Text style={s.feedbackText}>{feedback === 'correct' ? 'Верно!' : `Правильный ответ: ${answer}`}</Text><Pressable onPress={onAdvance}><Text style={s.continueText}>Продолжить</Text></Pressable></View>;
+  return <View style={[s.feedback, feedback === 'correct' ? s.correct : s.wrong]}><Text style={s.feedbackText}>{feedback === 'correct' ? t('practice.bank_player.correct') : t('practice.bank_player.right_answer', { answer })}</Text><Pressable onPress={onAdvance}><Text style={s.continueText}>{t('practice.bank_player.next')}</Text></Pressable></View>;
 }
 
 function SentenceBuilder({ tokens, answer, onAdvance, onWrong }: { tokens: string[]; answer: string; onAdvance: () => void; onWrong: () => void }) {
+  const { t } = useTranslation();
   const [built, setBuilt] = useState<string[]>([]);
   const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
   const availableIndexes = tokens.map((_, index) => index).filter((index) => !built.includes(String(index)));
@@ -218,44 +224,48 @@ function SentenceBuilder({ tokens, answer, onAdvance, onWrong }: { tokens: strin
     setFeedback(correct ? 'correct' : 'wrong');
     if (!correct) onWrong();
   };
-  return <View style={s.card}><Text style={s.sentence}>{value || 'Соберите предложение'}</Text><View style={s.tokenRow}>{availableIndexes.map((index) => <Pressable key={index} disabled={feedback !== null} onPress={() => add(index)} style={s.token}><Text style={s.tokenText}>{tokens[index]}</Text></Pressable>)}</View><Pressable disabled={!built.length || feedback !== null} onPress={removeLast} style={[s.secondary, (!built.length || feedback !== null) && s.disabled]}><Text style={s.secondaryText}>Убрать последнее</Text></Pressable><Pressable disabled={built.length !== tokens.length || feedback !== null} onPress={check} style={[s.primary, (built.length !== tokens.length || feedback !== null) && s.disabled]}><Text style={s.primaryText}>Проверить</Text></Pressable><Feedback feedback={feedback} answer={answer} onAdvance={onAdvance} /></View>;
+  return <View style={s.card}><Text style={s.sentence}>{value || t('practice.bank_player.build_sentence')}</Text><View style={s.tokenRow}>{availableIndexes.map((index) => <Pressable key={index} disabled={feedback !== null} onPress={() => add(index)} style={s.token}><Text style={s.tokenText}>{tokens[index]}</Text></Pressable>)}</View><Pressable disabled={!built.length || feedback !== null} onPress={removeLast} style={[s.secondary, (!built.length || feedback !== null) && s.disabled]}><Text style={s.secondaryText}>{t('practice.bank_player.remove_last')}</Text></Pressable><Pressable disabled={built.length !== tokens.length || feedback !== null} onPress={check} style={[s.primary, (built.length !== tokens.length || feedback !== null) && s.disabled]}><Text style={s.primaryText}>{t('practice.bank_player.check')}</Text></Pressable><Feedback feedback={feedback} answer={answer} onAdvance={onAdvance} /></View>;
 }
 
 function DiscoverActivity({ word, onAdvance }: { word: string; onAdvance: () => void }) {
+  const { t } = useTranslation();
   const [prediction, setPrediction] = useState('');
   const [revealed, setRevealed] = useState(false);
-  return <View style={s.centerCard}><View style={s.scene}><Text style={s.sceneIcon}>🖼️</Text><Text style={s.muted}>Сначала предположите слово по сцене</Text></View><TextInput value={prediction} onChangeText={setPrediction} placeholder="Ваш вариант" placeholderTextColor="rgba(255,255,255,0.48)" style={s.input} autoCapitalize="characters" />{revealed ? <><Text style={s.word}>{word}</Text><Text style={s.muted}>Ваш ответ записан как prediction/reveal.</Text><Pressable style={s.primary} onPress={onAdvance}><Text style={s.primaryText}>Продолжить</Text></Pressable></> : <Pressable style={s.primary} onPress={() => setRevealed(true)}><Text style={s.primaryText}>Reveal</Text></Pressable>}</View>;
+  return <View style={s.centerCard}><View style={s.scene}><IconVolume size={40} color="rgba(255,255,255,0.35)" /><Text style={s.muted}>{t('practice.bank_player.guess_scene')}</Text></View><TextInput value={prediction} onChangeText={setPrediction} placeholder={t('practice.bank_player.your_guess')} placeholderTextColor="rgba(255,255,255,0.48)" style={s.input} autoCapitalize="characters" />{revealed ? <><Text style={s.word}>{word}</Text><Text style={s.muted}>{t('practice.bank_player.guess_recorded')}</Text><Pressable style={s.primary} onPress={onAdvance}><Text style={s.primaryText}>{t('practice.bank_player.next')}</Text></Pressable></> : <Pressable style={s.primary} onPress={() => setRevealed(true)}><Text style={s.primaryText}>Reveal</Text></Pressable>}</View>;
 }
 
 function ListenActivity({ word, onAdvance }: { word: string; onAdvance: () => void }) {
+  const { t } = useTranslation();
   const [speed, setSpeed] = useState(1);
   const speak = () => Speech.speak(word, { language: 'en-US', rate: speed === 0.75 ? 0.7 : 0.9 });
-  return <View style={s.centerCard}><Text style={s.word}>{word}</Text><Pressable onPress={speak} style={s.listen}><IconVolume size={30} color="#FFD84A" /><Text style={s.listenText}>Прослушать</Text></Pressable><View style={s.speedRow}>{[0.75, 1].map((value) => <Pressable key={value} onPress={() => { setSpeed(value); Speech.speak(word, { language: 'en-US', rate: value === 0.75 ? 0.7 : 0.9 }); }} style={[s.speed, speed === value && s.speedSelected]}><Text style={s.optionText}>{value}×</Text></Pressable>)}</View><Pressable style={s.primary} onPress={onAdvance}><Text style={s.primaryText}>Я прослушал(а)</Text></Pressable></View>;
+  return <View style={s.centerCard}><Text style={s.word}>{word}</Text><Pressable onPress={speak} style={s.listen}><IconVolume size={30} color="#FFD84A" /><Text style={s.listenText}>{t('practice.bank_player.listen')}</Text></Pressable><View style={s.speedRow}>{[0.75, 1].map((value) => <Pressable key={value} onPress={() => { setSpeed(value); Speech.speak(word, { language: 'en-US', rate: value === 0.75 ? 0.7 : 0.9 }); }} style={[s.speed, speed === value && s.speedSelected]}><Text style={s.optionText}>{value}×</Text></Pressable>)}</View><Pressable style={s.primary} onPress={onAdvance}><Text style={s.primaryText}>{t('practice.bank_player.listened')}</Text></Pressable></View>;
 }
 
 function PronounceActivity({ word, onAdvance }: { word: string; onAdvance: () => void }) {
+  const { t } = useTranslation();
   const recording = useRef<Audio.Recording | null>(null);
   const [recordingNow, setRecordingNow] = useState(false);
   const [attempts, setAttempts] = useState(0);
-  const [message, setMessage] = useState('До 3 попыток');
+  const [message, setMessage] = useState(t('practice.bank_player.attempts_left'));
   const start = async () => {
     if (attempts >= 3) return;
     const permission = await Audio.requestPermissionsAsync();
-    if (!permission.granted) { setMessage('Микрофон недоступен — используйте доступный fallback.'); return; }
+    if (!permission.granted) { setMessage(t('practice.bank_player.mic_unavailable')); return; }
     await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
     const created = await Audio.Recording.createAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
     recording.current = created.recording;
-    setRecordingNow(true); setMessage('Говорите…');
+    setRecordingNow(true); setMessage(t('practice.bank_player.speaking'));
   };
   const stop = async () => {
     if (!recording.current) return;
     await recording.current.stopAndUnloadAsync();
-    recording.current = null; setRecordingNow(false); setAttempts((count) => count + 1); setMessage('Попытка записана.');
+    recording.current = null; setRecordingNow(false); setAttempts((count) => count + 1); setMessage(t('practice.bank_player.attempt_recorded'));
   };
-  return <View style={s.centerCard}><Text style={s.word}>{word}</Text><Text style={s.muted}>Произнесите слово в микрофон</Text><Pressable onPress={recordingNow ? stop : start} style={s.listen}>{recordingNow ? <Text style={s.listenIcon}>⏹</Text> : <IconMic size={30} color="#FFD84A" />}<Text style={s.listenText}>{recordingNow ? 'Остановить запись' : 'Записать попытку'}</Text></Pressable><Text style={s.muted}>{message}</Text><Pressable disabled={attempts === 0} style={[s.primary, attempts === 0 && s.disabled]} onPress={onAdvance}><Text style={s.primaryText}>Продолжить</Text></Pressable></View>;
+  return <View style={s.centerCard}><Text style={s.word}>{word}</Text><Text style={s.muted}>{t('practice.bank_player.say_the_word')}</Text><Pressable onPress={recordingNow ? stop : start} style={s.listen}>{recordingNow ? <Text style={s.listenIcon}>⏹</Text> : <IconMic size={30} color="#FFD84A" />}<Text style={s.listenText}>{recordingNow ? t('practice.bank_player.stop_recording') : t('practice.bank_player.record_attempt')}</Text></Pressable><Text style={s.muted}>{message}</Text><Pressable disabled={attempts === 0} style={[s.primary, attempts === 0 && s.disabled]} onPress={onAdvance}><Text style={s.primaryText}>{t('practice.bank_player.next')}</Text></Pressable></View>;
 }
 
 function QuestionPractice({ content, onAdvance }: { content: Record<string, unknown>; onAdvance: () => void }) {
+  const { t } = useTranslation();
   const [answer, setAnswer] = useState<'positive' | 'negative' | null>(null);
   const question = asText(content.question);
   const positive = asRecord(content.positive_answer);
@@ -263,26 +273,28 @@ function QuestionPractice({ content, onAdvance }: { content: Record<string, unkn
   const current = answer === 'positive' ? positive : answer === 'negative' ? negative : {};
   const [typed, setTyped] = useState('');
   const [submitted, setSubmitted] = useState(false);
-  return <View style={s.card}><Text style={s.question}>{question}</Text><Text style={s.muted}>Сначала ответьте, затем откройте модель.</Text>{(['positive', 'negative'] as const).map((kind) => <Pressable key={kind} onPress={() => setAnswer(kind)} style={[s.option, answer === kind && s.selected]}><Text style={s.optionText}>{kind === 'positive' ? 'Положительный ответ' : 'Отрицательный ответ'}</Text></Pressable>)}<TextInput value={typed} onChangeText={setTyped} placeholder="Или напишите свой ответ" placeholderTextColor="rgba(255,255,255,0.48)" style={s.input} /><Pressable disabled={!answer && !typed.trim()} style={[s.primary, !answer && !typed.trim() && s.disabled]} onPress={() => setSubmitted(true)}><Text style={s.primaryText}>Проверить ответ</Text></Pressable>{submitted && <View style={s.model}><Text style={s.modelLabel}>Модель для сравнения</Text><Text style={s.modelText}>{asText(current.full) || asText(current.short)}</Text><Pressable style={s.secondary} onPress={onAdvance}><Text style={s.secondaryText}>Продолжить</Text></Pressable></View>}</View>;
+  return <View style={s.card}><Text style={s.question}>{question}</Text><Text style={s.muted}>{t('practice.bank_player.answer_then_model')}</Text>{(['positive', 'negative'] as const).map((kind) => <Pressable key={kind} onPress={() => setAnswer(kind)} style={[s.option, answer === kind && s.selected]}><Text style={s.optionText}>{kind === 'positive' ? t('practice.bank_player.answer_positive') : t('practice.bank_player.answer_negative')}</Text></Pressable>)}<TextInput value={typed} onChangeText={setTyped} placeholder={t('practice.bank_player.or_type_answer')} placeholderTextColor="rgba(255,255,255,0.48)" style={s.input} /><Pressable disabled={!answer && !typed.trim()} style={[s.primary, !answer && !typed.trim() && s.disabled]} onPress={() => setSubmitted(true)}><Text style={s.primaryText}>{t('practice.bank_player.check_answer')}</Text></Pressable>{submitted && <View style={s.model}><Text style={s.modelLabel}>{t('practice.bank_player.model_label')}</Text><Text style={s.modelText}>{asText(current.full) || asText(current.short)}</Text><Pressable style={s.secondary} onPress={onAdvance}><Text style={s.secondaryText}>{t('practice.bank_player.next')}</Text></Pressable></View>}</View>;
 }
 
 function ModelAnswerPractice({ question, modelAnswer, positive, onAdvance }: { question: string; modelAnswer: Record<string, unknown>; positive: boolean; onAdvance: () => void }) {
+  const { t } = useTranslation();
   const text = asText(modelAnswer.full) || asText(modelAnswer.short);
   const [typed, setTyped] = useState('');
   const [submitted, setSubmitted] = useState(false);
-  return <View style={s.centerCard}><Text style={s.question}>{question}</Text><Text style={s.muted}>{positive ? 'Сформулируйте положительный ответ.' : 'Сформулируйте отрицательный ответ.'}</Text><TextInput value={typed} onChangeText={setTyped} placeholder="Ваш ответ" placeholderTextColor="rgba(255,255,255,0.48)" style={s.input} /><Pressable disabled={!typed.trim()} style={[s.primary, !typed.trim() && s.disabled]} onPress={() => setSubmitted(true)}><Text style={s.primaryText}>Проверить ответ</Text></Pressable>{submitted && <View style={s.model}><Text style={s.modelLabel}>Модель для сравнения</Text><Text style={s.modelText}>{text}</Text><Pressable style={s.secondary} onPress={onAdvance}><Text style={s.secondaryText}>Продолжить</Text></Pressable></View>}</View>;
+  return <View style={s.centerCard}><Text style={s.question}>{question}</Text><Text style={s.muted}>{positive ? t('practice.bank_player.formulate_positive') : t('practice.bank_player.formulate_negative')}</Text><TextInput value={typed} onChangeText={setTyped} placeholder={t('practice.bank_player.your_answer')} placeholderTextColor="rgba(255,255,255,0.48)" style={s.input} /><Pressable disabled={!typed.trim()} style={[s.primary, !typed.trim() && s.disabled]} onPress={() => setSubmitted(true)}><Text style={s.primaryText}>{t('practice.bank_player.check_answer')}</Text></Pressable>{submitted && <View style={s.model}><Text style={s.modelLabel}>{t('practice.bank_player.model_label')}</Text><Text style={s.modelText}>{text}</Text><Pressable style={s.secondary} onPress={onAdvance}><Text style={s.secondaryText}>{t('practice.bank_player.next')}</Text></Pressable></View>}</View>;
 }
 
 function SpeakAndReview({ word, onAdvance }: { word: string; onAdvance: () => void }) {
+  const { t } = useTranslation();
   const [sentence, setSentence] = useState('');
   const [seconds, setSeconds] = useState(3);
   const [recordingNow, setRecordingNow] = useState(false);
   const speak = () => Speech.speak(word, { language: 'en-US', rate: 0.8 });
   useEffect(() => { if (seconds <= 0) return; const timer = setInterval(() => setSeconds((value) => Math.max(0, value - 1)), 1000); return () => clearInterval(timer); }, [seconds]);
-  return <View style={s.card}><Text style={s.word}>{word}</Text><Text style={s.muted}>Подготовьтесь {seconds > 0 ? `${seconds}…` : '— теперь говорите'}</Text><Text style={s.muted}>Используйте слово в реальном предложении.</Text><Pressable onPress={speak} style={s.listen}><IconVolume size={30} color="#FFD84A" /><Text style={s.listenText}>Послушать слово</Text></Pressable><Pressable onPress={() => setRecordingNow((value) => !value)} style={s.listen}>{recordingNow ? <Text style={s.listenIcon}>⏹</Text> : <IconMic size={30} color="#FFD84A" />}<Text style={s.listenText}>{recordingNow ? 'Остановить запись' : 'Записать ответ'}</Text></Pressable><TextInput value={sentence} onChangeText={setSentence} multiline placeholder="My sentence with this word…" placeholderTextColor="rgba(255,255,255,0.48)" style={[s.input, s.multiline]} accessibilityLabel="Своё предложение" /><Pressable disabled={!sentence.trim() && !recordingNow} onPress={onAdvance} style={[s.primary, !sentence.trim() && !recordingNow && s.disabled]}><Text style={s.primaryText}>Завершить и запланировать review</Text></Pressable></View>;
+  return <View style={s.card}><Text style={s.word}>{word}</Text><Text style={s.muted}>{seconds > 0 ? t('practice.bank_player.prepare', { seconds }) : t('practice.bank_player.now_speak')}</Text><Text style={s.muted}>{t('practice.bank_player.use_in_sentence')}</Text><Pressable onPress={speak} style={s.listen}><IconVolume size={30} color="#FFD84A" /><Text style={s.listenText}>{t('practice.bank_player.listen_word')}</Text></Pressable><Pressable onPress={() => setRecordingNow((value) => !value)} style={s.listen}>{recordingNow ? <Text style={s.listenIcon}>⏹</Text> : <IconMic size={30} color="#FFD84A" />}<Text style={s.listenText}>{recordingNow ? t('practice.bank_player.stop_recording') : t('practice.bank_player.record_answer')}</Text></Pressable><TextInput value={sentence} onChangeText={setSentence} multiline placeholder="My sentence with this word…" placeholderTextColor="rgba(255,255,255,0.48)" style={[s.input, s.multiline]} accessibilityLabel={t('practice.bank_player.use_in_sentence')} /><Pressable disabled={!sentence.trim() && !recordingNow} onPress={onAdvance} style={[s.primary, !sentence.trim() && !recordingNow && s.disabled]}><Text style={s.primaryText}>{t('practice.bank_player.finish_schedule_review')}</Text></Pressable></View>;
 }
 
 const s = StyleSheet.create({
-  scene: { minHeight: 140, alignSelf: 'stretch', borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.1)', alignItems: 'center', justifyContent: 'center', gap: 8 }, sceneIcon: { fontSize: 44 }, speedRow: { flexDirection: 'row', gap: 10, alignSelf: 'stretch' }, speed: { flex: 1, borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)', borderRadius: 12, padding: 12, alignItems: 'center' }, speedSelected: { borderColor: '#FFD84A', backgroundColor: 'rgba(255,216,74,0.15)' },
-  content: { flexGrow: 1, padding: 20, gap: 16, paddingBottom: 42 }, finish: { flex: 1, padding: 30, justifyContent: 'center', alignItems: 'center', gap: 16 }, finishMedal: { width: 88, height: 88, borderRadius: 30, alignItems: 'center', justifyContent: 'center', shadowColor: '#FFB338', shadowOpacity: 0.4, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 6 }, title: { color: '#fff', fontSize: 27, fontWeight: '900', textAlign: 'center' }, message: { color: '#fff', textAlign: 'center', marginTop: 52, fontWeight: '700' }, progressRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }, progressText: { color: 'rgba(255,255,255,0.55)', fontWeight: '900', fontSize: 12, letterSpacing: 0.5 }, progressPct: { color: '#FFD84A', fontWeight: '900', fontSize: 12 }, segments: { flexDirection: 'row', gap: 3 }, segment: { flex: 1, height: 5, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.14)' }, segmentDone: { backgroundColor: 'rgba(255,216,74,0.45)' }, segmentCurrent: { backgroundColor: '#FFD84A', height: 7 }, instruction: { color: '#fff', fontSize: 21, fontWeight: '900', lineHeight: 28, marginTop: 4 }, card: { backgroundColor: 'rgba(255,255,255,0.12)', borderColor: 'rgba(255,255,255,0.2)', borderWidth: 1, borderRadius: 20, padding: 18, gap: 12 }, centerCard: { backgroundColor: 'rgba(255,255,255,0.12)', borderColor: 'rgba(255,255,255,0.2)', borderWidth: 1, borderRadius: 20, padding: 24, gap: 16, alignItems: 'center' }, word: { color: '#fff', fontSize: 32, fontWeight: '900', textAlign: 'center' }, muted: { color: 'rgba(255,255,255,0.78)', fontSize: 15, lineHeight: 21, textAlign: 'center' }, definition: { color: '#fff', fontSize: 16, textAlign: 'center', lineHeight: 23 }, primary: { backgroundColor: '#FFD84A', paddingVertical: 15, paddingHorizontal: 22, borderRadius: 15, alignItems: 'center', alignSelf: 'stretch' }, primaryText: { color: '#3D0A1A', fontWeight: '900', fontSize: 16 }, primaryGold: { paddingVertical: 15, paddingHorizontal: 22, borderRadius: 15, alignItems: 'center', alignSelf: 'stretch' }, primaryGoldText: { color: '#3D0A1A', fontWeight: '900', fontSize: 15 }, secondary: { borderColor: 'rgba(255,255,255,0.35)', borderWidth: 1, paddingVertical: 14, paddingHorizontal: 22, borderRadius: 15, alignItems: 'center', alignSelf: 'stretch' }, secondaryText: { color: '#fff', fontWeight: '900' }, listen: { backgroundColor: 'rgba(255,216,74,0.16)', borderColor: '#FFD84A', borderWidth: 1, padding: 20, borderRadius: 18, alignItems: 'center', alignSelf: 'stretch', gap: 7 }, listenIcon: { fontSize: 30, color: '#FFD84A' }, listenText: { color: '#FFD84A', fontWeight: '900' }, reveal: { alignSelf: 'stretch', alignItems: 'center', gap: 12, paddingVertical: 14 }, prompt: { color: '#fff', fontSize: 20, lineHeight: 28, fontWeight: '800' }, question: { color: '#fff', fontSize: 22, lineHeight: 30, fontWeight: '900', textAlign: 'center' }, tryAgain: { color: '#FFD84A', fontWeight: '800', textAlign: 'center' }, option: { borderWidth: 2, borderColor: 'rgba(255,255,255,0.22)', padding: 15, borderRadius: 15 }, optionText: { color: '#fff', fontWeight: '800', fontSize: 16 }, selected: { borderColor: '#FFD84A', backgroundColor: 'rgba(255,216,74,0.12)' }, correct: { borderColor: '#4ADE80', backgroundColor: 'rgba(74,222,128,0.15)' }, wrong: { borderColor: '#FB7185', backgroundColor: 'rgba(251,113,133,0.14)' }, input: { color: '#fff', borderWidth: 2, borderColor: 'rgba(255,255,255,0.28)', borderRadius: 15, padding: 15, fontSize: 18, fontWeight: '800' }, multiline: { minHeight: 106, textAlignVertical: 'top' }, disabled: { opacity: 0.45 }, feedback: { borderWidth: 1, borderRadius: 15, padding: 14, gap: 10, alignItems: 'center' }, feedbackText: { color: '#fff', fontWeight: '800', textAlign: 'center' }, continueText: { color: '#fff', fontWeight: '900', fontSize: 15 }, sentence: { color: '#fff', fontWeight: '900', fontSize: 20, lineHeight: 29, minHeight: 58 }, tokenRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 }, token: { borderWidth: 1, borderColor: '#FFD84A', backgroundColor: 'rgba(255,216,74,0.12)', paddingVertical: 9, paddingHorizontal: 12, borderRadius: 12 }, tokenText: { color: '#fff', fontWeight: '800' }, model: { backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 14, padding: 14, gap: 5, alignSelf: 'stretch' }, modelLabel: { color: 'rgba(255,255,255,0.65)', fontSize: 12, fontWeight: '800', textTransform: 'uppercase' }, modelText: { color: '#fff', fontSize: 17, fontWeight: '800', lineHeight: 24 }, xpChip: { backgroundColor: 'rgba(255,216,74,0.16)', borderWidth: 1, borderColor: '#FFD84A', borderRadius: 16, paddingHorizontal: 18, paddingVertical: 8 }, xpChipText: { color: '#FFD84A', fontSize: 20, fontWeight: '900' }, levelUp: { color: '#2EECC8', fontSize: 16, fontWeight: '900', textAlign: 'center' },
+  scene: { minHeight: 140, alignSelf: 'stretch', borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.1)', alignItems: 'center', justifyContent: 'center', gap: 8 }, speedRow: { flexDirection: 'row', gap: 10, alignSelf: 'stretch' }, speed: { flex: 1, borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)', borderRadius: 12, padding: 12, alignItems: 'center' }, speedSelected: { borderColor: '#FFD84A', backgroundColor: 'rgba(255,216,74,0.15)' },
+  content: { flexGrow: 1, padding: 20, gap: 16 }, finish: { flex: 1, padding: 30, justifyContent: 'center', alignItems: 'center', gap: 16 }, finishMedal: { width: 88, height: 88, borderRadius: 30, alignItems: 'center', justifyContent: 'center', shadowColor: '#FFB338', shadowOpacity: 0.4, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 6 }, title: { color: '#fff', fontSize: 27, fontWeight: '900', textAlign: 'center' }, message: { color: '#fff', textAlign: 'center', marginTop: 52, fontWeight: '700' }, progressRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }, progressText: { color: 'rgba(255,255,255,0.55)', fontWeight: '900', fontSize: 12, letterSpacing: 0.5 }, progressPct: { color: '#FFD84A', fontWeight: '900', fontSize: 12 }, segments: { flexDirection: 'row', gap: 3 }, segment: { flex: 1, height: 5, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.14)' }, segmentDone: { backgroundColor: 'rgba(255,216,74,0.45)' }, segmentCurrent: { backgroundColor: '#FFD84A', height: 7 }, instruction: { color: '#fff', fontSize: 21, fontWeight: '900', lineHeight: 28, marginTop: 4 }, card: { backgroundColor: 'rgba(255,255,255,0.12)', borderColor: 'rgba(255,255,255,0.2)', borderWidth: 1, borderRadius: 20, padding: 18, gap: 12 }, centerCard: { backgroundColor: 'rgba(255,255,255,0.12)', borderColor: 'rgba(255,255,255,0.2)', borderWidth: 1, borderRadius: 20, padding: 24, gap: 16, alignItems: 'center' }, word: { color: '#fff', fontSize: 32, fontWeight: '900', textAlign: 'center' }, muted: { color: 'rgba(255,255,255,0.78)', fontSize: 15, lineHeight: 21, textAlign: 'center' }, definition: { color: '#fff', fontSize: 16, textAlign: 'center', lineHeight: 23 }, primary: { backgroundColor: '#FFD84A', paddingVertical: 15, paddingHorizontal: 22, borderRadius: 15, alignItems: 'center', alignSelf: 'stretch' }, primaryText: { color: '#3D0A1A', fontWeight: '900', fontSize: 16 }, primaryGold: { paddingVertical: 15, paddingHorizontal: 22, borderRadius: 15, alignItems: 'center', alignSelf: 'stretch' }, primaryGoldText: { color: '#3D0A1A', fontWeight: '900', fontSize: 15 }, secondary: { borderColor: 'rgba(255,255,255,0.35)', borderWidth: 1, paddingVertical: 14, paddingHorizontal: 22, borderRadius: 15, alignItems: 'center', alignSelf: 'stretch' }, secondaryText: { color: '#fff', fontWeight: '900' }, listen: { backgroundColor: 'rgba(255,216,74,0.16)', borderColor: '#FFD84A', borderWidth: 1, padding: 20, borderRadius: 18, alignItems: 'center', alignSelf: 'stretch', gap: 7 }, listenIcon: { fontSize: 30, color: '#FFD84A' }, listenText: { color: '#FFD84A', fontWeight: '900' }, reveal: { alignSelf: 'stretch', alignItems: 'center', gap: 12, paddingVertical: 14 }, prompt: { color: '#fff', fontSize: 20, lineHeight: 28, fontWeight: '800' }, question: { color: '#fff', fontSize: 22, lineHeight: 30, fontWeight: '900', textAlign: 'center' }, tryAgain: { color: '#FFD84A', fontWeight: '800', textAlign: 'center' }, option: { borderWidth: 2, borderColor: 'rgba(255,255,255,0.22)', padding: 15, borderRadius: 15 }, optionText: { color: '#fff', fontWeight: '800', fontSize: 16 }, selected: { borderColor: '#FFD84A', backgroundColor: 'rgba(255,216,74,0.12)' }, correct: { borderColor: '#4ADE80', backgroundColor: 'rgba(74,222,128,0.15)' }, wrong: { borderColor: '#FB7185', backgroundColor: 'rgba(251,113,133,0.14)' }, input: { color: '#fff', borderWidth: 2, borderColor: 'rgba(255,255,255,0.28)', borderRadius: 15, padding: 15, fontSize: 18, fontWeight: '800' }, multiline: { minHeight: 106, textAlignVertical: 'top' }, disabled: { opacity: 0.45 }, feedback: { borderWidth: 1, borderRadius: 15, padding: 14, gap: 10, alignItems: 'center' }, feedbackText: { color: '#fff', fontWeight: '800', textAlign: 'center' }, continueText: { color: '#fff', fontWeight: '900', fontSize: 15 }, sentence: { color: '#fff', fontWeight: '900', fontSize: 20, lineHeight: 29, minHeight: 58 }, tokenRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 }, token: { borderWidth: 1, borderColor: '#FFD84A', backgroundColor: 'rgba(255,216,74,0.12)', paddingVertical: 9, paddingHorizontal: 12, borderRadius: 12 }, tokenText: { color: '#fff', fontWeight: '800' }, model: { backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 14, padding: 14, gap: 5, alignSelf: 'stretch' }, modelLabel: { color: 'rgba(255,255,255,0.65)', fontSize: 12, fontWeight: '800', textTransform: 'uppercase' }, modelText: { color: '#fff', fontSize: 17, fontWeight: '800', lineHeight: 24 }, xpChip: { backgroundColor: 'rgba(255,216,74,0.16)', borderWidth: 1, borderColor: '#FFD84A', borderRadius: 16, paddingHorizontal: 18, paddingVertical: 8 }, xpChipText: { color: '#FFD84A', fontSize: 20, fontWeight: '900' }, levelUp: { color: '#2EECC8', fontSize: 16, fontWeight: '900', textAlign: 'center' },
 });

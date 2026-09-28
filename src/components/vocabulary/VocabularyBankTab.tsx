@@ -5,7 +5,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
 
 import { useVocabularyBankFeed, useVocabularyBankPages } from '@/hooks/use-vocabulary-bank';
-import { getCurrentLang } from '@/lib/i18n';
 import type { VocabularyBankWord } from '@/types/api';
 import {
   IconArrowRight,
@@ -52,12 +51,15 @@ function StatusChip({ word }: { word: VocabularyBankWord }) {
 }
 
 export default function VocabularyBankTab() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const router = useRouter();
   const [search, setSearch] = useState('');
   const [query, setQuery] = useState('');
   const [level, setLevel] = useState('A1');
-  const locale = getCurrentLang();
+  // Reactive locale: when the app language changes after mount, the query
+  // key changes too and the bank refetches in the right language (instead of
+  // rendering EN UI with RU translations captured at mount time).
+  const locale = (i18n.resolvedLanguage ?? 'ru').slice(0, 2).toLowerCase();
   const filters = useMemo(
     () => ({ cefr_level: level, locale, ...(query ? { search: query } : {}) }),
     [level, locale, query],

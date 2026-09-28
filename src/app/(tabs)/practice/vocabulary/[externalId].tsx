@@ -3,6 +3,7 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Speech from 'expo-speech';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useTranslation } from 'react-i18next';
 
 import { useVocabularyBankProgress, useVocabularyBankWord } from '@/hooks/use-vocabulary-bank';
@@ -65,11 +66,21 @@ const STEP_TITLES: Record<string, string> = {
   speak_and_review: 'Speak & review',
 };
 
+/** Localized step title with English fallback for unknown types. */
+function stepTitle(t: (key: string) => string, type: string): string {
+  const localized = t(`practice.bank_steps.${type}`);
+  if (localized && localized !== `practice.bank_steps.${type}`) return localized;
+  return STEP_TITLES[type] ?? type.replaceAll('_', ' ');
+}
+
 export default function VocabularyBankPreviewScreen() {
   const { externalId } = useLocalSearchParams<{ externalId: string }>();
   const router = useRouter();
-  const { t } = useTranslation();
-  const query = useVocabularyBankWord(externalId);
+  const { t, i18n } = useTranslation();
+  const tabBarHeight = useBottomTabBarHeight();
+  // Follows the live app language so the word detail is never mixed-language.
+  const locale = (i18n.resolvedLanguage ?? 'ru').slice(0, 2).toLowerCase();
+  const query = useVocabularyBankWord(externalId, locale);
   const progressQuery = useVocabularyBankProgress(externalId);
   const entry = query.data?.entry;
 
@@ -97,7 +108,7 @@ export default function VocabularyBankPreviewScreen() {
   return (
     <ScrollView
       style={{ flex: 1 }}
-      contentContainerStyle={s.content}
+      contentContainerStyle={[s.content, { paddingBottom: 24 + tabBarHeight }]}
       showsVerticalScrollIndicator={false}
       nestedScrollEnabled
     >
@@ -189,7 +200,7 @@ export default function VocabularyBankPreviewScreen() {
                 >
                   <View style={{ flex: 1, minWidth: 0 }}>
                     <Text style={[s.tlTitle, done && { color: 'rgba(255,255,255,0.5)' }]}>
-                      {STEP_TITLES[activity.type] ?? activity.type.replaceAll('_', ' ')}
+                      {stepTitle(t, activity.type)}
                     </Text>
                     <Text style={s.tlHint} numberOfLines={2}>{activity.instruction}</Text>
                   </View>
