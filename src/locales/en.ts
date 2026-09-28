@@ -691,6 +691,7 @@ const en = {
     bank_next_word: 'Next word',
     bank_back: 'To word bank',
     bank_completed: 'Learned',
+    bank_count_short: 'WORDS',
   },
   profile: {
     stats_title: 'Statistics',

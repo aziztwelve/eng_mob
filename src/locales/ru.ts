@@ -693,6 +693,7 @@ const ru = {
     bank_next_word: 'Следующее слово',
     bank_back: 'К словарю',
     bank_completed: 'Выучено',
+    bank_count_short: 'СЛОВ',
   },
   profile: {
     stats_title: 'Статистика',

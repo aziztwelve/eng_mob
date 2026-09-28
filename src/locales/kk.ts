@@ -691,6 +691,7 @@ const kk = {
     bank_next_word: 'Келесі сөз',
     bank_back: 'Сөз банкіне',
     bank_completed: 'Үйренілді',
+    bank_count_short: 'СӨЗ',
   },
   profile: {
     stats_title: 'Статистика',
