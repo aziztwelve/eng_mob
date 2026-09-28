@@ -86,7 +86,12 @@ export async function setUiLang(lang: UiLang): Promise<void> {
 }
 
 export function getCurrentLang(): UiLang {
-  const cur = (i18n.language ?? DEFAULT_LANG).slice(0, 2).toLowerCase();
+  // resolvedLanguage — язык, из которого i18next реально берёт ключи
+  // (учитывает fallback). language может быть 'en' при недоступных
+  // en-ресурсах, а UI при этом рендерится на 'ru' — API-локаль должна
+  // совпадать с тем, что видит пользователь.
+  const resolved = i18n.resolvedLanguage ?? i18n.language ?? DEFAULT_LANG;
+  const cur = resolved.slice(0, 2).toLowerCase();
   return isSupported(cur) ? cur : DEFAULT_LANG;
 }
 
