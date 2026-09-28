@@ -10,7 +10,6 @@ import {
   IconArrowRight,
   IconBookOpen,
   IconCheck,
-  IconChevronRight,
   IconSearch,
   IconSparkles,
   IconVolume,
@@ -77,18 +76,6 @@ export default function VocabularyBankTab() {
     [bank.data],
   );
   const total = bank.data?.pages?.[0]?.total ?? 0;
-
-  // Bank answers alphabetically; group the loaded part by first letter.
-  const groups = useMemo(() => {
-    const map = new Map<string, VocabularyBankWord[]>();
-    entries.forEach((word) => {
-      const letter = word.word.charAt(0).toUpperCase();
-      const bucket = map.get(letter);
-      if (bucket) bucket.push(word);
-      else map.set(letter, [word]);
-    });
-    return Array.from(map.entries());
-  }, [entries]);
 
   const inProgress = feed.data?.in_progress ?? [];
   const newWords = feed.data?.new_words ?? [];
@@ -202,24 +189,23 @@ export default function VocabularyBankTab() {
               <Pressable
                 key={`new-${entry.word.external_id}`}
                 onPress={() => router.push(`/practice/vocabulary/${entry.word.external_id}` as never)}
-                style={vb.newCard}
+                style={({ pressed }) => [vb.newCard, pressed && vb.newCardPressed]}
                 accessibilityRole="button"
                 accessibilityLabel={`${entry.word.word}, ${entry.word.translation}`}
               >
-                <IconSparkles size={14} color="#FFD84A" />
-                <Text style={vb.newWord} numberOfLines={1}>{entry.word.word}</Text>
-                <Text style={vb.newTr} numberOfLines={2}>{entry.word.translation}</Text>
-                <View style={vb.newFoot}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <IconSparkles size={13} color="#FFD84A" />
                   <Text style={vb.newMeta}>{entry.word.cefr_level}</Text>
-                  <IconChevronRight size={13} color="rgba(255,255,255,0.5)" />
                 </View>
+                <Text style={vb.newWord} numberOfLines={1}>{entry.word.word}</Text>
+                <Text style={vb.newTr} numberOfLines={3}>{entry.word.translation}</Text>
               </Pressable>
             ))}
           </ScrollView>
         </View>
       ) : null}
 
-      {/* word list */}
+      {/* word list: one clean dictionary sheet — no per-row boxes */}
       {bank.isLoading ? (
         <ActivityIndicator color="#FFD84A" style={{ marginVertical: 30 }} />
       ) : bank.isError ? (
@@ -233,35 +219,28 @@ export default function VocabularyBankTab() {
           <Text style={vb.emptyText}>{query ? t('practice.bank_empty_search') : t('practice.bank_empty_level')}</Text>
         </View>
       ) : (
-        <View style={{ gap: 4 }}>
-          {groups.map(([letter, words]) => (
-            <View key={letter} style={{ gap: 4 }}>
-              <View style={vb.letterRow}>
-                <Text style={vb.letter}>{letter}</Text>
-                <View style={vb.letterLine} />
+        <View style={vb.sheet}>
+          <Text style={vb.sheetLabel}>{t('practice.bank_count', { count: total })}</Text>
+          {entries.map((word) => (
+            <Pressable
+              key={word.external_id}
+              onPress={() => router.push(`/practice/vocabulary/${word.external_id}` as never)}
+              style={({ pressed }) => [vb.sheetRow, pressed && vb.rowPressed, word.status === 'completed' && vb.rowDone]}
+              accessibilityRole="button"
+              accessibilityLabel={`${word.word}, ${word.translation}`}
+            >
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Text style={vb.word} numberOfLines={1}>{word.word}</Text>
+                  {word.has_audio ? <IconVolume size={12} color="rgba(255,255,255,0.35)" /> : null}
+                </View>
+                <Text style={vb.tr} numberOfLines={1}>{word.translation}</Text>
               </View>
-              {words.map((word) => (
-                <Pressable
-                  key={word.external_id}
-                  onPress={() => router.push(`/practice/vocabulary/${word.external_id}` as never)}
-                  style={({ pressed }) => [vb.row, pressed && vb.rowPressed, word.status === 'completed' && vb.rowDone]}
-                  accessibilityRole="button"
-                  accessibilityLabel={`${word.word}, ${word.translation}`}
-                >
-                  <View style={{ flex: 1, minWidth: 0 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                      <Text style={vb.word} numberOfLines={1}>{word.word}</Text>
-                      {word.has_audio ? <IconVolume size={12} color="rgba(255,255,255,0.4)" /> : null}
-                    </View>
-                    <Text style={vb.tr} numberOfLines={1}>{word.translation}</Text>
-                  </View>
-                  <StatusChip word={word} />
-                </Pressable>
-              ))}
-            </View>
+              <StatusChip word={word} />
+            </Pressable>
           ))}
           {bank.hasNextPage ? (
-            <Pressable onPress={() => bank.fetchNextPage()} disabled={bank.isFetchingNextPage} style={[vb.card, vb.moreBtn]} accessibilityRole="button">
+            <Pressable onPress={() => bank.fetchNextPage()} disabled={bank.isFetchingNextPage} style={vb.moreBtn} accessibilityRole="button">
               {bank.isFetchingNextPage ? <ActivityIndicator color="#FFD84A" /> : (
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                   <Text style={vb.moreText}>{t('practice.bank_load_more')}</Text>
@@ -307,14 +286,16 @@ const vb = StyleSheet.create({
   playBtn: { width: 40, height: 40, borderRadius: 13, alignItems: "center", justifyContent: "center" },
 
   newCard: {
-    width: 150, backgroundColor: "rgba(255,255,255,0.08)",
-    borderWidth: 1, borderColor: "rgba(255,255,255,0.14)",
-    borderRadius: 16, padding: 13, gap: 3,
+    width: 168, minHeight: 120,
+    backgroundColor: "rgba(255,255,255,0.13)",
+    borderWidth: 1, borderColor: "rgba(255,255,255,0.2)",
+    borderRadius: 18, padding: 14, gap: 3,
+    justifyContent: "space-between",
   },
-  newWord: { color: "#fff", fontSize: 16, fontWeight: "900", marginTop: 4 },
-  newTr: { color: "rgba(255,255,255,0.62)", fontSize: 12, fontWeight: "600", minHeight: 32, lineHeight: 16 },
-  newFoot: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 6 },
-  newMeta: { color: "rgba(255,255,255,0.45)", fontSize: 10.5, fontWeight: "800", letterSpacing: 0.3 },
+  newCardPressed: { backgroundColor: "rgba(255,255,255,0.2)" },
+  newWord: { color: "#fff", fontSize: 17, fontWeight: "900", marginTop: 4 },
+  newTr: { color: "rgba(255,255,255,0.75)", fontSize: 12.5, fontWeight: "600", lineHeight: 17 },
+  newMeta: { color: "rgba(255,255,255,0.5)", fontSize: 10.5, fontWeight: "800", letterSpacing: 0.3 },
 
   search: { flexDirection: "row", alignItems: "center", gap: 9, paddingHorizontal: 14, paddingVertical: 4, borderRadius: 14, backgroundColor: "rgba(255,255,255,0.10)", borderWidth: 1, borderColor: "rgba(255,255,255,0.16)" },
   searchInput: { flex: 1, color: "#fff", fontSize: 14, fontWeight: "600", paddingVertical: 10 },
@@ -326,23 +307,22 @@ const vb = StyleSheet.create({
   levelChipText: { color: "rgba(255,255,255,0.7)", fontSize: 12.5, fontWeight: "900" },
   levelChipTextActive: { color: "#3D0A1A" },
 
-  letterRow: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 8, marginBottom: 2 },
-  letter: { color: "rgba(255,216,74,0.9)", fontSize: 15, fontWeight: "900", width: 16 },
-  letterLine: { flex: 1, height: 1, backgroundColor: "rgba(255,255,255,0.10)" },
-
-  /* list rows: clean two-line layout, translation is the hero next to the word */
-  row: {
-    flexDirection: "row", alignItems: "center", gap: 10,
-    paddingHorizontal: 12, paddingVertical: 10, borderRadius: 14,
-    backgroundColor: "rgba(255,255,255,0.05)",
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "rgba(255,255,255,0.07)",
+  /* dictionary sheet: one surface, rows separated by whitespace only */
+  sheet: {
+    backgroundColor: "rgba(255,255,255,0.10)",
+    borderWidth: 1, borderColor: "rgba(255,255,255,0.16)",
+    borderRadius: 18, paddingHorizontal: 14, paddingVertical: 10,
   },
-  rowPressed: { backgroundColor: "rgba(255,255,255,0.12)" },
+  sheetLabel: { color: "rgba(255,255,255,0.5)", fontSize: 10.5, fontWeight: "900", letterSpacing: 1, marginHorizontal: 2, marginBottom: 4 },
+  sheetRow: {
+    flexDirection: "row", alignItems: "center", gap: 10,
+    paddingVertical: 11, borderRadius: 10,
+  },
+  rowPressed: { backgroundColor: "rgba(255,255,255,0.10)" },
   rowDone: { opacity: 0.55 },
   word: { color: "#fff", fontSize: 15, fontWeight: "800", letterSpacing: 0.2 },
   tr: { color: "rgba(255,255,255,0.88)", fontSize: 14.5, fontWeight: "600", marginTop: 1, lineHeight: 18 },
-  moreBtn: { alignItems: "center", paddingVertical: 13, borderRadius: 14, borderStyle: "dashed" },
+  moreBtn: { alignItems: "center", paddingVertical: 12, marginTop: 2 },
   moreText: { color: "#fff", fontWeight: "800", fontSize: 13.5 },
   emptyText: { color: "rgba(255,255,255,0.7)", fontSize: 13.5, textAlign: "center", lineHeight: 19 },
   link: { color: "#FFD84A", fontWeight: "800", fontSize: 14 },
