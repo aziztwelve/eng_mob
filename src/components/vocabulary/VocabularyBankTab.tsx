@@ -31,7 +31,7 @@ const glass = {
 const LEVELS = ["A1", "A2", "B1", "B2", "C1"] as const;
 const TOTAL_STEPS = 15;
 
-/** Word status: mint check for completed, gold pill for in-progress. */
+/** Word status: mint check for completed, gold step progress for in-progress. */
 function StatusChip({ word }: { word: VocabularyBankWord }) {
   if (word.status === 'completed') {
     return (
@@ -243,32 +243,29 @@ export default function VocabularyBankTab() {
           <Text style={vb.emptyText}>{query ? t('practice.bank_empty_search') : t('practice.bank_empty_level')}</Text>
         </View>
       ) : (
-        <View style={{ gap: 6 }}>
+        <View style={{ gap: 4 }}>
           {groups.map(([letter, words]) => (
-            <View key={letter} style={{ gap: 6 }}>
+            <View key={letter} style={{ gap: 4 }}>
               <View style={vb.letterRow}>
-                <View style={vb.letterBadge}><Text style={vb.letter}>{letter}</Text></View>
+                <Text style={vb.letter}>{letter}</Text>
                 <View style={vb.letterLine} />
               </View>
               {words.map((word) => (
                 <Pressable
                   key={word.external_id}
                   onPress={() => router.push(`/practice/vocabulary/${word.external_id}` as never)}
-                  style={({ pressed }) => [vb.card, vb.rowCard, pressed && { backgroundColor: 'rgba(255,255,255,0.16)' }]}
+                  style={({ pressed }) => [vb.row, pressed && vb.rowPressed, word.status === 'completed' && vb.rowDone]}
                   accessibilityRole="button"
                   accessibilityLabel={`${word.word}, ${word.translation}`}
                 >
-                  <View style={[vb.avatar, word.status === 'completed' && vb.avatarDone]}><Text style={[vb.avatarText, word.status === 'completed' && vb.avatarTextDone]}>{word.word.charAt(0).toUpperCase()}</Text></View>
-                  <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+                  <View style={{ flex: 1, minWidth: 0 }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                      <Text style={[vb.word, word.status === 'completed' && { color: 'rgba(255,255,255,0.55)' }]} numberOfLines={1}>{word.word}</Text>
-                      {word.has_audio ? <IconVolume size={12} color="rgba(255,255,255,0.5)" /> : null}
+                      <Text style={vb.word} numberOfLines={1}>{word.word}</Text>
+                      {word.has_audio ? <IconVolume size={12} color="rgba(255,255,255,0.4)" /> : null}
                     </View>
                     <Text style={vb.tr} numberOfLines={1}>{word.translation}</Text>
                   </View>
                   <StatusChip word={word} />
-                  {word.status !== 'completed' ? <View style={vb.cefr}><Text style={vb.cefrText}>{word.cefr_level}</Text></View> : null}
-                  <IconChevronRight size={16} color="rgba(255,255,255,0.35)" />
                 </Pressable>
               ))}
             </View>
@@ -311,8 +308,6 @@ const vb = StyleSheet.create({
     borderRadius: 16,
   },
   rowCard: { flexDirection: "row", alignItems: "center", gap: 11, padding: 11 },
-  word: { color: "#fff", fontSize: 15.5, fontWeight: "800" },
-  tr: { color: "rgba(255,255,255,0.62)", fontSize: 12.5, fontWeight: "600" },
 
   done: {
     width: 24, height: 24, borderRadius: 12, alignItems: "center", justifyContent: "center",
@@ -347,19 +342,22 @@ const vb = StyleSheet.create({
   levelChipText: { color: "rgba(255,255,255,0.7)", fontSize: 12.5, fontWeight: "900" },
   levelChipTextActive: { color: "#3D0A1A" },
 
-  letterRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 6 },
-  letterBadge: { width: 22, height: 22, borderRadius: 8, backgroundColor: "rgba(255,216,74,0.13)", borderWidth: 1, borderColor: "rgba(255,216,74,0.3)", alignItems: "center", justifyContent: "center" },
-  letter: { color: "#FFD84A", fontSize: 11.5, fontWeight: "900" },
+  letterRow: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 8, marginBottom: 2 },
+  letter: { color: "rgba(255,216,74,0.9)", fontSize: 15, fontWeight: "900", width: 16 },
   letterLine: { flex: 1, height: 1, backgroundColor: "rgba(255,255,255,0.10)" },
-  avatar: {
-    width: 40, height: 40, borderRadius: 13, alignItems: "center", justifyContent: "center",
-    backgroundColor: "rgba(255,216,74,0.10)", borderWidth: 1, borderColor: "rgba(255,216,74,0.25)",
+
+  /* list rows: clean two-line layout, translation is the hero next to the word */
+  row: {
+    flexDirection: "row", alignItems: "center", gap: 10,
+    paddingHorizontal: 12, paddingVertical: 10, borderRadius: 14,
+    backgroundColor: "rgba(255,255,255,0.05)",
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "rgba(255,255,255,0.07)",
   },
-  avatarText: { color: "#FFD84A", fontSize: 16, fontWeight: "900" },
-  avatarDone: { backgroundColor: "rgba(46,236,200,0.08)", borderColor: "rgba(46,236,200,0.25)" },
-  avatarTextDone: { color: MINT },
-  cefr: { backgroundColor: "rgba(255,255,255,0.08)", borderRadius: 8, paddingHorizontal: 7, paddingVertical: 3 },
-  cefrText: { color: "rgba(255,255,255,0.6)", fontSize: 10.5, fontWeight: "900" },
+  rowPressed: { backgroundColor: "rgba(255,255,255,0.12)" },
+  rowDone: { opacity: 0.55 },
+  word: { color: "#fff", fontSize: 15, fontWeight: "800", letterSpacing: 0.2 },
+  tr: { color: "rgba(255,255,255,0.88)", fontSize: 14.5, fontWeight: "600", marginTop: 1, lineHeight: 18 },
   moreBtn: { alignItems: "center", paddingVertical: 13, borderRadius: 14, borderStyle: "dashed" },
   moreText: { color: "#fff", fontWeight: "800", fontSize: 13.5 },
   emptyText: { color: "rgba(255,255,255,0.7)", fontSize: 13.5, textAlign: "center", lineHeight: 19 },
