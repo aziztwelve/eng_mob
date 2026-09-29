@@ -5,11 +5,11 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
 
 import { useVocabularyBankFeed, useVocabularyBankPages } from '@/hooks/use-vocabulary-bank';
-import type { VocabularyBankWord } from '@/types/api';
 import {
   IconArrowRight,
   IconBookOpen,
   IconCheck,
+  IconChevronRight,
   IconSearch,
   IconSparkles,
   IconVolume,
@@ -29,25 +29,6 @@ const glass = {
 
 const LEVELS = ["A1", "A2", "B1", "B2", "C1"] as const;
 const TOTAL_STEPS = 15;
-
-/** Word status: mint check for completed, gold step progress for in-progress. */
-function StatusChip({ word }: { word: VocabularyBankWord }) {
-  if (word.status === 'completed') {
-    return (
-      <View style={vb.done}>
-        <IconCheck size={13} color={MINT} />
-      </View>
-    );
-  }
-  if (word.status === 'in_progress') {
-    return (
-      <View style={vb.step}>
-        <Text style={vb.stepText}>{word.current_step ?? 1}/{TOTAL_STEPS}</Text>
-      </View>
-    );
-  }
-  return null;
-}
 
 export default function VocabularyBankTab() {
   const { t, i18n } = useTranslation();
@@ -150,7 +131,7 @@ export default function VocabularyBankTab() {
               <View style={{ flex: 1, gap: 8 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
                   <Text style={vb.word}>{entry.word.word}</Text>
-                  <Text style={vb.tr} numberOfLines={1}>{entry.word.translation}</Text>
+                  <Text style={vb.trInline} numberOfLines={1}>{entry.word.translation}</Text>
                 </View>
                 <View style={vb.pbarRow}>
                   <View style={vb.pbar}>
@@ -233,10 +214,21 @@ export default function VocabularyBankTab() {
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                   <Text style={vb.word} numberOfLines={1}>{word.word}</Text>
                   {word.has_audio ? <IconVolume size={12} color="rgba(255,255,255,0.35)" /> : null}
+                  <Text style={vb.trInline} numberOfLines={1}>{word.translation}</Text>
                 </View>
-                <Text style={vb.tr} numberOfLines={1}>{word.translation}</Text>
+                {word.status === 'in_progress' ? (
+                  <View style={vb.miniBar}>
+                    <View style={[vb.miniBarFill, { width: `${Math.min(100, Math.round(((word.current_step ?? 1) / TOTAL_STEPS) * 100))}%` }]} />
+                  </View>
+                ) : null}
               </View>
-              <StatusChip word={word} />
+              {word.status === 'completed' ? (
+                <View style={vb.done}>
+                  <IconCheck size={12} color={MINT} />
+                </View>
+              ) : (
+                <IconChevronRight size={15} color="rgba(255,255,255,0.3)" />
+              )}
             </Pressable>
           ))}
           {bank.hasNextPage ? (
@@ -276,8 +268,6 @@ const vb = StyleSheet.create({
     width: 24, height: 24, borderRadius: 12, alignItems: "center", justifyContent: "center",
     backgroundColor: "rgba(46,236,200,0.14)", borderWidth: 1, borderColor: "rgba(46,236,200,0.45)",
   },
-  step: { backgroundColor: "rgba(255,216,74,0.13)", borderWidth: 1, borderColor: "rgba(255,216,74,0.4)", borderRadius: 9, paddingHorizontal: 7, paddingVertical: 3 },
-  stepText: { color: "#FFD84A", fontSize: 10.5, fontWeight: "900" },
 
   pbarRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   pbar: { flex: 1, height: 5, borderRadius: 3, backgroundColor: "rgba(255,255,255,0.14)", overflow: "hidden" },
@@ -307,21 +297,23 @@ const vb = StyleSheet.create({
   levelChipText: { color: "rgba(255,255,255,0.7)", fontSize: 12.5, fontWeight: "900" },
   levelChipTextActive: { color: "#3D0A1A" },
 
-  /* dictionary sheet: one surface, rows separated by whitespace only */
+  /* dictionary sheet: one surface, airy rows, word is the hero */
   sheet: {
     backgroundColor: "rgba(255,255,255,0.10)",
     borderWidth: 1, borderColor: "rgba(255,255,255,0.16)",
-    borderRadius: 18, paddingHorizontal: 14, paddingVertical: 10,
+    borderRadius: 18, paddingHorizontal: 14, paddingVertical: 8,
   },
-  sheetLabel: { color: "rgba(255,255,255,0.5)", fontSize: 10.5, fontWeight: "900", letterSpacing: 1, marginHorizontal: 2, marginBottom: 4 },
+  sheetLabel: { color: "rgba(255,255,255,0.5)", fontSize: 10.5, fontWeight: "900", letterSpacing: 1, marginHorizontal: 2, marginBottom: 2 },
   sheetRow: {
     flexDirection: "row", alignItems: "center", gap: 10,
-    paddingVertical: 11, borderRadius: 10,
+    paddingVertical: 13, borderRadius: 10,
   },
   rowPressed: { backgroundColor: "rgba(255,255,255,0.10)" },
   rowDone: { opacity: 0.55 },
-  word: { color: "#fff", fontSize: 15, fontWeight: "800", letterSpacing: 0.2 },
-  tr: { color: "rgba(255,255,255,0.88)", fontSize: 14.5, fontWeight: "600", marginTop: 1, lineHeight: 18 },
+  word: { color: "#fff", fontSize: 16.5, fontWeight: "900", letterSpacing: 0.2 },
+  trInline: { color: "rgba(255,255,255,0.6)", fontSize: 13, fontWeight: "600", flexShrink: 1 },
+  miniBar: { height: 3, borderRadius: 2, backgroundColor: "rgba(255,255,255,0.12)", marginTop: 7, maxWidth: 140 },
+  miniBarFill: { height: "100%", borderRadius: 2, backgroundColor: "#FFD84A" },
   moreBtn: { alignItems: "center", paddingVertical: 12, marginTop: 2 },
   moreText: { color: "#fff", fontWeight: "800", fontSize: 13.5 },
   emptyText: { color: "rgba(255,255,255,0.7)", fontSize: 13.5, textAlign: "center", lineHeight: 19 },
