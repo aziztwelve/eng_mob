@@ -9,7 +9,6 @@ import {
   IconArrowRight,
   IconBookOpen,
   IconCheck,
-  IconChevronRight,
   IconSearch,
   IconSparkles,
   IconVolume,
@@ -202,11 +201,11 @@ export default function VocabularyBankTab() {
       ) : (
         <View style={vb.sheet}>
           <Text style={vb.sheetLabel}>{t('practice.bank_count', { count: total })}</Text>
-          {entries.map((word) => (
+          {entries.map((word, i) => (
             <Pressable
               key={word.external_id}
               onPress={() => router.push(`/practice/vocabulary/${word.external_id}` as never)}
-              style={({ pressed }) => [vb.sheetRow, pressed && vb.rowPressed, word.status === 'completed' && vb.rowDone]}
+              style={({ pressed }) => [vb.sheetRow, i < entries.length - 1 && vb.sheetRowDiv, pressed && vb.rowPressed, word.status === 'completed' && vb.rowDone]}
               accessibilityRole="button"
               accessibilityLabel={`${word.word}, ${word.translation}`}
             >
@@ -226,9 +225,7 @@ export default function VocabularyBankTab() {
                 <View style={vb.done}>
                   <IconCheck size={12} color={MINT} />
                 </View>
-              ) : (
-                <IconChevronRight size={15} color="rgba(255,255,255,0.3)" />
-              )}
+              ) : null}
             </Pressable>
           ))}
           {bank.hasNextPage ? (
@@ -307,6 +304,10 @@ const vb = StyleSheet.create({
   sheetRow: {
     flexDirection: "row", alignItems: "center", gap: 10,
     paddingVertical: 13, borderRadius: 10,
+  },
+  sheetRowDiv: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "rgba(255,255,255,0.10)",
   },
   rowPressed: { backgroundColor: "rgba(255,255,255,0.10)" },
   rowDone: { opacity: 0.55 },
