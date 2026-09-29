@@ -1,16 +1,17 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Audio } from 'expo-av';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useTranslation } from 'react-i18next';
 
-import type { VocabularyBankActivity, VocabularyBankXPAward } from '@/types/api';
+import type { CheckPronunciationResponse, VocabularyBankActivity, VocabularyBankXPAward } from '@/types/api';
 import { VocabularyBankApi } from '@/lib/api-client';
 import { playWordTTS, prefetchWordTTS } from '@/lib/tts';
+import { useCheckPronunciation } from '@/hooks/use-ai';
 import { useVocabularyBankFeed, useVocabularyBankProgress, useVocabularyBankWord } from '@/hooks/use-vocabulary-bank';
+import { VoiceRecorder } from '@/components/ai/voice-recorder';
 import {
   IconArrowRight,
   IconMic,
@@ -62,22 +63,22 @@ export default function VocabularyBankLessonScreen() {
     return pool.find((candidate) => candidate.word.external_id !== externalId)?.word ?? null;
   }, [feed.data, externalId]);
 
-  const submitAttempt = (step: number, isCorrect: boolean, score: number) => {
+  const submitAttempt = (step: number, isCorrect: boolean, score: number, pronunciationScore?: number) => {
     // Network sync is non-blocking: the local checkpoint guarantees resume
     // during an offline session, and the protected API records the attempt
     // as soon as the connection is available.
     VocabularyBankApi.recordAttempt(externalId, step, {
-      answer: { source: 'mobile_player' }, is_correct: isCorrect, score,
+      answer: { source: 'mobile_player' }, is_correct: isCorrect, score, pronunciation_score: pronunciationScore,
     }).then((response) => {
       if (response?.xp) setXpAward(response.xp);
     }).catch(() => undefined);
   };
 
-  const advance = (result: { is_correct: boolean; score?: number }) => {
+  const advance = (result: { is_correct: boolean; score?: number; pronunciation_score?: number }) => {
     if (index === null) return;
     const completedActivity = activities[index];
     const next = index + 1;
-    submitAttempt(completedActivity.step, result.is_correct, result.score ?? (result.is_correct ? 100 : 0));
+    submitAttempt(completedActivity.step, result.is_correct, result.score ?? (result.is_correct ? 100 : 0), result.pronunciation_score);
     if (next >= activities.length) {
       void AsyncStorage.removeItem(progressKey(externalId));
       setFinished(true);
@@ -154,7 +155,7 @@ export default function VocabularyBankLessonScreen() {
   </ScrollView>;
 }
 
-function ActivityBody({ activity, word, translation, meaning, onAdvance, onWrong }: { activity: VocabularyBankActivity; word: string; translation: string; meaning: string; onAdvance: (result: { is_correct: boolean; score?: number }) => void; onWrong: () => void }) {
+function ActivityBody({ activity, word, translation, meaning, onAdvance, onWrong }: { activity: VocabularyBankActivity; word: string; translation: string; meaning: string; onAdvance: (result: { is_correct: boolean; score?: number; pronunciation_score?: number }) => void; onWrong: () => void }) {
   const { t } = useTranslation();
   const payload = activity.payload ?? {};
   const [selected, setSelected] = useState<string | null>(null);
@@ -245,27 +246,40 @@ function ListenActivity({ word, onAdvance }: { word: string; onAdvance: () => vo
   return <View style={s.centerCard}><Text style={s.word}>{word}</Text><Pressable onPress={() => speak()} style={s.listen}><IconVolume size={30} color="#FFD84A" /><Text style={s.listenText}>{t('practice.bank_player.listen')}</Text></Pressable><View style={s.speedRow}>{[0.75, 1].map((value) => <Pressable key={value} onPress={() => { setSpeed(value); speak(value); }} style={[s.speed, speed === value && s.speedSelected]}><Text style={s.optionText}>{value}×</Text></Pressable>)}</View><Pressable style={s.primary} onPress={onAdvance}><Text style={s.primaryText}>{t('practice.bank_player.listened')}</Text></Pressable></View>;
 }
 
-function PronounceActivity({ word, onAdvance }: { word: string; onAdvance: () => void }) {
+function PronounceActivity({ word, onAdvance }: { word: string; onAdvance: (result: { is_correct: boolean; score?: number; pronunciation_score?: number }) => void }) {
   const { t } = useTranslation();
-  const recording = useRef<Audio.Recording | null>(null);
-  const [recordingNow, setRecordingNow] = useState(false);
+  const check = useCheckPronunciation();
   const [attempts, setAttempts] = useState(0);
-  const [message, setMessage] = useState(t('practice.bank_player.attempts_left'));
-  const start = async () => {
-    if (attempts >= 3) return;
-    const permission = await Audio.requestPermissionsAsync();
-    if (!permission.granted) { setMessage(t('practice.bank_player.mic_unavailable')); return; }
-    await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
-    const created = await Audio.Recording.createAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
-    recording.current = created.recording;
-    setRecordingNow(true); setMessage(t('practice.bank_player.speaking'));
+  const [result, setResult] = useState<CheckPronunciationResponse | null>(null);
+  const [recorderKey, setRecorderKey] = useState(0);
+  const score = result ? Math.round(result.accuracy_score * 100) : 0;
+  const isClear = score >= 70;
+
+  const submit = async (audio: { uri: string; type: string; name: string }) => {
+    try {
+      const response = await check.mutateAsync({ audio, target_text: word, language: 'en' });
+      setAttempts((count) => count + 1);
+      setResult(response);
+    } catch {
+      setAttempts((count) => count + 1);
+    }
   };
-  const stop = async () => {
-    if (!recording.current) return;
-    await recording.current.stopAndUnloadAsync();
-    recording.current = null; setRecordingNow(false); setAttempts((count) => count + 1); setMessage(t('practice.bank_player.attempt_recorded'));
-  };
-  return <View style={s.centerCard}><Text style={s.word}>{word}</Text><Text style={s.muted}>{t('practice.bank_player.say_the_word')}</Text><Pressable onPress={recordingNow ? stop : start} style={s.listen}>{recordingNow ? <Text style={s.listenIcon}>⏹</Text> : <IconMic size={30} color="#FFD84A" />}<Text style={s.listenText}>{recordingNow ? t('practice.bank_player.stop_recording') : t('practice.bank_player.record_attempt')}</Text></Pressable><Text style={s.muted}>{message}</Text><Pressable disabled={attempts === 0} style={[s.primary, attempts === 0 && s.disabled]} onPress={onAdvance}><Text style={s.primaryText}>{t('practice.bank_player.next')}</Text></Pressable></View>;
+
+  return <View style={s.centerCard}>
+    <Text style={s.word}>{word}</Text>
+    <Text style={s.muted}>{t('practice.bank_player.say_the_word')}</Text>
+    {!result && attempts < 3 ? <VoiceRecorder key={recorderKey} loading={check.isPending} minDurationSec={1} onSubmit={submit} /> : null}
+    {check.isError ? <Text style={s.tryAgain}>{t('ai.check_err')}</Text> : null}
+    {result ? <View style={s.model}>
+      <Text style={s.modelLabel}>{t('ai.accuracy')}</Text>
+      <Text style={[s.modelText, { color: isClear ? '#4ADE80' : '#FFD84A' }]}>{score}%</Text>
+      {result.feedback ? <Text style={s.muted}>{result.feedback}</Text> : null}
+      {result.transcribed_text ? <Text style={s.muted}>{t('ai.recognized')}: {result.transcribed_text}</Text> : null}
+      {attempts < 3 ? <Pressable onPress={() => { setResult(null); check.reset(); setRecorderKey((key) => key + 1); }} style={s.secondary}><Text style={s.secondaryText}>{t('ai.try_again')}</Text></Pressable> : null}
+    </View> : null}
+    {attempts >= 3 && !result ? <Text style={s.tryAgain}>{t('ai.check_err')}</Text> : null}
+    <Pressable disabled={!result} style={[s.primary, !result && s.disabled]} onPress={() => onAdvance({ is_correct: isClear, score, pronunciation_score: result?.accuracy_score })}><Text style={s.primaryText}>{t('practice.bank_player.next')}</Text></Pressable>
+  </View>;
 }
 
 function QuestionPractice({ content, onAdvance }: { content: Record<string, unknown>; onAdvance: () => void }) {
