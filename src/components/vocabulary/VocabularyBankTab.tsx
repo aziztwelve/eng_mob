@@ -1,22 +1,18 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
 
-import { useVocabularyBankFeed, useVocabularyBankPages } from '@/hooks/use-vocabulary-bank';
+import { useVocabularyBankPages } from '@/hooks/use-vocabulary-bank';
 import {
   IconArrowRight,
   IconBookOpen,
-  IconCheck,
   IconSearch,
-  IconSparkles,
   IconVolume,
   IconX,
-  IconPlay,
 } from '@/components/ui/icons';
 
-const CTA = ["#A8243F", "#CC5A1F"] as const;
 const GOLD = ["#FFDF5E", "#FFB338"] as const;
 const MINT = '#2EECC8';
 
@@ -44,7 +40,6 @@ export default function VocabularyBankTab() {
     [level, locale, query],
   );
   const bank = useVocabularyBankPages(filters);
-  const feed = useVocabularyBankFeed({ cefr_level: level, locale, new_limit: 5, in_progress_limit: 5 });
 
   useEffect(() => {
     const timer = setTimeout(() => setQuery(search.trim()), 300);
@@ -56,9 +51,6 @@ export default function VocabularyBankTab() {
     [bank.data],
   );
   const total = bank.data?.pages?.[0]?.total ?? 0;
-
-  const inProgress = feed.data?.in_progress ?? [];
-  const newWords = feed.data?.new_words ?? [];
 
   return (
     <View style={{ marginTop: 16, gap: 14 }}>
@@ -112,79 +104,6 @@ export default function VocabularyBankTab() {
         })}
       </View>
 
-      {/* continue learning */}
-      {inProgress.length > 0 ? (
-        <View style={{ gap: 10 }}>
-          <View style={vb.sectionRow}>
-            <IconPlay size={12} color="#FFD84A" />
-            <Text style={vb.sectionTitle}>{t('practice.bank_continue')}</Text>
-          </View>
-          {inProgress.map((entry) => (
-            <Pressable
-              key={`continue-${entry.word.external_id}`}
-              onPress={() => router.push(`/practice/vocabulary/${entry.word.external_id}/learn` as never)}
-              style={[vb.card, vb.rowCard]}
-              accessibilityRole="button"
-              accessibilityLabel={`${entry.word.word}, ${t('practice.bank_step', { step: entry.current_step, total: TOTAL_STEPS })}`}
-            >
-              <View style={{ flex: 1, gap: 8 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
-                  <Text style={vb.word}>{entry.word.word}</Text>
-                  <Text style={vb.trInline} numberOfLines={1}>{entry.word.translation}</Text>
-                </View>
-                <View style={vb.pbarRow}>
-                  <View style={vb.pbar}>
-                    <LinearGradient
-                      colors={GOLD as unknown as [string, string]}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 0 }}
-                      style={[vb.pbarFill, { width: `${Math.min(100, Math.round((entry.current_step / TOTAL_STEPS) * 100))}%` }]}
-                    />
-                  </View>
-                  <Text style={vb.pbarLabel}>{entry.current_step}/{TOTAL_STEPS}</Text>
-                </View>
-              </View>
-              <LinearGradient colors={CTA as unknown as [string, string]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={vb.playBtn}>
-                <IconPlay size={16} color="#fff" />
-              </LinearGradient>
-            </Pressable>
-          ))}
-        </View>
-      ) : null}
-
-      {/* new words carousel */}
-      {newWords.length > 0 ? (
-        <View style={{ gap: 10 }}>
-          <View style={vb.sectionRow}>
-            <IconSparkles size={13} color="#FFD84A" />
-            <Text style={vb.sectionTitle}>{t('practice.bank_new')}</Text>
-          </View>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            nestedScrollEnabled
-            contentContainerStyle={{ gap: 10, paddingRight: 8 }}
-          >
-            {newWords.map((entry) => (
-              <Pressable
-                key={`new-${entry.word.external_id}`}
-                onPress={() => router.push(`/practice/vocabulary/${entry.word.external_id}` as never)}
-                style={({ pressed }) => [vb.newCard, pressed && vb.newCardPressed]}
-                accessibilityRole="button"
-                accessibilityLabel={`${entry.word.word}, ${entry.word.translation}`}
-              >
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <IconSparkles size={13} color="#FFD84A" />
-                  <Text style={vb.newMeta}>{entry.word.cefr_level}</Text>
-                </View>
-                <Text style={vb.newWord} numberOfLines={1}>{entry.word.word}</Text>
-                <Text style={vb.newTr} numberOfLines={3}>{entry.word.translation}</Text>
-              </Pressable>
-            ))}
-          </ScrollView>
-        </View>
-      ) : null}
-
       {/* word list: one clean dictionary sheet — no per-row boxes */}
       {bank.isLoading ? (
         <ActivityIndicator color="#FFD84A" style={{ marginVertical: 30 }} />
@@ -209,23 +128,17 @@ export default function VocabularyBankTab() {
               accessibilityRole="button"
               accessibilityLabel={`${word.word}, ${word.translation}`}
             >
+              <View style={[vb.dot, word.status === 'completed' ? vb.dotDone : word.status === 'in_progress' ? vb.dotProg : vb.dotNew]} />
               <View style={{ flex: 1, minWidth: 0 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
                   <Text style={vb.word} numberOfLines={1}>{word.word}</Text>
-                  {word.has_audio ? <IconVolume size={12} color="rgba(255,255,255,0.35)" /> : null}
                   <Text style={vb.trInline} numberOfLines={1}>{word.translation}</Text>
                 </View>
                 {word.status === 'in_progress' ? (
-                  <View style={vb.miniBar}>
-                    <View style={[vb.miniBarFill, { width: `${Math.min(100, Math.round(((word.current_step ?? 1) / TOTAL_STEPS) * 100))}%` }]} />
-                  </View>
+                  <Text style={vb.progNote}>{word.current_step ?? 1}/{TOTAL_STEPS}</Text>
                 ) : null}
               </View>
-              {word.status === 'completed' ? (
-                <View style={vb.done}>
-                  <IconCheck size={12} color={MINT} />
-                </View>
-              ) : null}
+              {word.has_audio ? <IconVolume size={13} color="rgba(255,255,255,0.3)" /> : null}
             </Pressable>
           ))}
           {bank.hasNextPage ? (
@@ -261,29 +174,6 @@ const vb = StyleSheet.create({
   },
   rowCard: { flexDirection: "row", alignItems: "center", gap: 11, padding: 11 },
 
-  done: {
-    width: 24, height: 24, borderRadius: 12, alignItems: "center", justifyContent: "center",
-    backgroundColor: "rgba(46,236,200,0.14)", borderWidth: 1, borderColor: "rgba(46,236,200,0.45)",
-  },
-
-  pbarRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  pbar: { flex: 1, height: 5, borderRadius: 3, backgroundColor: "rgba(255,255,255,0.14)", overflow: "hidden" },
-  pbarFill: { height: "100%", borderRadius: 3 },
-  pbarLabel: { color: "rgba(255,255,255,0.55)", fontSize: 10.5, fontWeight: "800" },
-  playBtn: { width: 40, height: 40, borderRadius: 13, alignItems: "center", justifyContent: "center" },
-
-  newCard: {
-    width: 168, minHeight: 120,
-    backgroundColor: "rgba(255,255,255,0.13)",
-    borderWidth: 1, borderColor: "rgba(255,255,255,0.2)",
-    borderRadius: 18, padding: 14, gap: 3,
-    justifyContent: "space-between",
-  },
-  newCardPressed: { backgroundColor: "rgba(255,255,255,0.2)" },
-  newWord: { color: "#fff", fontSize: 17, fontWeight: "900", marginTop: 4 },
-  newTr: { color: "rgba(255,255,255,0.75)", fontSize: 12.5, fontWeight: "600", lineHeight: 17 },
-  newMeta: { color: "rgba(255,255,255,0.5)", fontSize: 10.5, fontWeight: "800", letterSpacing: 0.3 },
-
   search: { flexDirection: "row", alignItems: "center", gap: 9, paddingHorizontal: 14, paddingVertical: 4, borderRadius: 14, backgroundColor: "rgba(255,255,255,0.10)", borderWidth: 1, borderColor: "rgba(255,255,255,0.16)" },
   searchInput: { flex: 1, color: "#fff", fontSize: 14, fontWeight: "600", paddingVertical: 10 },
   clearBtn: { width: 24, height: 24, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.12)", alignItems: "center", justifyContent: "center" },
@@ -294,27 +184,30 @@ const vb = StyleSheet.create({
   levelChipText: { color: "rgba(255,255,255,0.7)", fontSize: 12.5, fontWeight: "900" },
   levelChipTextActive: { color: "#3D0A1A" },
 
-  /* dictionary sheet: one surface, airy rows, word is the hero */
+  /* dictionary sheet: one clean surface, airy rows, word is the hero */
   sheet: {
-    backgroundColor: "rgba(255,255,255,0.10)",
-    borderWidth: 1, borderColor: "rgba(255,255,255,0.16)",
-    borderRadius: 18, paddingHorizontal: 14, paddingVertical: 8,
+    backgroundColor: "rgba(20,6,34,0.35)",
+    borderWidth: 1, borderColor: "rgba(255,255,255,0.14)",
+    borderRadius: 18, paddingHorizontal: 16, paddingVertical: 6,
   },
-  sheetLabel: { color: "rgba(255,255,255,0.5)", fontSize: 10.5, fontWeight: "900", letterSpacing: 1, marginHorizontal: 2, marginBottom: 2 },
+  sheetLabel: { color: "rgba(255,255,255,0.45)", fontSize: 10.5, fontWeight: "900", letterSpacing: 1.2, marginHorizontal: 2, marginBottom: 2 },
   sheetRow: {
-    flexDirection: "row", alignItems: "center", gap: 10,
-    paddingVertical: 13, borderRadius: 10,
+    flexDirection: "row", alignItems: "center", gap: 12,
+    paddingVertical: 16, borderRadius: 10,
   },
   sheetRowDiv: {
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "rgba(255,255,255,0.10)",
+    borderBottomColor: "rgba(255,255,255,0.12)",
   },
-  rowPressed: { backgroundColor: "rgba(255,255,255,0.10)" },
+  rowPressed: { backgroundColor: "rgba(255,255,255,0.08)", marginHorizontal: -8, paddingHorizontal: 8 },
   rowDone: { opacity: 0.55 },
+  dot: { width: 8, height: 8, borderRadius: 4 },
+  dotDone: { backgroundColor: MINT },
+  dotProg: { backgroundColor: "#FFD84A" },
+  dotNew: { backgroundColor: "rgba(255,255,255,0.22)" },
   word: { color: "#fff", fontSize: 16.5, fontWeight: "900", letterSpacing: 0.2 },
   trInline: { color: "rgba(255,255,255,0.6)", fontSize: 13, fontWeight: "600", flexShrink: 1 },
-  miniBar: { height: 3, borderRadius: 2, backgroundColor: "rgba(255,255,255,0.12)", marginTop: 7, maxWidth: 140 },
-  miniBarFill: { height: "100%", borderRadius: 2, backgroundColor: "#FFD84A" },
+  progNote: { color: "#FFD84A", fontSize: 11, fontWeight: "800", marginTop: 2 },
   moreBtn: { alignItems: "center", paddingVertical: 12, marginTop: 2 },
   moreText: { color: "#fff", fontWeight: "800", fontSize: 13.5 },
   emptyText: { color: "rgba(255,255,255,0.7)", fontSize: 13.5, textAlign: "center", lineHeight: 19 },
