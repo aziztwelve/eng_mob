@@ -1,12 +1,12 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import * as Speech from 'expo-speech';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useTranslation } from 'react-i18next';
 
 import { useVocabularyBankProgress, useVocabularyBankWord } from '@/hooks/use-vocabulary-bank';
+import { playWordTTS, prefetchWordTTS } from '@/lib/tts';
 import {
   IconBookOpen,
   IconCheck,
@@ -94,8 +94,12 @@ export default function VocabularyBankPreviewScreen() {
     [entry?.activities],
   );
 
+  useEffect(() => {
+    if (entry?.word.word) void prefetchWordTTS(entry.word.word, 'en').catch(() => undefined);
+  }, [entry?.word.word]);
+
   const speak = () => {
-    if (entry?.word.word) Speech.speak(entry.word.word, { language: 'en-US', rate: 0.85 });
+    if (entry?.word.word) void playWordTTS(entry.word.word, 'en', undefined, 0.85);
   };
 
   const pct = Math.round((Math.min(currentStep, TOTAL_STEPS) / TOTAL_STEPS) * 100);

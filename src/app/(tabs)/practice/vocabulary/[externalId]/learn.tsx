@@ -1,6 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Audio } from 'expo-av';
-import * as Speech from 'expo-speech';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -10,6 +9,7 @@ import { useTranslation } from 'react-i18next';
 
 import type { VocabularyBankActivity, VocabularyBankXPAward } from '@/types/api';
 import { VocabularyBankApi } from '@/lib/api-client';
+import { playWordTTS, prefetchWordTTS } from '@/lib/tts';
 import { useVocabularyBankFeed, useVocabularyBankProgress, useVocabularyBankWord } from '@/hooks/use-vocabulary-bank';
 import {
   IconArrowRight,
@@ -41,6 +41,10 @@ export default function VocabularyBankLessonScreen() {
   const [index, setIndex] = useState<number | null>(null);
   const [finished, setFinished] = useState(false);
   const [xpAward, setXpAward] = useState<VocabularyBankXPAward | null>(null);
+
+  useEffect(() => {
+    if (entry?.word.word) void prefetchWordTTS(entry.word.word, 'en').catch(() => undefined);
+  }, [entry?.word.word]);
 
   useEffect(() => {
     if (!externalId || !activities.length) return;
@@ -237,8 +241,8 @@ function DiscoverActivity({ word, onAdvance }: { word: string; onAdvance: () => 
 function ListenActivity({ word, onAdvance }: { word: string; onAdvance: () => void }) {
   const { t } = useTranslation();
   const [speed, setSpeed] = useState(1);
-  const speak = () => Speech.speak(word, { language: 'en-US', rate: speed === 0.75 ? 0.7 : 0.9 });
-  return <View style={s.centerCard}><Text style={s.word}>{word}</Text><Pressable onPress={speak} style={s.listen}><IconVolume size={30} color="#FFD84A" /><Text style={s.listenText}>{t('practice.bank_player.listen')}</Text></Pressable><View style={s.speedRow}>{[0.75, 1].map((value) => <Pressable key={value} onPress={() => { setSpeed(value); Speech.speak(word, { language: 'en-US', rate: value === 0.75 ? 0.7 : 0.9 }); }} style={[s.speed, speed === value && s.speedSelected]}><Text style={s.optionText}>{value}×</Text></Pressable>)}</View><Pressable style={s.primary} onPress={onAdvance}><Text style={s.primaryText}>{t('practice.bank_player.listened')}</Text></Pressable></View>;
+  const speak = (rate = speed) => void playWordTTS(word, 'en', undefined, rate);
+  return <View style={s.centerCard}><Text style={s.word}>{word}</Text><Pressable onPress={() => speak()} style={s.listen}><IconVolume size={30} color="#FFD84A" /><Text style={s.listenText}>{t('practice.bank_player.listen')}</Text></Pressable><View style={s.speedRow}>{[0.75, 1].map((value) => <Pressable key={value} onPress={() => { setSpeed(value); speak(value); }} style={[s.speed, speed === value && s.speedSelected]}><Text style={s.optionText}>{value}×</Text></Pressable>)}</View><Pressable style={s.primary} onPress={onAdvance}><Text style={s.primaryText}>{t('practice.bank_player.listened')}</Text></Pressable></View>;
 }
 
 function PronounceActivity({ word, onAdvance }: { word: string; onAdvance: () => void }) {
@@ -289,7 +293,7 @@ function SpeakAndReview({ word, onAdvance }: { word: string; onAdvance: () => vo
   const [sentence, setSentence] = useState('');
   const [seconds, setSeconds] = useState(3);
   const [recordingNow, setRecordingNow] = useState(false);
-  const speak = () => Speech.speak(word, { language: 'en-US', rate: 0.8 });
+  const speak = () => void playWordTTS(word, 'en', undefined, 0.8);
   useEffect(() => { if (seconds <= 0) return; const timer = setInterval(() => setSeconds((value) => Math.max(0, value - 1)), 1000); return () => clearInterval(timer); }, [seconds]);
   return <View style={s.card}><Text style={s.word}>{word}</Text><Text style={s.muted}>{seconds > 0 ? t('practice.bank_player.prepare', { seconds }) : t('practice.bank_player.now_speak')}</Text><Text style={s.muted}>{t('practice.bank_player.use_in_sentence')}</Text><Pressable onPress={speak} style={s.listen}><IconVolume size={30} color="#FFD84A" /><Text style={s.listenText}>{t('practice.bank_player.listen_word')}</Text></Pressable><Pressable onPress={() => setRecordingNow((value) => !value)} style={s.listen}>{recordingNow ? <Text style={s.listenIcon}>⏹</Text> : <IconMic size={30} color="#FFD84A" />}<Text style={s.listenText}>{recordingNow ? t('practice.bank_player.stop_recording') : t('practice.bank_player.record_answer')}</Text></Pressable><TextInput value={sentence} onChangeText={setSentence} multiline placeholder="My sentence with this word…" placeholderTextColor="rgba(255,255,255,0.48)" style={[s.input, s.multiline]} accessibilityLabel={t('practice.bank_player.use_in_sentence')} /><Pressable disabled={!sentence.trim() && !recordingNow} onPress={onAdvance} style={[s.primary, !sentence.trim() && !recordingNow && s.disabled]}><Text style={s.primaryText}>{t('practice.bank_player.finish_schedule_review')}</Text></Pressable></View>;
 }

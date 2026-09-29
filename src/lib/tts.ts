@@ -18,6 +18,8 @@ import { AIApi } from './ai-api';
 const CACHE_DIR = (FileSystem.cacheDirectory ?? '') + 'tts/';
 
 let currentSound: Audio.Sound | null = null;
+const pendingAudio = new Map<string, Promise<string>>();
+const remoteAudio = new Map<string, string>();
 
 function cacheKey(text: string, language: string): string {
   return `${language}_${text}`
@@ -38,7 +40,7 @@ async function ensureDir(): Promise<void> {
   }
 }
 
-async function playUri(uri: string): Promise<void> {
+async function playUri(uri: string, rate = 1): Promise<void> {
   // Останавливаем предыдущий звук, чтобы не накладывались.
   if (currentSound) {
     await currentSound.unloadAsync().catch(() => {});
@@ -47,7 +49,7 @@ async function playUri(uri: string): Promise<void> {
   await Audio.setAudioModeAsync({ playsInSilentModeIOS: true }).catch(() => {});
   const { sound } = await Audio.Sound.createAsync(
     { uri },
-    { shouldPlay: true, volume: 1.0 },
+    { shouldPlay: true, volume: 1.0, rate, shouldCorrectPitch: true },
   );
   currentSound = sound;
   sound.setOnPlaybackStatusUpdate((status) => {
@@ -62,34 +64,64 @@ async function playUri(uri: string): Promise<void> {
  * playWordTTS — синтезирует (или берёт из кэша) и проигрывает слово.
  * Бросает только при сетевой/IO-ошибке; вызывающий код может игнорировать.
  */
-export async function playWordTTS(
+async function cachedWordTTSUri(
   text: string,
   language = 'en',
   voice?: string,
-): Promise<void> {
+): Promise<string> {
   const t = text.trim();
-  if (!t) return;
+  if (!t) return '';
 
   await ensureDir();
   const uri = `${CACHE_DIR}${cacheKey(t, language)}.mp3`;
 
   const cached = await FileSystem.getInfoAsync(uri).catch(() => ({ exists: false }) as { exists: boolean });
-  if (!cached.exists) {
+  if (cached.exists) return uri;
+  const cachedRemote = remoteAudio.get(uri);
+  if (cachedRemote) return cachedRemote;
+
+  const pending = pendingAudio.get(uri);
+  if (pending) return pending;
+
+  const request = (async () => {
     const resp = await AIApi.synthesizeTTS({ text: t, language, voice });
     if (resp.audio_content) {
       await FileSystem.writeAsStringAsync(uri, resp.audio_content, {
         encoding: FileSystem.EncodingType.Base64,
       });
+      return uri;
     } else if (resp.audio_url) {
-      // Fallback path B (storage URL) — играем напрямую, без кэша файла.
-      await playUri(resp.audio_url);
-      return;
-    } else {
-      throw new Error('tts: empty audio response');
+      // Path B is already a permanent public object. Keep its URL for this
+      // screen session so a prefetch is shared with the subsequent tap.
+      remoteAudio.set(uri, resp.audio_url);
+      return resp.audio_url;
     }
+    throw new Error('tts: empty audio response');
+  })();
+  pendingAudio.set(uri, request);
+  try {
+    return await request;
+  } finally {
+    pendingAudio.delete(uri);
   }
+}
 
-  await playUri(uri);
+/** Start TTS while the word screen is opening, before the learner presses play. */
+export async function prefetchWordTTS(text: string, language = 'en', voice?: string): Promise<void> {
+  await cachedWordTTSUri(text, language, voice);
+}
+
+/** Plays a cached/preloaded word. The first request is shared with prefetch. */
+export async function playWordTTS(
+  text: string,
+  language = 'en',
+  voice?: string,
+  rate = 1,
+): Promise<void> {
+  const uri = await cachedWordTTSUri(text, language, voice);
+  if (!uri) return;
+
+  await playUri(uri, rate);
 }
 
 
