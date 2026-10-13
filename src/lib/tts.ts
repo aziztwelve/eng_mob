@@ -1,7 +1,8 @@
-import { Audio } from 'expo-av';
+import { setAudioModeAsync } from 'expo-audio';
 import * as FileSystem from 'expo-file-system/legacy';
 
 import { AIApi } from './ai-api';
+import { SoundSlot } from './audio';
 
 /**
  * On-demand TTS для флешкарт/словаря (path A — Google Cloud TTS).
@@ -17,7 +18,7 @@ import { AIApi } from './ai-api';
 
 const CACHE_DIR = (FileSystem.cacheDirectory ?? '') + 'tts/';
 
-let currentSound: Audio.Sound | null = null;
+const currentSlot = new SoundSlot();
 const pendingAudio = new Map<string, Promise<string>>();
 const remoteAudio = new Map<string, string>();
 
@@ -41,23 +42,9 @@ async function ensureDir(): Promise<void> {
 }
 
 async function playUri(uri: string, rate = 1): Promise<void> {
-  // Останавливаем предыдущий звук, чтобы не накладывались.
-  if (currentSound) {
-    await currentSound.unloadAsync().catch(() => {});
-    currentSound = null;
-  }
-  await Audio.setAudioModeAsync({ playsInSilentModeIOS: true }).catch(() => {});
-  const { sound } = await Audio.Sound.createAsync(
-    { uri },
-    { shouldPlay: true, volume: 1.0, rate, shouldCorrectPitch: true },
-  );
-  currentSound = sound;
-  sound.setOnPlaybackStatusUpdate((status) => {
-    if ('didJustFinish' in status && status.didJustFinish) {
-      sound.unloadAsync().catch(() => {});
-      if (currentSound === sound) currentSound = null;
-    }
-  });
+  // SoundSlot останавливает предыдущий звук, чтобы не накладывались.
+  await setAudioModeAsync({ playsInSilentMode: true }).catch(() => {});
+  await currentSlot.play({ uri }, { rate, volume: 1.0 });
 }
 
 /**
@@ -156,7 +143,7 @@ function hashKey(text: string, language: string): string {
 /**
  * getChatTTSUri — синтезирует реплику ассистента через Google Cloud TTS
  * (POST /ai/tts, path A — inline base64), кэширует mp3 в файловой системе
- * и возвращает локальный uri для проигрывания в expo-av.
+ * и возвращает локальный uri для проигрывания (expo-audio).
  *
  * Жёсткая привязка к Google TTS: никакого системного голоса/OpenAI —
  * только бэкендный Google-синтезатор. Markdown чистится, текст режется

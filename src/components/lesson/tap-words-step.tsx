@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { View, Text, Pressable, ScrollView } from 'react-native';
 import { Volume2 } from 'lucide-react-native';
-import { Audio } from 'expo-av';
+import { SoundSlot } from '@/lib/audio';
 import { useTranslation } from 'react-i18next';
 import { FeedbackBar, type FeedbackState } from './FeedbackBar';
 import { DraggableWordBank } from './draggable-word-bank';
@@ -17,7 +17,7 @@ export function TapWordsStep({ step, onSubmit, onContinue, isLast }: StepCompone
   const { t } = useTranslation();
   const content = parseStepContent<TapWordsContent>(step);
   const bank = content?.word_bank ?? [];
-  const soundRef = useRef<Audio.Sound | null>(null);
+  const soundRef = useRef(new SoundSlot());
   const [picked, setPicked] = useState<number[]>([]);
   const [state, setState] = useState<FeedbackState>({ kind: 'idle' });
 
@@ -34,15 +34,7 @@ export function TapWordsStep({ step, onSubmit, onContinue, isLast }: StepCompone
   const play = async () => {
     try {
       if (content.audio_url) {
-        if (soundRef.current) {
-          await soundRef.current.unloadAsync();
-          soundRef.current = null;
-        }
-        const { sound } = await Audio.Sound.createAsync(
-          { uri: content.audio_url },
-          { shouldPlay: true },
-        );
-        soundRef.current = sound;
+        await soundRef.current.play({ uri: content.audio_url });
         return;
       }
       if (content.audio_text) {

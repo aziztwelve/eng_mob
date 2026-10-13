@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, Pressable, ScrollView } from 'react-native';
-import { Audio } from 'expo-av';
+import { playOnce } from '@/lib/audio';
 import { Headphones, Play, Volume2 } from 'lucide-react-native';
 import { FeedbackBar, type FeedbackState } from './FeedbackBar';
 import { parseStepContent, type StepComponentProps } from './step-types';
@@ -30,7 +30,7 @@ export function ListenChooseWordStep({ step, onSubmit, onContinue, isLast }: Ste
   const locked = state.kind !== 'idle';
   const play = async (text: string, url?: string) => {
     if (url) {
-      await Audio.Sound.createAsync({ uri: url }, { shouldPlay: true });
+      playOnce({ uri: url });
       return;
     }
     await playWordTTS(text, content.language);

@@ -26,7 +26,7 @@ export type FxSound =
   | 'practice-complete';
 
 /**
- * Возвращает Asset-source для `Audio.Sound.createAsync()` или null, если
+ * Возвращает Asset-source для `createAudioPlayer()` или null, если
  * звук еще не добавлен. Тип сознательно широкий (`unknown`), так как
  * результат `require()` для медиа-ассетов — это number в RN.
  */

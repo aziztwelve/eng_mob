@@ -418,6 +418,19 @@ const en = {
 
   auth: {
     login: {
+      welcome_back: 'Welcome Back',
+      login_subtitle: 'Please login with your Account by entering your valid credentials',
+      password_hint: 'Password',
+      forgot_password: 'Forgot Password .?',
+      forgot_password_title: 'Forgot Password?',
+      forgot_password_body: 'Password recovery will be available soon.',
+      login_now: 'Login Now',
+      or_continue_with: 'Or Continue With',
+      google: 'Google',
+      apple: 'Apple',
+      oauth_google_title: 'Google Sign-In',
+      oauth_apple_title: 'Apple Sign-In',
+      oauth_not_configured: 'This provider is not configured in this build yet.',
       title: 'Welcome back!',
       subtitle: 'Sign in to continue learning',
       email_label: 'Email',

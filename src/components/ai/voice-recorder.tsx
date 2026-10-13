@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Mic, Pause, Play, RotateCcw, Square } from 'lucide-react-native';
-import { Audio } from 'expo-av';
+import { RecordingPresets, requestRecordingPermissionsAsync, setAudioModeAsync, useAudioRecorder } from 'expo-audio';
 import { LinearGradient } from 'expo-linear-gradient';
 import { CTA } from '@/components/sunset';
+import { SoundSlot } from '@/lib/audio';
 import type { PronunciationAudioInput } from '@/lib/ai-api';
 import { useTranslation } from 'react-i18next';
 
@@ -26,28 +27,25 @@ export function VoiceRecorder({
   const [audio, setAudio] = useState<PronunciationAudioInput | null>(null);
   const [playing, setPlaying] = useState(false);
 
-  const recRef = useRef<Audio.Recording | null>(null);
-  const soundRef = useRef<Audio.Sound | null>(null);
+  const recorder = useAudioRecorder(Platform.OS === 'android' ? RecordingPresets.LOW_QUALITY : RecordingPresets.HIGH_QUALITY);
+  const soundRef = useRef(new SoundSlot());
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     return () => {
       if (tickRef.current) clearInterval(tickRef.current);
-      recRef.current?.stopAndUnloadAsync().catch(() => {});
-      soundRef.current?.unloadAsync().catch(() => {});
+      if (recorder.isRecording) void recorder.stop().catch(() => {});
+      soundRef.current.stop();
     };
   }, []);
 
   const start = async () => {
     try {
-      const perm = await Audio.requestPermissionsAsync();
+      const perm = await requestRecordingPermissionsAsync();
       if (!perm.granted) { setState('denied'); return; }
-      await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
-      const options = Platform.OS === 'android'
-        ? Audio.RecordingOptionsPresets.LOW_QUALITY
-        : Audio.RecordingOptionsPresets.HIGH_QUALITY;
-      const { recording } = await Audio.Recording.createAsync(options);
-      recRef.current = recording;
+      await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
+      await recorder.prepareToRecordAsync();
+      recorder.record();
       setSeconds(0);
       setState('recording');
       tickRef.current = setInterval(() => {
@@ -62,13 +60,11 @@ export function VoiceRecorder({
 
   const stop = async () => {
     if (tickRef.current) { clearInterval(tickRef.current); tickRef.current = null; }
-    const rec = recRef.current;
-    if (!rec) return;
+    if (!recorder.isRecording) return;
     try {
-      await rec.stopAndUnloadAsync();
-      const uri = rec.getURI();
-      recRef.current = null;
-      await Audio.setAudioModeAsync({ allowsRecordingIOS: false, playsInSilentModeIOS: true }).catch(() => {});
+      await recorder.stop();
+      const uri = recorder.uri;
+      await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true }).catch(() => {});
       if (!uri) { setState('idle'); return; }
       const { type, name } = inferAudioMeta(uri);
       setAudio({ uri, type, name });
@@ -79,28 +75,18 @@ export function VoiceRecorder({
   const togglePlay = async () => {
     if (!audio) return;
     try {
-      if (!soundRef.current) {
-        const { sound } = await Audio.Sound.createAsync({ uri: audio.uri }, { shouldPlay: true });
-        soundRef.current = sound;
+      if (!soundRef.current.isActive) {
+        soundRef.current.play({ uri: audio.uri }, { keep: true, onFinish: () => setPlaying(false) });
         setPlaying(true);
-        sound.setOnPlaybackStatusUpdate((s) => { if (s.isLoaded && s.didJustFinish) setPlaying(false); });
         return;
       }
-      const st = await soundRef.current.getStatusAsync();
-      if (!st.isLoaded) return;
-      if (st.isPlaying) { await soundRef.current.pauseAsync(); setPlaying(false); }
-      else {
-        if (st.positionMillis && st.durationMillis && st.positionMillis >= st.durationMillis)
-          await soundRef.current.setPositionAsync(0);
-        await soundRef.current.playAsync(); setPlaying(true);
-      }
+      setPlaying(await soundRef.current.toggle());
     } catch (e) { console.warn('playback failed', e); }
   };
 
   const reset = async () => {
     setSeconds(0); setAudio(null); setPlaying(false);
-    try { await soundRef.current?.unloadAsync(); } catch {}
-    soundRef.current = null;
+    soundRef.current.stop();
     setState('idle');
   };
 

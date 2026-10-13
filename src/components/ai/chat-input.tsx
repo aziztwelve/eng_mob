@@ -1,7 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { Mic, Send, Square } from 'lucide-react-native';
-import { Audio } from 'expo-av';
+import {
+  AudioQuality,
+  IOSOutputFormat,
+  requestRecordingPermissionsAsync,
+  setAudioModeAsync,
+  useAudioRecorder,
+  type RecordingOptions,
+} from 'expo-audio';
 import Toast from 'react-native-toast-message';
 import { LinearGradient } from 'expo-linear-gradient';
 import { glass, CTA } from '@/components/sunset';
@@ -16,23 +23,23 @@ const STT_SAMPLE_RATE = 16000;
 //   • Android — AMR_WB @ 16 kHz (encoder/format AMR_WB)
 //   • iOS     — LINEAR16 WAV @ 16 kHz (LinearPCM)
 //   • Web     — WEBM/Opus (MediaRecorder по умолчанию, 48 kHz)
-const STT_RECORDING_OPTIONS: Audio.RecordingOptions = {
+const STT_RECORDING_OPTIONS: RecordingOptions = {
   isMeteringEnabled: false,
+  numberOfChannels: 1,
+  extension: '.wav',
+  sampleRate: STT_SAMPLE_RATE,
+  bitRate: 23850, // AMR-WB max mode (Android); ignored for LINEARPCM on iOS
   android: {
     extension: '.amr',
-    outputFormat: Audio.AndroidOutputFormat.AMR_WB,
-    audioEncoder: Audio.AndroidAudioEncoder.AMR_WB,
+    outputFormat: 'amrwb',
+    audioEncoder: 'amr_wb',
     sampleRate: STT_SAMPLE_RATE,
-    numberOfChannels: 1,
-    bitRate: 23850, // AMR-WB max mode
   },
   ios: {
     extension: '.wav',
-    outputFormat: Audio.IOSOutputFormat.LINEARPCM,
-    audioQuality: Audio.IOSAudioQuality.HIGH,
+    outputFormat: IOSOutputFormat.LINEARPCM,
+    audioQuality: AudioQuality.HIGH,
     sampleRate: STT_SAMPLE_RATE,
-    numberOfChannels: 1,
-    bitRate: 256000,
     linearPCMBitDepth: 16,
     linearPCMIsBigEndian: false,
     linearPCMIsFloat: false,
@@ -82,7 +89,7 @@ export function ChatInput({
 
   // === Голосовой ввод (STT) ===
   const [recording, setRecording] = useState(false);
-  const recRef = useRef<Audio.Recording | null>(null);
+  const recorder = useAudioRecorder(STT_RECORDING_OPTIONS);
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const transcribeMut = useTranscribeAudio();
   const transcribing = transcribeMut.isPending;
@@ -90,7 +97,7 @@ export function ChatInput({
   useEffect(() => {
     return () => {
       if (tickRef.current) clearInterval(tickRef.current);
-      recRef.current?.stopAndUnloadAsync().catch(() => {});
+      if (recorder.isRecording) void recorder.stop().catch(() => {});
     };
   }, []);
 
@@ -112,7 +119,7 @@ export function ChatInput({
   const startRec = async () => {
     if (loading || transcribing) return;
     try {
-      const perm = await Audio.requestPermissionsAsync();
+      const perm = await requestRecordingPermissionsAsync();
       if (!perm.granted) {
         Toast.show({
           type: 'error',
@@ -121,9 +128,9 @@ export function ChatInput({
         });
         return;
       }
-      await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
-      const { recording: rec } = await Audio.Recording.createAsync(STT_RECORDING_OPTIONS);
-      recRef.current = rec;
+      await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
+      await recorder.prepareToRecordAsync();
+      recorder.record();
       setRecording(true);
       let elapsed = 0;
       tickRef.current = setInterval(() => {
@@ -138,14 +145,12 @@ export function ChatInput({
 
   const stopRecAndTranscribe = async () => {
     if (tickRef.current) { clearInterval(tickRef.current); tickRef.current = null; }
-    const rec = recRef.current;
-    recRef.current = null;
     setRecording(false);
-    if (!rec) return;
+    if (!recorder.isRecording) return;
     try {
-      await rec.stopAndUnloadAsync();
-      const uri = rec.getURI();
-      await Audio.setAudioModeAsync({ allowsRecordingIOS: false, playsInSilentModeIOS: true }).catch(() => {});
+      await recorder.stop();
+      const uri = recorder.uri;
+      await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true }).catch(() => {});
       if (!uri) return;
       const meta = sttFormatMeta();
       const out = await transcribeMut.mutateAsync({

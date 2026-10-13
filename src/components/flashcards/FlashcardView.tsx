@@ -10,7 +10,7 @@ import Animated, {
   runOnJS,
   Extrapolation,
 } from 'react-native-reanimated';
-import { Audio } from 'expo-av';
+import { SoundSlot } from '@/lib/audio';
 import { Check, X, Undo2, SkipForward, Volume2 } from 'lucide-react-native';
 
 import { fx } from '@/lib/fx';
@@ -61,7 +61,7 @@ export function FlashcardView({
   const rotation = useSharedValue(0);
   const translateX = useSharedValue(0);
   const ttsPlayedRef = useRef(false);
-  const soundRef = useRef<Audio.Sound | null>(null);
+  const soundRef = useRef(new SoundSlot());
 
   const playTTS = useCallback(async () => {
     if (ttsBusy || !word) return;
@@ -70,15 +70,7 @@ export function FlashcardView({
     setTtsBusy(true);
     try {
       if (realUrl) {
-        if (soundRef.current) {
-          await soundRef.current.unloadAsync();
-          soundRef.current = null;
-        }
-        const { sound } = await Audio.Sound.createAsync(
-          { uri: realUrl },
-          { shouldPlay: true, volume: 0.9 },
-        );
-        soundRef.current = sound;
+        soundRef.current.play({ uri: realUrl }, { volume: 0.9 });
       } else {
         // Путь A: on-demand синтез слова через Google TTS + локальный кэш.
         await playWordTTS(word, ttsLanguage || 'en');
@@ -100,9 +92,7 @@ export function FlashcardView({
 
   useEffect(() => {
     return () => {
-      if (soundRef.current) {
-        void soundRef.current.unloadAsync();
-      }
+      soundRef.current.stop();
     };
   }, []);
 

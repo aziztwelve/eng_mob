@@ -41,7 +41,7 @@ function resolveApiBaseUrl(): string {
 const API_BASE_URL = resolveApiBaseUrl();
 
 /**
- * Параметры pronunciation-аудио для RN: file uri (из expo-av Recording),
+ * Параметры pronunciation-аудио для RN: file uri (из expo-audio Recording),
  * MIME-type и имя файла.
  */
 export interface PronunciationAudioInput {

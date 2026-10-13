@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
-import { Audio } from 'expo-av';
+import { playOnce } from '@/lib/audio';
 import { Check, Headphones, Play, Volume2, X } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { FeedbackBar, type FeedbackState } from './FeedbackBar';
@@ -26,7 +26,7 @@ export function MatchPairsVoiceStep({ step, onSubmit, onContinue, isLast }: Step
 
   const play = async (pair: VoicePair) => {
     if (pair.audio_url) {
-      await Audio.Sound.createAsync({ uri: pair.audio_url }, { shouldPlay: true });
+      playOnce({ uri: pair.audio_url });
       return;
     }
     await playWordTTS(pair.audio_text, content.language);

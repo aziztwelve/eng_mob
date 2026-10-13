@@ -3,7 +3,7 @@ import { ActivityIndicator, Platform, Pressable, ScrollView, Text, TextInput, Vi
 import { Stack, useRouter, type Href } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
-import { Audio } from "expo-av";
+import { AudioQuality, IOSOutputFormat, requestRecordingPermissionsAsync, setAudioModeAsync, useAudioRecorder, type RecordingOptions } from "expo-audio";
 import Toast from "react-native-toast-message";
 import { Send, Square } from "lucide-react-native";
 import type { Icon as PhosphorIcon } from "phosphor-react-native";
@@ -34,10 +34,14 @@ const SEND = ["#7C5CFF", "#5B36E0"] as const;
 
 /* STT — формат записи под Google STT (как в chat-input). */
 const STT_SR = 16000;
-const STT_REC_OPTS: Audio.RecordingOptions = {
+const STT_REC_OPTS: RecordingOptions = {
   isMeteringEnabled: false,
-  android: { extension: ".amr", outputFormat: Audio.AndroidOutputFormat.AMR_WB, audioEncoder: Audio.AndroidAudioEncoder.AMR_WB, sampleRate: STT_SR, numberOfChannels: 1, bitRate: 23850 },
-  ios: { extension: ".wav", outputFormat: Audio.IOSOutputFormat.LINEARPCM, audioQuality: Audio.IOSAudioQuality.HIGH, sampleRate: STT_SR, numberOfChannels: 1, bitRate: 256000, linearPCMBitDepth: 16, linearPCMIsBigEndian: false, linearPCMIsFloat: false },
+  numberOfChannels: 1,
+  extension: '.wav',
+  sampleRate: STT_SR,
+  bitRate: 23850, // AMR-WB max mode (Android); ignored for LINEARPCM on iOS
+  android: { extension: ".amr", outputFormat: "amrwb", audioEncoder: "amr_wb", sampleRate: STT_SR },
+  ios: { extension: ".wav", outputFormat: IOSOutputFormat.LINEARPCM, audioQuality: AudioQuality.HIGH, sampleRate: STT_SR, linearPCMBitDepth: 16, linearPCMIsBigEndian: false, linearPCMIsFloat: false },
   web: { mimeType: "audio/webm", bitsPerSecond: 128000 },
 };
 function sttMeta(): { encoding: string; sampleRate: number; type: string; name: string } {
@@ -112,7 +116,7 @@ function AskBar() {
   const { t } = useTranslation();
   const [text, setText] = useState("");
   const [recording, setRecording] = useState(false);
-  const recRef = useRef<Audio.Recording | null>(null);
+  const recorder = useAudioRecorder(STT_REC_OPTS);
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startMut = useStartConversation();
   const transcribeMut = useTranscribeAudio();
@@ -134,11 +138,11 @@ function AskBar() {
   const startRec = async () => {
     if (busy || transcribing) return;
     try {
-      const perm = await Audio.requestPermissionsAsync();
+      const perm = await requestRecordingPermissionsAsync();
       if (!perm.granted) { Toast.show({ type: "error", text1: "Нет доступа к микрофону" }); return; }
-      await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
-      const { recording: rec } = await Audio.Recording.createAsync(STT_REC_OPTS);
-      recRef.current = rec;
+      await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
+      await recorder.prepareToRecordAsync();
+      recorder.record();
       setRecording(true);
       let elapsed = 0;
       tickRef.current = setInterval(() => { elapsed += 1; if (elapsed >= 60) stopRec(); }, 1000);
@@ -147,14 +151,12 @@ function AskBar() {
 
   const stopRec = async () => {
     if (tickRef.current) { clearInterval(tickRef.current); tickRef.current = null; }
-    const rec = recRef.current;
-    recRef.current = null;
     setRecording(false);
-    if (!rec) return;
+    if (!recorder.isRecording) return;
     try {
-      await rec.stopAndUnloadAsync();
-      const uri = rec.getURI();
-      await Audio.setAudioModeAsync({ allowsRecordingIOS: false, playsInSilentModeIOS: true }).catch(() => {});
+      await recorder.stop();
+      const uri = recorder.uri;
+      await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true }).catch(() => {});
       if (!uri) return;
       const meta = sttMeta();
       const out = await transcribeMut.mutateAsync({ audio: { uri, type: meta.type, name: meta.name }, language: DEFAULT_TARGET_LANG, encoding: meta.encoding, sample_rate: meta.sampleRate });

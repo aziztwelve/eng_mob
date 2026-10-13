@@ -3,7 +3,7 @@
  *
  * Объединяет:
  *   - haptics (expo-haptics) — тактильная отдача;
- *   - sounds (expo-av) — короткие UI-звуки.
+ *   - sounds (expo-audio) — короткие UI-звуки.
  *
  * Все методы fire-and-forget: ошибки гасятся, основной поток UI не блокируется.
  * Если пользователь выключил один из каналов в настройках (см. fx-prefs.ts),
@@ -19,13 +19,13 @@
  *   dailyGoal    — chime + Success haptic
  *
  * Звуковые ассеты ленивы: при первом обращении загружаются через
- * `Audio.Sound.createAsync()` и кешируются. Если ассет не зарегистрирован —
+ * `createAudioPlayer()` и кешируются. Если ассет не зарегистрирован —
  * звук пропускается, haptic все равно играет.
  */
 
 import { Platform } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { Audio } from 'expo-av';
+import { createAudioPlayer, setAudioModeAsync, type AudioPlayer } from 'expo-audio';
 import { getFxPreferences } from '@/lib/fx-prefs';
 import { hasSoundAsset, SOUND_ASSETS, type FxSound } from '@/lib/sound-manifest';
 
@@ -55,11 +55,11 @@ function selection() {
 }
 
 // === Sounds ===
-// Кэш загруженных Audio.Sound объектов. Не выгружаем — UI-звуки маленькие,
+// Кэш загруженных AudioPlayer объектов. Не выгружаем — UI-звуки маленькие,
 // между ними переключаемся часто. Если потребуется освободить память,
 // можно сделать LRU + unload по таймеру.
 
-const loadedSounds = new Map<FxSound, Audio.Sound>();
+const loadedSounds = new Map<FxSound, AudioPlayer>();
 let audioModeInitialized = false;
 
 async function ensureAudioMode() {
@@ -69,10 +69,10 @@ async function ensureAudioMode() {
   // На Android и web — no-op (опции игнорируются).
   if (Platform.OS !== 'web') {
     try {
-      await Audio.setAudioModeAsync({
-        playsInSilentModeIOS: true,
-        staysActiveInBackground: false,
-        shouldDuckAndroid: true,
+      await setAudioModeAsync({
+        playsInSilentMode: true,
+        shouldPlayInBackground: false,
+        interruptionMode: 'duckOthers',
       });
     } catch {
       /* noop */
@@ -81,18 +81,16 @@ async function ensureAudioMode() {
   audioModeInitialized = true;
 }
 
-async function loadSound(name: FxSound): Promise<Audio.Sound | null> {
+async function loadSound(name: FxSound): Promise<AudioPlayer | null> {
   if (loadedSounds.has(name)) return loadedSounds.get(name)!;
   const asset = SOUND_ASSETS[name];
   if (asset == null) return null;
   try {
     await ensureAudioMode();
-    const { sound } = await Audio.Sound.createAsync(asset as number, {
-      shouldPlay: false,
-      volume: 0.85,
-    });
-    loadedSounds.set(name, sound);
-    return sound;
+    const player = createAudioPlayer(asset as number);
+    player.volume = 0.85;
+    loadedSounds.set(name, player);
+    return player;
   } catch {
     return null;
   }
@@ -108,8 +106,8 @@ function playSound(name: FxSound) {
     try {
       // setPositionAsync(0) гарантирует, что быстрые повторные вызовы
       // (несколько XP-gain'ов подряд) начинаются с начала, а не наслаиваются.
-      await sound.setPositionAsync(0);
-      await sound.playAsync();
+      await sound.seekTo(0);
+      sound.play();
     } catch {
       /* noop */
     }

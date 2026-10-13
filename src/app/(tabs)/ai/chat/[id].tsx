@@ -13,7 +13,8 @@ import {
 } from 'react-native';
 import { Stack, useLocalSearchParams, router } from 'expo-router';
 import { ArrowLeft, Mic, Square, X } from 'lucide-react-native';
-import { Audio } from 'expo-av';
+import { AudioQuality, IOSOutputFormat, requestRecordingPermissionsAsync, setAudioModeAsync, useAudioRecorder, type RecordingOptions } from 'expo-audio';
+import { SoundSlot } from '@/lib/audio';
 import Toast from 'react-native-toast-message';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
@@ -29,10 +30,14 @@ import { useTranslation } from 'react-i18next';
 
 /* STT — формат записи под Google STT (как в chat-input/ai-hub). */
 const STT_SR = 16000;
-const STT_REC_OPTS: Audio.RecordingOptions = {
+const STT_REC_OPTS: RecordingOptions = {
   isMeteringEnabled: false,
-  android: { extension: '.amr', outputFormat: Audio.AndroidOutputFormat.AMR_WB, audioEncoder: Audio.AndroidAudioEncoder.AMR_WB, sampleRate: STT_SR, numberOfChannels: 1, bitRate: 23850 },
-  ios: { extension: '.wav', outputFormat: Audio.IOSOutputFormat.LINEARPCM, audioQuality: Audio.IOSAudioQuality.HIGH, sampleRate: STT_SR, numberOfChannels: 1, bitRate: 256000, linearPCMBitDepth: 16, linearPCMIsBigEndian: false, linearPCMIsFloat: false },
+  numberOfChannels: 1,
+  extension: '.wav',
+  sampleRate: STT_SR,
+  bitRate: 23850, // AMR-WB max mode (Android); ignored for LINEARPCM on iOS
+  android: { extension: '.amr', outputFormat: 'amrwb', audioEncoder: 'amr_wb', sampleRate: STT_SR },
+  ios: { extension: '.wav', outputFormat: IOSOutputFormat.LINEARPCM, audioQuality: AudioQuality.HIGH, sampleRate: STT_SR, linearPCMBitDepth: 16, linearPCMIsBigEndian: false, linearPCMIsFloat: false },
   web: { mimeType: 'audio/webm', bitsPerSecond: 128000 },
 };
 function sttMeta(): { encoding: string; sampleRate: number; type: string; name: string } {
@@ -58,20 +63,20 @@ function VoiceConsole({
 }) {
   const { t } = useTranslation();
   const [phase, setPhase] = useState<VoicePhase>('recording');
-  const recRef = useRef<Audio.Recording | null>(null);
-  const soundRef = useRef<Audio.Sound | null>(null);
+  const recorder = useAudioRecorder(STT_REC_OPTS);
+  const soundRef = useRef(new SoundSlot());
   const activeRef = useRef(true);
   const transcribeMut = useTranscribeAudio();
 
   const beginRecording = useCallback(async () => {
     if (!activeRef.current) return;
     try {
-      const perm = await Audio.requestPermissionsAsync();
+      const perm = await requestRecordingPermissionsAsync();
       if (!perm.granted) { Toast.show({ type: 'error', text1: 'Нет доступа к микрофону' }); onClose(); return; }
-      await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
-      const { recording } = await Audio.Recording.createAsync(STT_REC_OPTS);
-      if (!activeRef.current) { try { await recording.stopAndUnloadAsync(); } catch {} return; }
-      recRef.current = recording;
+      await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
+      await recorder.prepareToRecordAsync();
+      if (!activeRef.current) { try { await recorder.stop(); } catch {} return; }
+      recorder.record();
       setPhase('recording');
     } catch (e) { console.error('voice rec failed', e); Toast.show({ type: 'error', text1: 'Не удалось начать запись' }); onClose(); }
   }, [onClose]);
@@ -82,15 +87,7 @@ function VoiceConsole({
       setPhase('speaking');
       const uri = await getChatTTSUri(reply, language ?? 'en');
       if (!activeRef.current) return;
-      const { sound } = await Audio.Sound.createAsync({ uri }, { shouldPlay: true });
-      soundRef.current = sound;
-      sound.setOnPlaybackStatusUpdate((st) => {
-        if (st.isLoaded && st.didJustFinish) {
-          sound.unloadAsync().catch(() => {});
-          if (soundRef.current === sound) soundRef.current = null;
-          if (activeRef.current) void beginRecording();
-        }
-      });
+      soundRef.current.play({ uri }, { onFinish: () => { if (activeRef.current) void beginRecording(); } });
     } catch (e) {
       console.warn('voice tts failed', e);
       if (activeRef.current) void beginRecording();
@@ -98,14 +95,12 @@ function VoiceConsole({
   }, [beginRecording, language]);
 
   const stopAndSend = useCallback(async () => {
-    const rec = recRef.current;
-    recRef.current = null;
-    if (!rec) return;
+    if (!recorder.isRecording) return;
     setPhase('processing');
     try {
-      await rec.stopAndUnloadAsync();
-      const uri = rec.getURI();
-      await Audio.setAudioModeAsync({ allowsRecordingIOS: false, playsInSilentModeIOS: true }).catch(() => {});
+      await recorder.stop();
+      const uri = recorder.uri;
+      await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true }).catch(() => {});
       if (!uri) { void beginRecording(); return; }
       const meta = sttMeta();
       const out = await transcribeMut.mutateAsync({ audio: { uri, type: meta.type, name: meta.name }, language: language ?? 'en', encoding: meta.encoding, sample_rate: meta.sampleRate });
@@ -126,11 +121,9 @@ function VoiceConsole({
     void beginRecording();
     return () => {
       activeRef.current = false;
-      recRef.current?.stopAndUnloadAsync().catch(() => {});
-      recRef.current = null;
-      soundRef.current?.unloadAsync().catch(() => {});
-      soundRef.current = null;
-      Audio.setAudioModeAsync({ allowsRecordingIOS: false, playsInSilentModeIOS: true }).catch(() => {});
+      if (recorder.isRecording) void recorder.stop().catch(() => {});
+      soundRef.current.stop();
+      setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true }).catch(() => {});
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

@@ -3,18 +3,19 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-nati
 import { AlertCircle, Bot, ChevronDown, Languages, Play, Square, User as UserIcon } from 'lucide-react-native';
 import Markdown from 'react-native-markdown-display';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Audio } from 'expo-av';
+import { setAudioModeAsync } from 'expo-audio';
 import Toast from 'react-native-toast-message';
 import { useTranslation } from 'react-i18next';
 import { glass, CTA } from '@/components/sunset';
 import { getChatTTSUri } from '@/lib/tts';
+import { SoundSlot } from '@/lib/audio';
 
 import type { AIMessage } from '@/types/api';
 
 // ── TTS кнопка «Прослушать» — объявляем ДО ChatMessage (React Compiler) ─────
 //
 // Жёсткая привязка к Google Cloud TTS: реплика всегда синтезируется на
-// бэкенде через POST /ai/tts (Google), кэшируется и проигрывается expo-av.
+// бэкенде через POST /ai/tts (Google), кэшируется и проигрывается expo-audio.
 // Никакого системного голоса (expo-speech) и OpenAI audio_url — только Google.
 
 function SpeechButton({
@@ -26,19 +27,19 @@ function SpeechButton({
 }) {
   const [playing, setPlaying] = useState(false);
   const [loading, setLoading] = useState(false);
-  const soundRef = useRef<Audio.Sound | null>(null);
+  const soundRef = useRef(new SoundSlot());
 
   // Cleanup при unmount
   useEffect(() => {
     return () => {
-      soundRef.current?.unloadAsync().catch(() => {});
+      soundRef.current.stop();
     };
   }, []);
 
   const toggle = async () => {
     if (loading) return;
     // Sound уже создан → play/pause/restart.
-    if (soundRef.current) {
+    if (soundRef.current.isActive) {
       await toggleExisting();
       return;
     }
@@ -59,36 +60,19 @@ function SpeechButton({
     }
   };
 
-  // --- expo-av: первый запуск URI (локальный mp3 или storage URL) ---
+  // --- expo-audio: первый запуск URI (локальный mp3 или storage URL) ---
   const playUri = async (uri: string) => {
-    await Audio.setAudioModeAsync({ playsInSilentModeIOS: true }).catch(() => {});
-    const { sound } = await Audio.Sound.createAsync({ uri }, { shouldPlay: true });
-    soundRef.current = sound;
+    await setAudioModeAsync({ playsInSilentMode: true }).catch(() => {});
+    soundRef.current.play({ uri }, { keep: true, onFinish: () => setPlaying(false) });
     setPlaying(true);
-    sound.setOnPlaybackStatusUpdate((st) => {
-      if (st.isLoaded && (st.didJustFinish || !st.isPlaying)) {
-        setPlaying(false);
-      }
-    });
   };
 
-  // --- expo-av: повторное нажатие (pause / resume / restart) ---
+  // --- expo-audio: повторное нажатие (pause / resume / restart) ---
   const toggleExisting = async () => {
     try {
-      const st = await soundRef.current!.getStatusAsync();
-      if (!st.isLoaded) return;
-      if (st.isPlaying) {
-        await soundRef.current!.pauseAsync();
-        setPlaying(false);
-      } else {
-        if (st.positionMillis && st.durationMillis && st.positionMillis >= st.durationMillis) {
-          await soundRef.current!.setPositionAsync(0);
-        }
-        await soundRef.current!.playAsync();
-        setPlaying(true);
-      }
+      setPlaying(await soundRef.current.toggle());
     } catch (e) {
-      console.warn('[TTS] expo-av toggle failed', e);
+      console.warn('[TTS] expo-audio toggle failed', e);
     }
   };
 

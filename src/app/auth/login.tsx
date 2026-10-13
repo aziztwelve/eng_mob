@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
@@ -26,16 +26,22 @@ const lockKeyhole = require('../../../assets/figma/mieo-login/095-364-15127-svg.
 const eyeTop = require('../../../assets/figma/mieo-login/096-364-15127-svg.svg');
 const eyeBottom = require('../../../assets/figma/mieo-login/097-364-15127-svg.svg');
 
+// Figma uses hard (non-blurred) offset shadows; NativeWind has no classes for them.
+const primaryShadow = { shadowColor: '#3E8CB2', shadowOpacity: 1, shadowRadius: 0, shadowOffset: { width: 0, height: 4 }, elevation: 4 };
+const fieldShadow = { shadowColor: '#1AB3FF', shadowOpacity: 1, shadowRadius: 0, shadowOffset: { width: 0, height: 2 }, elevation: 2 };
+const socialShadow = { shadowColor: '#E3E6E8', shadowOpacity: 1, shadowRadius: 0, shadowOffset: { width: 0, height: 4 }, elevation: 4 };
+
 function MailIcon() {
-  return <View style={styles.icon24}><FigmaSvg source={mailBody} width={20.64} height={18.72} style={styles.iconLayer} /><FigmaSvg source={mailFold} width={19.12} height={9.1} style={[styles.iconLayer, { top: 4 }]} /></View>;
+  return <View className="w-6 h-6 shrink-0"><FigmaSvg source={mailBody} width={20.64} height={18.72} style={styles.iconLayer} /><FigmaSvg source={mailFold} width={19.12} height={9.1} style={[styles.iconLayer, { top: 4 }]} /></View>;
 }
 function LockIcon() {
-  return <View style={styles.icon24}><FigmaSvg source={lockBody} width={18.72} height={13.93} style={[styles.iconLayer, { top: 8 }]} /><FigmaSvg source={lockShackle} width={11.04} height={8.16} style={[styles.iconLayer, { left: 6, top: 1 }]} /><FigmaSvg source={lockKeyhole} width={9.5} height={9.5} style={[styles.iconLayer, { left: 7.25, top: 10 }]} /></View>;
+  return <View className="w-6 h-6 shrink-0"><FigmaSvg source={lockBody} width={18.72} height={13.93} style={[styles.iconLayer, { top: 8 }]} /><FigmaSvg source={lockShackle} width={11.04} height={8.16} style={[styles.iconLayer, { left: 6, top: 1 }]} /><FigmaSvg source={lockKeyhole} width={9.5} height={9.5} style={[styles.iconLayer, { left: 7.25, top: 10 }]} /></View>;
 }
 function EyeIcon() {
-  return <View style={styles.eyeIcon}><FigmaSvg source={eyeTop} width={21.5} height={9.5} style={styles.iconLayer} /><FigmaSvg source={eyeBottom} width={21.5} height={9.5} style={styles.iconLayer} /><FigmaSvg source={lockKeyhole} width={9.5} height={9.5} style={[styles.iconLayer, { left: 6, top: 5 }]} /></View>;
+  return <View className="w-6 h-6 shrink-0"><FigmaSvg source={eyeTop} width={21.5} height={9.5} style={styles.iconLayer} /><FigmaSvg source={eyeBottom} width={21.5} height={9.5} style={styles.iconLayer} /><FigmaSvg source={lockKeyhole} width={9.5} height={9.5} style={[styles.iconLayer, { left: 6, top: 5 }]} /></View>;
 }
 function CloudDecoration() {
+  // Absolute positions come from the Figma frame, so they stay inline.
   return <View pointerEvents="none" style={StyleSheet.absoluteFill}>
     <FigmaSvg source={cloudLeftTop} width={200.4} height={96.5} style={styles.cloudLeftTop} />
     <FigmaSvg source={cloudRightTop} width={200.4} height={96.5} style={styles.cloudRightTop} />
@@ -54,73 +60,64 @@ export default function LoginScreen() {
   const contentWidth = Math.min(width, 375);
   const sidePadding = width < 375 ? 16 : 0;
   const formWidth = contentWidth - sidePadding * 2;
-  const inputStyle = useMemo(() => [styles.input, { width: formWidth }], [formWidth]);
   const { control, handleSubmit, formState: { errors } } = useForm<LoginRequest>({ defaultValues: { email: '', password: '' } });
   const showOAuthMessage = async (provider: 'google' | 'apple') => {
     const result = provider === 'google' ? await signInWithGoogle() : await signInWithApple();
-    if (!result.ok && result.reason !== 'cancelled') Toast.show({ type: 'info', text1: provider === 'google' ? 'Google Sign-In' : 'Apple Sign-In', text2: result.message ?? 'This provider is not configured in this build yet.' });
+    if (!result.ok && result.reason !== 'cancelled') Toast.show({ type: 'info', text1: provider === 'google' ? t('auth.login.oauth_google_title') : t('auth.login.oauth_apple_title'), text2: result.message ?? t('auth.login.oauth_not_configured') });
   };
 
-  return <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 24}>
+  return <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 24}>
     <StatusBar style="dark" />
-    <LinearGradient colors={['#B3E6FF', '#FFFFFF', '#FFFFFF']} locations={[0, 0.42365, 1]} style={styles.screen}>
+    <View className="flex-1 overflow-hidden bg-mieo-surface">
+      <LinearGradient colors={['#B3E6FF', '#FFFFFF', '#FFFFFF']} locations={[0, 0.42365, 1]} style={StyleSheet.absoluteFill} />
       <CloudDecoration />
-      <ScrollView style={styles.flex} contentContainerStyle={[styles.scrollContent, { width: contentWidth }]} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-        <View style={[styles.container, { width: contentWidth, paddingHorizontal: sidePadding }]}>
-          <View style={styles.heading}><Text style={styles.title}>Welcome Back</Text><Text style={styles.subtitle}>Please login with your Account by entering your valid credentials</Text></View>
-          <View style={styles.inputFields}>
-            <Controller control={control} name="email" rules={{ required: t('auth.login.email_required'), pattern: { value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i, message: t('auth.login.email_invalid') } }} render={({ field: { onChange, onBlur, value } }) => <View style={[inputStyle, styles.field, errors.email && styles.fieldError]}><MailIcon /><TextInput style={styles.textInput} value={value} onBlur={onBlur} onChangeText={onChange} placeholder="jennyfrost@gmail.com" placeholderTextColor="#171A1C" keyboardType="email-address" autoCapitalize="none" autoComplete="email" /></View>} />
-            <Controller control={control} name="password" rules={{ required: t('auth.login.password_required'), minLength: { value: 6, message: t('auth.login.password_min') } }} render={({ field: { onChange, onBlur, value } }) => <View style={[inputStyle, styles.field, styles.passwordField, errors.password && styles.fieldError]}><LockIcon /><TextInput style={styles.textInput} value={value} onBlur={onBlur} onChangeText={onChange} placeholder="Password" placeholderTextColor="#5D686F" secureTextEntry={!showPassword} autoCapitalize="none" autoComplete="password" /><Pressable accessibilityRole="button" accessibilityLabel={showPassword ? 'Hide password' : 'Show password'} hitSlop={10} onPress={() => setShowPassword((v) => !v)}><EyeIcon /></Pressable></View>} />
-            {errors.email && <Text style={styles.errorText}>{errors.email.message}</Text>}
-            {errors.password && <Text style={styles.errorText}>{errors.password.message}</Text>}
-            <Pressable accessibilityRole="button" onPress={() => Alert.alert('Forgot Password?', 'Password recovery will be available soon.')} style={styles.forgot}><Text style={styles.forgotText}>Forgot Password .?</Text></Pressable>
+      <ScrollView className="flex-1" contentContainerStyle={{ alignItems: 'center', paddingTop: 113, paddingBottom: 32, width: contentWidth }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+        <View className="justify-center gap-7" style={{ minHeight: 586, width: contentWidth, paddingHorizontal: sidePadding }}>
+          <View className="h-20 items-center justify-center">
+            <Text className="font-nunito-black text-[32px] leading-10 text-center text-mieo-heading">{t('auth.login.welcome_back')}</Text>
+            <Text className="font-nunito-medium text-base leading-5 tracking-wide text-center text-mieo-heading px-4">{t('auth.login.login_subtitle')}</Text>
           </View>
-          <View style={styles.bottomAction}><Pressable accessibilityRole="button" onPress={handleSubmit((data) => login.mutate(data))} disabled={login.isPending} style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed, login.isPending && styles.disabled]}><Text style={styles.primaryButtonText}>{login.isPending ? t('auth.login.submitting') : 'Login Now'}</Text></Pressable></View>
-          <View style={styles.social}>
-            <View style={styles.socialHeading}><View style={styles.divider} /><Text style={styles.socialHeadingText}>Or Continue With</Text><View style={styles.divider} /></View>
-            <View style={styles.socialList}>
-              <Pressable accessibilityRole="button" onPress={() => void showOAuthMessage('google')} style={({ pressed }) => [styles.socialButton, pressed && styles.pressed]}><FigmaSvg source={googleIcon} width={23} height={23} /><Text style={styles.socialText}>Google</Text></Pressable>
-              <Pressable accessibilityRole="button" onPress={() => void showOAuthMessage('apple')} style={({ pressed }) => [styles.socialButton, pressed && styles.pressed]}><FigmaSvg source={appleIcon} width={20} height={24} /><Text style={styles.socialText}>Apple</Text></Pressable>
+
+          <View className="gap-4">
+            <Controller control={control} name="email" rules={{ required: t('auth.login.email_required'), pattern: { value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i, message: t('auth.login.email_invalid') } }} render={({ field: { onChange, onBlur, value } }) => <View style={[{ width: formWidth }, fieldShadow]} className={`h-[52px] flex-row items-center gap-4 px-3 rounded-xl border-[1.5px] bg-mieo-surface ${errors.email ? 'border-mieo-error' : 'border-mieo-primary'}`}><MailIcon /><TextInput className="flex-1 min-w-0 p-0 font-nunito-semibold text-sm tracking-[0.1px] text-mieo-heading" value={value} onBlur={onBlur} onChangeText={onChange} placeholder="jennyfrost@gmail.com" placeholderTextColor="#171A1C" keyboardType="email-address" autoCapitalize="none" autoComplete="email" /></View>} />
+            <Controller control={control} name="password" rules={{ required: t('auth.login.password_required'), minLength: { value: 6, message: t('auth.login.password_min') } }} render={({ field: { onChange, onBlur, value } }) => <View style={[{ width: formWidth }, fieldShadow, { shadowColor: '#E3E6E8' }]} className={`h-[52px] flex-row items-center gap-4 px-3 rounded-xl border-[1.5px] bg-mieo-surface ${errors.password ? 'border-mieo-error' : 'border-mieo-stroke'}`}><LockIcon /><TextInput className="flex-1 min-w-0 p-0 font-nunito-semibold text-sm tracking-[0.1px] text-mieo-heading" value={value} onBlur={onBlur} onChangeText={onChange} placeholder={t('auth.login.password_hint')} placeholderTextColor="#5D686F" secureTextEntry={!showPassword} autoCapitalize="none" autoComplete="password" /><Pressable accessibilityRole="button" accessibilityLabel={showPassword ? 'Hide password' : 'Show password'} hitSlop={10} onPress={() => setShowPassword((v) => !v)}><EyeIcon /></Pressable></View>} />
+            {errors.email && <Text className="font-nunito-semibold text-xs -mt-2 text-mieo-error-text">{errors.email.message}</Text>}
+            {errors.password && <Text className="font-nunito-semibold text-xs -mt-2 text-mieo-error-text">{errors.password.message}</Text>}
+            <Pressable accessibilityRole="button" onPress={() => Alert.alert(t('auth.login.forgot_password_title'), t('auth.login.forgot_password_body'))} className="self-stretch items-end">
+              <Text className="font-nunito-semibold text-sm tracking-[0.1px] underline text-mieo-heading">{t('auth.login.forgot_password')}</Text>
+            </Pressable>
+          </View>
+
+          <View className="w-full px-4 py-6">
+            <Pressable accessibilityRole="button" onPress={handleSubmit((data) => login.mutate(data))} disabled={login.isPending} style={[primaryShadow, login.isPending && styles.disabled]} className="min-h-12 items-center justify-center overflow-hidden px-6 py-3.5 rounded-2xl bg-mieo-primary active:opacity-80">
+              {/* Figma sheen: two translucent bars rotated 119°, clipped to the button */}
+              <View pointerEvents="none" style={[styles.sheenBar, { left: -12, top: 13, height: 15, opacity: 0.3 }]} />
+              <View pointerEvents="none" style={[styles.sheenBar, { left: 2, top: 21, height: 5, opacity: 0.2 }]} />
+              <Text className="font-nunito-extrabold text-base tracking-[0.15px] text-[#F5FCFF]">{login.isPending ? t('auth.login.submitting') : t('auth.login.login_now')}</Text>
+            </Pressable>
+          </View>
+
+          <View className="w-full gap-[18px] px-4 py-6">
+            <View className="w-full flex-row items-center gap-4">
+              <View className="flex-1 h-px bg-mieo-stroke" />
+              <Text className="font-nunito-semibold text-sm tracking-[0.1px] text-mieo-heading">{t('auth.login.or_continue_with')}</Text>
+              <View className="flex-1 h-px bg-mieo-stroke" />
+            </View>
+            <View className="w-full flex-row gap-4">
+              <Pressable accessibilityRole="button" onPress={() => void showOAuthMessage('google')} style={socialShadow} className="flex-1 min-h-[52px] flex-row items-center justify-center gap-2.5 px-6 py-3.5 rounded-2xl border-2 border-mieo-stroke bg-mieo-surface active:opacity-80"><FigmaSvg source={googleIcon} width={23} height={23} /><Text className="font-nunito-semibold text-sm tracking-[0.1px] text-mieo-body">{t('auth.login.google')}</Text></Pressable>
+              <Pressable accessibilityRole="button" onPress={() => void showOAuthMessage('apple')} style={socialShadow} className="flex-1 min-h-[52px] flex-row items-center justify-center gap-2.5 px-6 py-3.5 rounded-2xl border-2 border-mieo-stroke bg-mieo-surface active:opacity-80"><FigmaSvg source={appleIcon} width={20} height={24} /><Text className="font-nunito-semibold text-sm tracking-[0.1px] text-mieo-body">{t('auth.login.apple')}</Text></Pressable>
             </View>
           </View>
         </View>
       </ScrollView>
-    </LinearGradient>
+    </View>
   </KeyboardAvoidingView>;
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1 },
-  screen: { flex: 1, overflow: 'hidden' },
-  scrollContent: { alignItems: 'center', paddingTop: 113, paddingBottom: 32 },
-  container: { minHeight: 586, justifyContent: 'center', gap: 28 },
-  heading: { height: 80, alignItems: 'center', justifyContent: 'center' },
-  title: { color: '#171A1C', fontFamily: 'Nunito_900Black', fontSize: 32, lineHeight: 40, textAlign: 'center' },
-  subtitle: { color: '#171A1C', fontFamily: 'Nunito_500Medium', fontSize: 16, lineHeight: 20, letterSpacing: 0.5, textAlign: 'center', paddingHorizontal: 16 },
-  inputFields: { gap: 16 },
-  input: {},
-  field: { height: 52, flexDirection: 'row', alignItems: 'center', gap: 16, paddingHorizontal: 12, borderRadius: 12, borderWidth: 1.5, borderColor: '#59C8FF', backgroundColor: '#FFFFFF', shadowColor: '#1AB3FF', shadowOpacity: 1, shadowRadius: 0, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
-  passwordField: { borderColor: '#E3E6E8', shadowColor: '#E3E6E8' },
-  fieldError: { borderColor: '#EB8787' },
-  icon24: { width: 24, height: 24, position: 'relative', flexShrink: 0 },
   iconLayer: { position: 'absolute', left: 0, top: 0 },
-  eyeIcon: { width: 24, height: 24, position: 'relative', flexShrink: 0 },
-  textInput: { flex: 1, minWidth: 0, padding: 0, color: '#171A1C', fontFamily: 'Nunito_600SemiBold', fontSize: 14, letterSpacing: 0.1 },
-  errorText: { color: '#B34D4D', fontFamily: 'Nunito_600SemiBold', fontSize: 12, marginTop: -8 },
-  forgot: { alignSelf: 'stretch', alignItems: 'flex-end' },
-  forgotText: { color: '#171A1C', fontFamily: 'Nunito_600SemiBold', fontSize: 14, letterSpacing: 0.1, textDecorationLine: 'underline' },
-  bottomAction: { width: '100%', paddingHorizontal: 16, paddingVertical: 24 },
-  primaryButton: { minHeight: 48, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24, paddingVertical: 14, borderRadius: 16, backgroundColor: '#59C8FF', shadowColor: '#3E8CB2', shadowOpacity: 1, shadowRadius: 0, shadowOffset: { width: 0, height: 4 }, elevation: 4 },
-  primaryButtonText: { color: '#F5FCFF', fontFamily: 'Nunito_800ExtraBold', fontSize: 16, letterSpacing: 0.15 },
   disabled: { opacity: 0.6 },
-  pressed: { opacity: 0.78 },
-  social: { width: '100%', gap: 18, paddingHorizontal: 16, paddingVertical: 24 },
-  socialHeading: { width: '100%', flexDirection: 'row', alignItems: 'center', gap: 16 },
-  divider: { flex: 1, height: 1, backgroundColor: '#E3E6E8' },
-  socialHeadingText: { color: '#171A1C', fontFamily: 'Nunito_600SemiBold', fontSize: 14, letterSpacing: 0.1 },
-  socialList: { width: '100%', flexDirection: 'row', gap: 16 },
-  socialButton: { flex: 1, minHeight: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, paddingHorizontal: 24, paddingVertical: 14, borderRadius: 16, borderWidth: 2, borderColor: '#E3E6E8', backgroundColor: '#FFFFFF', shadowColor: '#E3E6E8', shadowOpacity: 1, shadowRadius: 0, shadowOffset: { width: 0, height: 4 }, elevation: 4 },
-  socialText: { color: '#5D686F', fontFamily: 'Nunito_600SemiBold', fontSize: 14, letterSpacing: 0.1 },
+  sheenBar: { position: 'absolute', width: 88, backgroundColor: '#FFFFFF', transform: [{ rotate: '119.15deg' }] },
   cloudLeftTop: { position: 'absolute', left: -85, top: -113 },
   cloudRightTop: { position: 'absolute', left: 155, top: -23 },
   cloudLeftMid: { position: 'absolute', left: -73, top: 21 },

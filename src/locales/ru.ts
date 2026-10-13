@@ -420,6 +420,19 @@ const ru = {
 
   auth: {
     login: {
+      welcome_back: 'С возвращением!',
+      login_subtitle: 'Войдите в аккаунт, введя свои данные',
+      password_hint: 'Пароль',
+      forgot_password: 'Забыли пароль?',
+      forgot_password_title: 'Забыли пароль?',
+      forgot_password_body: 'Восстановление пароля скоро появится.',
+      login_now: 'Войти',
+      or_continue_with: 'Или продолжить с',
+      google: 'Google',
+      apple: 'Apple',
+      oauth_google_title: 'Вход через Google',
+      oauth_apple_title: 'Вход через Apple',
+      oauth_not_configured: 'Этот способ входа пока не настроен в этой сборке.',
       title: 'Добро пожаловать!',
       subtitle: 'Войди, чтобы продолжить обучение',
       email_label: 'Email',

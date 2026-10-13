@@ -10,7 +10,10 @@
     "ios": {
       "icon": "./assets/images/icon.png",
       "bundleIdentifier": "com.aziztwelve.engmob",
-      "usesAppleSignIn": true
+      "usesAppleSignIn": true,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -43,6 +46,18 @@
       [
         "expo-build-properties",
         {
+          "ios": {
+            "extraPods": [
+              {
+                "name": "GoogleUtilities",
+                "modular_headers": true
+              },
+              {
+                "name": "RecaptchaInterop",
+                "modular_headers": true
+              }
+            ]
+          },
           "android": {
             "usesCleartextTraffic": true
           }
@@ -51,7 +66,9 @@
       "@react-native-google-signin/google-signin",
       "expo-apple-authentication",
       "expo-secure-store",
-      "expo-image"
+      "expo-image",
+      "expo-audio",
+      "expo-video"
     ],
     "experiments": {
       "typedRoutes": true,

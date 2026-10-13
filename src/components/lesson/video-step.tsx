@@ -1,6 +1,6 @@
-import React, { useState, useRef } from 'react';
-import { View, Text, Pressable } from 'react-native';
-import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
+import React, { useEffect, useState } from 'react';
+import { View, Text } from 'react-native';
+import { useVideoPlayer, VideoView } from 'expo-video';
 import { VideoContent } from '@/types/api';
 
 interface VideoStepProps {
@@ -10,33 +10,36 @@ interface VideoStepProps {
 }
 
 export function VideoStep({ content, videoUrl, onComplete }: VideoStepProps) {
-  const videoRef = useRef<Video>(null);
+  const player = useVideoPlayer({ uri: videoUrl }, (p) => {
+    p.timeUpdateEventInterval = 0.5;
+  });
   const [progress, setProgress] = useState(0);
   const [isCompleted, setIsCompleted] = useState(false);
 
-  const handlePlaybackStatusUpdate = (status: AVPlaybackStatus) => {
-    if (status.isLoaded && status.durationMillis) {
-      const percent = (status.positionMillis / status.durationMillis) * 100;
+  useEffect(() => {
+    const subscription = player.addListener('timeUpdate', ({ currentTime }) => {
+      const duration = player.duration;
+      if (!duration) return;
+      const percent = (currentTime / duration) * 100;
       setProgress(percent);
-      
+
       // Auto-complete at 90%
       if (percent >= 90 && !isCompleted) {
         setIsCompleted(true);
         onComplete();
       }
-    }
-  };
+    });
+    return () => subscription.remove();
+  }, [player, isCompleted, onComplete]);
 
   return (
     <View className="flex-1 bg-background">
       {/* Video Player */}
       <View className="bg-black">
-        <Video
-          ref={videoRef}
-          source={{ uri: videoUrl }}
-          useNativeControls
-          resizeMode={ResizeMode.CONTAIN}
-          onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
+        <VideoView
+          player={player}
+          nativeControls
+          contentFit="contain"
           className="w-full h-64"
         />
       </View>
@@ -44,7 +47,7 @@ export function VideoStep({ content, videoUrl, onComplete }: VideoStepProps) {
       {/* Progress Bar */}
       <View className="p-4">
         <View className="bg-muted rounded-full h-3 overflow-hidden">
-          <View 
+          <View
             className="bg-primary h-full rounded-full"
             style={{ width: `${progress}%` }}
           />
@@ -62,7 +65,7 @@ export function VideoStep({ content, videoUrl, onComplete }: VideoStepProps) {
             Duration: {Math.floor(content.duration_seconds / 60)}:{(content.duration_seconds % 60).toString().padStart(2, '0')}
           </Text>
         </View>
-        
+
         {isCompleted && (
           <View className="bg-primary/20 rounded-2xl p-4 border-2 border-primary">
             <Text className="text-primary font-bold text-center">
