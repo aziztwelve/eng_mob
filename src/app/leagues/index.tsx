@@ -11,17 +11,23 @@ import {
   ArrowDown,
   ArrowLeft,
   ArrowUp,
+  ChevronRight,
   Crown,
+  Flame,
+  Gem,
   History,
   Medal,
+  Sparkles,
   Trophy,
 } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 
 import { Avatar } from '@/components/ui/avatar';
 import { useMyLeaderboard, useMyLeague } from '@/hooks/use-leagues';
 import { tsToDate } from '@/lib/api-client';
 import type { LeaderboardEntry, League } from '@/types/api';
 import { useTranslation } from 'react-i18next';
+import { CANDY_GRADIENT, neon } from '@/components/neon-screen';
 
 /**
  * /leagues — главный экран лиг (mirror web /leagues).
@@ -56,7 +62,7 @@ export default function LeaguesScreen() {
   const demotionCount = board.data?.demotion_count ?? 0;
 
   return (
-    <View className="flex-1 bg-background">
+    <LinearGradient className="flex-1" colors={CANDY_GRADIENT.colors} locations={CANDY_GRADIENT.locations}>
       <Stack.Screen options={{ title: t('social.leagues') }} />
       <ScrollView contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 80 }}>
         <Pressable
@@ -71,7 +77,7 @@ export default function LeaguesScreen() {
           <View className="flex-1 gap-2 min-w-0">
             <View className="flex-row items-center gap-2">
               <Trophy size={28} color="#f59e0b" />
-              <Text className="text-foreground font-black text-3xl">
+            <Text className="text-white font-black text-4xl tracking-tight">
                 Лиги
               </Text>
             </View>
@@ -96,12 +102,13 @@ export default function LeaguesScreen() {
           <ErrorState />
         ) : (
           <>
-            <Hero
+              <Hero
               league={league}
               cycleEndAt={cycleEnd}
               myRank={myRank}
               myXP={myXP}
               cohortSize={entries.length}
+              promotionCount={promotionCount}
             />
 
             {(promotionCount > 0 || demotionCount > 0) && (
@@ -120,7 +127,7 @@ export default function LeaguesScreen() {
           </>
         )}
       </ScrollView>
-    </View>
+    </LinearGradient>
   );
 }
 
@@ -134,56 +141,69 @@ function Hero({
   myRank,
   myXP,
   cohortSize,
+  promotionCount,
 }: {
   league?: League;
   cycleEndAt?: string;
   myRank: number;
   myXP: number;
   cohortSize: number;
+  promotionCount: number;
 }) {
   const accent = league?.color || '#CD7F32';
   return (
-    <View
-      className="bg-card rounded-3xl p-5 gap-5"
-      style={{ borderWidth: 4, borderColor: accent }}
-    >
-      <View className="flex-row items-center gap-4">
-        <View
-          className="h-20 w-20 items-center justify-center rounded-3xl"
-          style={{
-            borderWidth: 4,
-            borderColor: accent,
-            backgroundColor: `${accent}22`,
-          }}
-        >
-          <Crown size={42} color={accent} />
+    <View className="gap-3">
+      <View className="rounded-3xl border border-white/20 bg-white/10 px-5 py-4 flex-row items-center gap-4 overflow-hidden">
+        <View className="h-14 w-14 rounded-full border-2 border-pink-400 items-center justify-center bg-violet-950">
+          <Flame size={27} color="#FFDF5E" fill="#FF6BBF" />
         </View>
-        <View className="flex-1 min-w-0">
-          <Text className="text-muted-foreground font-bold text-[10px] uppercase tracking-wider">
-            Tier {league?.tier ?? '—'}
-          </Text>
-          <Text className="text-foreground font-black text-2xl" numberOfLines={1}>
-            {league?.name ?? 'Bronze League'}
-          </Text>
-          <Text className="text-muted-foreground font-medium text-sm">
-            В когорте из {cohortSize || 30} человек
-          </Text>
+        <View className="flex-1">
+          <Text className="text-white/70 font-bold text-xs">Твое место</Text>
+          <Text className="text-white font-black text-2xl">#{myRank || '—'} <Text className="text-pink-200 text-base">· {myXP.toLocaleString('ru')} XP</Text></Text>
+        </View>
+        <View className="items-end gap-1">
+          <Text className="text-white/60 text-[10px] font-bold uppercase">Неделя</Text>
+          <View className="flex-row gap-1 items-end">
+            {[10, 16, 12, 22, 18, 29, 38].map((height, index) => (
+              <View key={index} className="w-1.5 rounded-full bg-pink-400" style={{ height }} />
+            ))}
+          </View>
         </View>
       </View>
 
-      <View className="flex-row items-center justify-between gap-4 pt-4 border-t border-border/40">
-        <CycleTimer endsAt={cycleEndAt} />
-        <View className="items-end">
-          <Text className="text-muted-foreground font-bold text-[10px] uppercase tracking-wider">
-            Ваше место
-          </Text>
-          <Text className="text-foreground font-black text-3xl tabular-nums">
-            #{myRank || '—'}
-          </Text>
-          <Text className="text-primary font-bold tabular-nums">
-            {myXP.toLocaleString('ru')} XP
-          </Text>
-        </View>
+      <View className="rounded-[28px] overflow-hidden border" style={{ borderColor: `${accent}AA` }}>
+        <LinearGradient colors={['rgba(27,17,83,0.96)', 'rgba(76,16,91,0.88)']} className="p-5 gap-5">
+          <View className="flex-row items-center gap-4">
+            <View className="h-20 w-20 rounded-3xl items-center justify-center border-2 border-blue-200 bg-blue-600/30">
+              <Gem size={42} color="#BEE3FF" fill="#2583FF" />
+            </View>
+            <View className="flex-1 min-w-0 gap-1">
+              <Text className="text-white font-black text-2xl" numberOfLines={1}>{league?.name ?? 'Сапфировая лига'}</Text>
+              <View className="flex-row items-center gap-2">
+                <CycleTimer endsAt={cycleEndAt} />
+                <View className="rounded-full bg-amber-300/15 border border-amber-300/60 px-2 py-1">
+                  <Text className="text-amber-200 text-xs font-black">Топ {promotionCount || 10}</Text>
+                </View>
+              </View>
+            </View>
+          </View>
+
+          <View className="gap-2">
+            <View className="flex-row items-center justify-between">
+              <Text className="text-white/70 font-bold text-sm">До следующей лиги</Text>
+              <Text className="text-amber-200 font-black">{Math.max(0, (promotionCount || 10) - myRank)} мест</Text>
+            </View>
+            <View className="h-3 rounded-full bg-black/35 overflow-hidden">
+              <LinearGradient colors={[neon.primary, '#FF6BBF']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} className="h-full rounded-full" style={{ width: `${Math.min(100, Math.max(12, ((promotionCount || 10) / Math.max(cohortSize || 30, 1)) * 100))}%` }} />
+            </View>
+            <Text className="text-white/65 text-xs">Топ {promotionCount || 10} проходят в следующую лигу</Text>
+          </View>
+
+          <View className="rounded-2xl bg-black/20 px-4 py-3 flex-row items-center justify-between">
+            <View className="flex-row items-center gap-2"><Sparkles size={18} color="#FFDF5E" /><Text className="text-white font-bold">Следующая награда</Text></View>
+            <ChevronRight size={20} color="#FFDF5E" />
+          </View>
+        </LinearGradient>
       </View>
     </View>
   );
@@ -229,7 +249,7 @@ function CycleTimer({ endsAt }: { endsAt?: string }) {
       <Text className="text-muted-foreground font-bold text-[10px] uppercase tracking-wider">
         До конца
       </Text>
-      <Text className="text-foreground font-black tabular-nums">
+      <Text className="text-white font-black tabular-nums">
         {remaining.d}д {remaining.h}ч {remaining.m}м
       </Text>
     </View>
@@ -322,18 +342,18 @@ function Leaderboard({
   }
   const cohortSize = entries.length;
   return (
-    <View className="bg-card rounded-3xl border-4 border-border overflow-hidden">
-      <View className="px-5 py-3 border-b-2 border-border bg-muted/30">
-        <Text className="text-foreground font-black text-lg">{t('social.top_cohort')}</Text>
+    <View className="bg-[#250b42]/90 rounded-3xl border border-white/20 overflow-hidden">
+      <View className="px-5 py-4 border-b border-white/10 flex-row items-center justify-between">
+        <Text className="text-white font-black text-xl">{t('social.top_cohort')}</Text>
+        <View className="rounded-full border border-pink-300/50 bg-pink-300/10 px-3 py-1"><Text className="text-pink-100 font-bold text-xs">Рейтинг</Text></View>
       </View>
       {entries.map((e, idx) => (
-        <LeaderboardRow
-          key={e.user_id}
-          entry={e}
-          isPromotion={e.rank <= promotionCount && promotionCount > 0}
-          isDemotion={demotionCount > 0 && e.rank > cohortSize - demotionCount}
-          isLast={idx === entries.length - 1}
-        />
+        <React.Fragment key={e.user_id}>
+          <LeaderboardRow entry={e} isPromotion={e.rank <= promotionCount && promotionCount > 0} isDemotion={demotionCount > 0 && e.rank > cohortSize - demotionCount} isLast={idx === entries.length - 1} />
+          {promotionCount > 0 && e.rank === promotionCount && idx < entries.length - 1 && (
+            <View className="flex-row items-center gap-2 px-4 py-2 bg-emerald-400/10 border-y border-emerald-300/25"><ArrowUp size={14} color="#6EE7B7" /><Text className="text-emerald-200 text-xs font-black">Топ {promotionCount} проходят</Text></View>
+          )}
+        </React.Fragment>
       ))}
     </View>
   );
@@ -354,7 +374,7 @@ function LeaderboardRow({
   const name = entry.full_name || `User ${entry.user_id.slice(0, 6)}`;
 
   let bg = '';
-  if (entry.is_me) bg = 'bg-primary/10';
+  if (entry.is_me) bg = 'bg-pink-500/25 border-y border-pink-300/60';
   else if (isPromotion) bg = 'bg-emerald-500/10';
   else if (isDemotion) bg = 'bg-rose-500/10';
 
@@ -373,7 +393,7 @@ function LeaderboardRow({
             }
           />
         ) : (
-          <Text className="text-muted-foreground font-black tabular-nums">
+        <Text className="text-white/70 font-black tabular-nums">
             {entry.rank}
           </Text>
         )}
@@ -384,14 +404,14 @@ function LeaderboardRow({
       <View className="flex-1 min-w-0">
         <View className="flex-row items-center gap-2">
           <Text
-            className="text-foreground font-bold flex-shrink"
+            className="text-white font-bold flex-shrink"
             numberOfLines={1}
           >
             {name}
           </Text>
           {entry.is_me && (
-            <View className="bg-primary rounded-lg px-2 py-0.5">
-              <Text className="text-primary-foreground font-black text-[10px] uppercase tracking-wider">
+            <View className="bg-pink-300 rounded-lg px-2 py-0.5">
+              <Text className="text-violet-950 font-black text-[10px] uppercase tracking-wider">
                 Вы
               </Text>
             </View>
@@ -400,7 +420,7 @@ function LeaderboardRow({
       </View>
 
       <View>
-        <Text className="text-foreground font-black tabular-nums text-right">
+        <Text className="text-white font-black tabular-nums text-right">
           {entry.weekly_xp.toLocaleString('ru')}
         </Text>
         <Text className="text-muted-foreground font-bold text-[10px] uppercase tracking-wider text-right">

@@ -25,7 +25,8 @@ import {
 } from '@/components/ui/icons';
 
 const GOLD = ["#FFDF5E", "#FFB338"] as const;
-const CTA = ["#A8243F", "#CC5A1F"] as const;
+const ON_GOLD = '#3D0A1A';
+const GOLD_TEXT = '#FFE166';
 const MINT = '#2EECC8';
 const TOTAL_STEPS = 15;
 
@@ -159,12 +160,12 @@ export default function VocabularyBankPreviewScreen() {
             style={({ pressed }) => (pressed ? { opacity: 0.85 } : undefined)}
           >
             <LinearGradient
-              colors={completed ? (GOLD as unknown as [string, string]) : (CTA as unknown as [string, string])}
+              colors={GOLD as unknown as [string, string]}
               start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.cta}
             >
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                {completed ? <IconRefresh size={16} color="#3D0A1A" /> : <IconPlay size={14} color="#fff" />}
-                <Text style={[s.ctaText, completed && s.ctaTextGold]}>{cta}</Text>
+                {completed ? <IconRefresh size={16} color={ON_GOLD} /> : <IconPlay size={14} color={ON_GOLD} />}
+                <Text style={s.ctaText}>{cta}</Text>
               </View>
             </LinearGradient>
           </Pressable>
@@ -223,37 +224,38 @@ const s = StyleSheet.create({
   content: { padding: 20, paddingTop: 12, gap: 14, paddingBottom: 56 },
   message: { color: '#fff', textAlign: 'center', marginTop: 48, fontWeight: '700' },
 
+  // Glass surfaces — the same plum glass + gold hairline as the bank hero
   hero: {
-    borderRadius: 22, padding: 20, gap: 4,
-    backgroundColor: 'rgba(255,255,255,0.10)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.16)',
+    borderRadius: 24, padding: 20, gap: 4,
+    backgroundColor: 'rgba(65, 11, 71, 0.84)', borderWidth: 1, borderColor: 'rgba(255, 224, 104, 0.38)',
+    shadowColor: '#22062F', shadowOpacity: 0.28, shadowRadius: 8, elevation: 3,
   },
   heroChips: { flexDirection: 'row', gap: 6 },
-  level: { backgroundColor: 'rgba(255,255,255,0.10)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)', borderRadius: 9, paddingHorizontal: 8, paddingVertical: 3 },
-  levelText: { color: 'rgba(255,255,255,0.85)', fontSize: 11, fontWeight: '900' },
+  level: { backgroundColor: 'rgba(255,226,99,0.13)', borderWidth: 1, borderColor: 'rgba(255,224,104,0.4)', borderRadius: 9, paddingHorizontal: 8, paddingVertical: 3 },
+  levelText: { color: GOLD_TEXT, fontSize: 11, fontWeight: '900' },
   doneChip: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(46,236,200,0.12)', borderWidth: 1, borderColor: 'rgba(46,236,200,0.4)', borderRadius: 9, paddingHorizontal: 8, paddingVertical: 3 },
   doneText: { color: MINT, fontSize: 10.5, fontWeight: '900' },
-  progChip: { backgroundColor: 'rgba(255,216,74,0.13)', borderWidth: 1, borderColor: 'rgba(255,216,74,0.4)', borderRadius: 9, paddingHorizontal: 8, paddingVertical: 3 },
-  progText: { color: '#FFD84A', fontSize: 10.5, fontWeight: '900' },
+  progChip: { backgroundColor: 'rgba(255,226,99,0.13)', borderWidth: 1, borderColor: 'rgba(255,224,104,0.4)', borderRadius: 9, paddingHorizontal: 8, paddingVertical: 3 },
+  progText: { color: GOLD_TEXT, fontSize: 10.5, fontWeight: '900' },
   speak: {
     width: 48, height: 48, borderRadius: 16, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: 'rgba(255,216,74,0.12)', borderWidth: 1, borderColor: 'rgba(255,216,74,0.4)',
+    backgroundColor: 'rgba(255,224,95,0.14)', borderWidth: 1, borderColor: 'rgba(255,224,95,0.36)',
   },
   word: { color: '#fff', fontSize: 34, fontWeight: '900', marginTop: 10, letterSpacing: 0.3 },
-  translation: { color: '#FFD84A', fontSize: 17, fontWeight: '800', marginTop: 2 },
-  meta: { color: 'rgba(255,255,255,0.5)', fontSize: 12.5, fontWeight: '700', marginTop: 2, textTransform: 'capitalize' },
+  translation: { color: GOLD_TEXT, fontSize: 17, fontWeight: '900', marginTop: 2 },
+  meta: { color: 'rgba(238,218,247,0.6)', fontSize: 12.5, fontWeight: '700', marginTop: 2, textTransform: 'capitalize' },
 
-  card: { backgroundColor: 'rgba(255,255,255,0.10)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.16)', borderRadius: 18, padding: 16, gap: 10 },
+  card: { backgroundColor: 'rgba(65, 11, 71, 0.84)', borderWidth: 1, borderColor: 'rgba(255, 224, 104, 0.38)', borderRadius: 22, padding: 16, gap: 10, shadowColor: '#22062F', shadowOpacity: 0.28, shadowRadius: 8, elevation: 3 },
   stepsRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   stepsLabel: { color: '#fff', fontSize: 14.5, fontWeight: '900' },
-  stepsPct: { color: '#FFD84A', fontSize: 13, fontWeight: '900' },
-  track: { height: 8, borderRadius: 5, backgroundColor: 'rgba(255,255,255,0.14)', overflow: 'hidden' },
+  stepsPct: { color: GOLD_TEXT, fontSize: 13, fontWeight: '900' },
+  track: { height: 8, borderRadius: 5, backgroundColor: 'rgba(42, 13, 66, 0.92)', overflow: 'hidden' },
   trackFill: { height: '100%', borderRadius: 5 },
-  cta: { paddingVertical: 15, borderRadius: 14, alignItems: 'center', marginTop: 2 },
-  ctaText: { color: '#fff', fontWeight: '900', fontSize: 15.5 },
-  ctaTextGold: { color: '#3D0A1A' },
+  cta: { paddingVertical: 15, borderRadius: 16, alignItems: 'center', marginTop: 2, shadowColor: '#FFB338', shadowOpacity: 0.42, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 6 },
+  ctaText: { color: ON_GOLD, fontWeight: '900', fontSize: 15.5 },
 
-  heading: { color: 'rgba(255,255,255,0.85)', fontSize: 12, fontWeight: '900', letterSpacing: 0.5, textTransform: 'uppercase' },
-  body: { color: 'rgba(255,255,255,0.75)', lineHeight: 21, fontSize: 14.5 },
+  heading: { color: 'rgba(255,226,99,0.85)', fontSize: 11, fontWeight: '900', letterSpacing: 0.6, textTransform: 'uppercase' },
+  body: { color: 'rgba(238,218,247,0.82)', lineHeight: 21, fontSize: 14.5 },
 
   planRow: { marginTop: 4 },
   planTitle: { color: '#fff', fontSize: 16, fontWeight: '900' },
@@ -262,20 +264,20 @@ const s = StyleSheet.create({
   tlRail: { width: 30, alignItems: 'center' },
   tlNode: {
     width: 30, height: 30, borderRadius: 11, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.10)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)',
+    backgroundColor: 'rgba(42,13,66,0.6)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.16)',
   },
   tlNodeDone: { backgroundColor: 'rgba(46,236,200,0.10)', borderColor: 'rgba(46,236,200,0.35)' },
-  tlNodeCurrent: { backgroundColor: '#FFD84A', borderColor: '#FFD84A', elevation: 3 },
+  tlNodeCurrent: { backgroundColor: '#FFD84A', borderColor: '#FFB338', shadowColor: '#FFB338', shadowOpacity: 0.9, shadowRadius: 8, elevation: 4 },
   tlNum: { color: 'rgba(255,255,255,0.7)', fontWeight: '900', fontSize: 12 },
   tlLine: { flex: 1, width: 2, borderRadius: 1, backgroundColor: 'rgba(255,255,255,0.12)', marginVertical: 2 },
   tlLineDone: { backgroundColor: 'rgba(46,236,200,0.25)' },
   tlCard: {
     flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8,
-    backgroundColor: 'rgba(255,255,255,0.07)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)',
-    borderRadius: 14, padding: 12, marginBottom: 8,
+    backgroundColor: 'rgba(65, 11, 71, 0.84)', borderWidth: 1, borderColor: 'rgba(255, 224, 104, 0.38)',
+    borderRadius: 16, padding: 12, marginBottom: 8,
   },
   tlCardDone: { opacity: 0.55 },
-  tlCardCurrent: { backgroundColor: 'rgba(255,216,74,0.10)', borderColor: 'rgba(255,216,74,0.4)' },
+  tlCardCurrent: { backgroundColor: 'rgba(255,216,74,0.10)', borderColor: 'rgba(255,224,104,0.75)' },
   tlTitle: { color: '#fff', fontWeight: '800', fontSize: 13 },
-  tlHint: { color: 'rgba(255,255,255,0.5)', fontSize: 11.5, marginTop: 2, lineHeight: 15 },
+  tlHint: { color: 'rgba(238,218,247,0.62)', fontSize: 11.5, marginTop: 2, lineHeight: 15 },
 });

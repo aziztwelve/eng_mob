@@ -5,6 +5,7 @@ import React, { useEffect, useState } from 'react';
 import {
   useFonts,
   Nunito_400Regular,
+  Nunito_500Medium,
   Nunito_600SemiBold,
   Nunito_700Bold,
   Nunito_800ExtraBold,
@@ -15,7 +16,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { PaperProvider } from 'react-native-paper';
 import Toast from 'react-native-toast-message';
 import NetInfo from '@react-native-community/netinfo';
-import { AppState } from 'react-native';
+import { AppState, LogBox } from 'react-native';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { queryClient } from '@/lib/query-client';
@@ -25,6 +26,10 @@ import { initI18n } from '@/lib/i18n';
 import { drainOnboardingQueue } from '@/hooks/use-onboarding';
 
 import '../global.css';
+
+// Dev builds: the LogBox warning bar overlays the bottom CTA area of the
+// word-bank player and swallows taps. Production never shows it anyway.
+LogBox.ignoreAllLogs();
 
 // Neon Dark — force a consistent dark navigation theme regardless of the
 // device color scheme so chrome (stack/tab backgrounds) matches the app.
@@ -50,6 +55,7 @@ export default function TabLayout() {
   const [i18nReady, setI18nReady] = useState(false);
   const [fontsLoaded] = useFonts({
     Nunito_400Regular,
+    Nunito_500Medium,
     Nunito_600SemiBold,
     Nunito_700Bold,
     Nunito_800ExtraBold,

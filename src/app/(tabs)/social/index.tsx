@@ -3,6 +3,7 @@ import { ActivityIndicator, Pressable, ScrollView, Text, View, StatusBar } from 
 import { Stack, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Line } from 'react-native-svg';
+import { Crown, Flame, Gem, Gift, Sparkles } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { Avatar } from '@/components/ui/avatar';
 import { useMyLeaderboard, useMyLeague } from '@/hooks/use-leagues';
@@ -82,39 +83,59 @@ function LeaguesView() {
   }
 
   const PROMO_RANK = 10; // top 10 promote
+  const progress = Math.min(100, Math.max(12, ((PROMO_RANK - Math.max(myRank, 1) + 1) / PROMO_RANK) * 100));
 
   return (
-    <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 84 }}>
-      {/* League hero */}
-      <View style={[glass, {
-        borderRadius: 20, padding: 16, alignItems: 'center', marginBottom: 12,
-      }]}>
-        <Text style={{ fontSize: 44 }}>🥇</Text>
-        <Text style={{ color: '#fff', fontWeight: '900', fontSize: 20, marginTop: 4 }}>
-          {league?.name ?? t('social.gold_league')}
-        </Text>
-        {daysLeft !== null && (
-          <Text style={{ color: 'rgba(255,255,255,0.75)', fontSize: 13, fontWeight: '600', marginTop: 2 }}>
-            {t('social.days_left', {
-              count: daysLeft,
-              unit: t(daysLeft === 1 ? 'social.day_1' : 'social.day_5' as never),
-            })}
-          </Text>
-        )}
-        <View style={{ flexDirection: 'row', gap: 34, marginTop: 14 }}>
-          <View style={{ alignItems: 'center' }}>
-            <Text style={{ color: '#FFD84A', fontWeight: '900', fontSize: 22 }}>#{myRank || '—'}</Text>
-            <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 11, fontWeight: '700', textTransform: 'uppercase' }}>{t('social.rank')}</Text>
-          </View>
-          <View style={{ alignItems: 'center' }}>
-            <Text style={{ color: neon.xp, fontWeight: '900', fontSize: 22 }}>{myXp}</Text>
-            <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 11, fontWeight: '700', textTransform: 'uppercase' }}>XP</Text>
-          </View>
+    <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 84, gap: 12 }}>
+      <View style={[glass, { borderRadius: 18, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 12 }]}> 
+        <View style={{ height: 46, width: 46, borderRadius: 23, backgroundColor: 'rgba(255,107,191,0.25)', borderWidth: 1, borderColor: 'rgba(255,107,191,0.7)', alignItems: 'center', justifyContent: 'center' }}>
+          <Flame size={23} color="#FFDF5E" fill="#FF6BBF" />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={{ color: 'rgba(255,255,255,0.68)', fontSize: 12, fontWeight: '700' }}>Твое место</Text>
+          <Text style={{ color: '#fff', fontSize: 23, fontWeight: '900' }}>#{myRank || '—'} <Text style={{ color: '#FFD84A', fontSize: 16 }}>· {myXp} XP</Text></Text>
+        </View>
+        <View style={{ flexDirection: 'row', gap: 4, alignItems: 'flex-end' }}>
+          {[12, 19, 15, 25, 18, 30, 38].map((height, index) => (
+            <View key={index} style={{ width: 6, height, borderRadius: 5, backgroundColor: index === 6 ? '#FF6BBF' : 'rgba(255,107,191,0.36)' }} />
+          ))}
         </View>
       </View>
 
-      {/* Leaderboard table */}
-      <View style={[glass, { borderRadius: 20, padding: 8, marginBottom: 14 }]}>
+      <LinearGradient colors={['rgba(25,24,86,0.96)', 'rgba(82,18,93,0.9)']} style={{ borderRadius: 24, padding: 16, borderWidth: 1, borderColor: 'rgba(72,148,255,0.8)', gap: 14 }}>
+        <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
+          <View style={{ width: 72, height: 72, borderRadius: 22, backgroundColor: 'rgba(22,105,255,0.28)', borderWidth: 2, borderColor: '#BEE3FF', alignItems: 'center', justifyContent: 'center' }}>
+            <Gem size={38} color="#D9F2FF" fill="#2583FF" />
+          </View>
+          <View style={{ flex: 1, gap: 4 }}>
+            <Text style={{ color: '#fff', fontSize: 20, fontWeight: '900' }}>{league?.name ?? 'Сапфировая лига'}</Text>
+            <Text style={{ color: '#64C7FF', fontSize: 13, fontWeight: '700' }}>До конца {daysLeft ?? 4} дня</Text>
+          </View>
+          <View style={{ borderRadius: 14, borderWidth: 1, borderColor: 'rgba(255,223,94,0.8)', backgroundColor: 'rgba(255,223,94,0.12)', paddingHorizontal: 9, paddingVertical: 7 }}>
+            <Text style={{ color: '#FFDF5E', fontWeight: '900', fontSize: 12 }}>Топ {PROMO_RANK}</Text>
+          </View>
+        </View>
+        <View style={{ gap: 6 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+            <Text style={{ color: 'rgba(255,255,255,0.72)', fontWeight: '700', fontSize: 13 }}>До следующей лиги</Text>
+            <Text style={{ color: '#fff', fontWeight: '900', fontSize: 13 }}>{myRank || '—'} из {entries.length || 50}</Text>
+          </View>
+          <View style={{ height: 10, borderRadius: 5, backgroundColor: 'rgba(0,0,0,0.35)', overflow: 'hidden' }}>
+            <LinearGradient colors={['#FFDF5E', '#FF6BBF']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ width: `${progress}%`, height: '100%', borderRadius: 5 }} />
+          </View>
+          <Text style={{ color: 'rgba(255,255,255,0.62)', fontSize: 11, fontWeight: '600' }}>Топ {PROMO_RANK} проходят в следующую лигу</Text>
+        </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10, backgroundColor: 'rgba(0,0,0,0.2)' }}>
+          <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}><Gift size={18} color="#FFDF5E" /><Text style={{ color: '#fff', fontWeight: '800' }}>Следующая награда</Text></View>
+          <Sparkles size={18} color="#FFDF5E" />
+        </View>
+      </LinearGradient>
+
+      <View style={[glass, { borderRadius: 20, padding: 8, marginBottom: 2, borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)' }]}> 
+        <View style={{ paddingHorizontal: 8, paddingTop: 5, paddingBottom: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Text style={{ color: '#fff', fontSize: 18, fontWeight: '900' }}>Рейтинг</Text>
+          <View style={{ borderRadius: 12, paddingHorizontal: 8, paddingVertical: 4, backgroundColor: 'rgba(255,107,191,0.18)' }}><Text style={{ color: '#FFD5EA', fontSize: 11, fontWeight: '800' }}>Эта неделя</Text></View>
+        </View>
         {entries.slice(0, 11).map((e, idx) => {
           const rank = idx + 1;
           const isMe = e.is_me;
@@ -125,19 +146,19 @@ function LeaguesView() {
               {isPromoLine && <PromoLine />}
               <View style={[{
                 flexDirection: 'row', alignItems: 'center',
-                paddingHorizontal: 8, paddingVertical: 10, borderRadius: 12,
+                paddingHorizontal: 8, paddingVertical: 8, borderRadius: 12,
                 gap: 10,
-              }, isMe && { backgroundColor: neon.greenHero, borderWidth: 1, borderColor: neon.greenHeroBorder }]}>
-                <Text style={{ color: '#fff', fontWeight: '900', width: 28, fontSize: 14 }}>
-                  {rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`}
+              }, isMe && { backgroundColor: 'rgba(255,107,191,0.24)', borderWidth: 1, borderColor: 'rgba(255,107,191,0.75)' }]}> 
+                <Text style={{ color: rank <= 3 ? '#FFDF5E' : '#fff', fontWeight: '900', width: 28, fontSize: 14 }}>
+                  {rank <= 3 ? `#${rank}` : `#${rank}`}
                 </Text>
                 <Avatar uri={e.avatar_url} name={e.full_name} size={32} />
                 <Text style={{ flex: 1, color: '#fff', fontWeight: isMe ? '900' : '700', fontSize: 14 }} numberOfLines={1}>
                   {e.full_name || `User ${(e.user_id ?? '').slice(0, 6)}`}
                   {isMe ? ` ${t('social.you')}` : ''}
                 </Text>
-                <Text style={{ color: '#FFD54F', fontWeight: '900', fontSize: 14 }}>
-                  {(e.weekly_xp ?? 0)} XP
+                <Text style={{ color: '#FFD54F', fontWeight: '900', fontSize: 13 }}>
+                  <Text style={{ color: '#FF9344' }}>🔥 </Text>{(e.weekly_xp ?? 0)} XP
                 </Text>
               </View>
             </React.Fragment>

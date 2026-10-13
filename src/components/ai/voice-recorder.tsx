@@ -1,13 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
-import { Mic, Pause, Play, Square, Trash2 } from 'lucide-react-native';
+import { Mic, Pause, Play, RotateCcw, Square } from 'lucide-react-native';
 import { Audio } from 'expo-av';
 import { LinearGradient } from 'expo-linear-gradient';
-import { glass, CTA } from '@/components/sunset';
+import { CTA } from '@/components/sunset';
 import type { PronunciationAudioInput } from '@/lib/ai-api';
 import { useTranslation } from 'react-i18next';
 
 const MAX_DURATION_SEC = 60;
+const GOLD: [string, string] = ['#FFDF5E', '#FFB338'];
 type State = 'idle' | 'recording' | 'recorded' | 'denied';
 
 export function VoiceRecorder({
@@ -108,18 +109,18 @@ export function VoiceRecorder({
 
   if (state === 'denied') {
     return (
-      <View style={[s.card, glass]}>
+      <View style={s.card}>
         <Text style={s.deniedTitle}>{t('voice.mic_denied')}</Text>
         <Text style={s.deniedText}>{t('voice.mic_denied_desc')}</Text>
-        <Pressable onPress={() => setState('idle')} style={[s.retryBtn, glass]}>
-          <Text style={s.retryText}>{t('voice.retry')}</Text>
+        <Pressable onPress={() => setState('idle')} style={[s.retryBtn, s.ghostBtn]}>
+          <Text style={s.ghostText}>{t('voice.retry')}</Text>
         </Pressable>
       </View>
     );
   }
 
   return (
-    <View style={[s.card, glass]}>
+    <View style={s.card}>
       {state === 'idle' && (
         <View style={s.center}>
           <Pressable onPress={start} style={s.micWrap}>
@@ -147,28 +148,45 @@ export function VoiceRecorder({
       )}
 
       {state === 'recorded' && audio && (
-        <View style={{ gap: 12 }}>
-          <View style={s.center}>
-            <Pressable onPress={togglePlay} style={[s.playBtn, glass]}>
+        <View style={{ gap: 10 }}>
+          <View style={s.recordedRow}>
+            <Pressable
+              onPress={togglePlay}
+              style={({ pressed }) => [s.playBtn, pressed && s.pressed]}
+              accessibilityRole="button"
+              accessibilityLabel={playing ? t('voice.pause') : t('voice.play')}
+            >
               {playing
-                ? <Pause size={22} color="#FFD84A" fill="#FFD84A" />
-                : <Play size={22} color="#FFD84A" fill="#FFD84A" />}
+                ? <Pause size={18} color="#FFE166" fill="#FFE166" />
+                : <Play size={18} color="#FFE166" fill="#FFE166" />}
             </Pressable>
-            <Text style={s.duration}>{t('voice.duration', { dur: formatSeconds(seconds) })}</Text>
-          </View>
-          <View style={s.actionsRow}>
-            <Pressable onPress={reset} disabled={loading} style={[s.rerecBtn, glass]}>
-              <Trash2 size={14} color="rgba(255,255,255,0.6)" />
+            <View style={s.durationBox}>
+              <Text style={s.duration}>{formatSeconds(seconds)}</Text>
+            </View>
+            <Pressable
+              onPress={reset}
+              disabled={loading}
+              style={({ pressed }) => [s.rerecBtn, pressed && s.pressed, loading && s.disabled]}
+              accessibilityRole="button"
+              accessibilityLabel={t('voice.rerec')}
+            >
+              <RotateCcw size={15} color="#FFE166" />
               <Text style={s.rerecText}>{t('voice.rerec')}</Text>
             </Pressable>
-            <Pressable onPress={submit} disabled={loading || !canSubmit} style={s.submitWrap}>
-              <LinearGradient colors={loading || !canSubmit ? ['rgba(255,255,255,0.12)', 'rgba(255,255,255,0.12)'] : CTA} style={s.submitBtn}>
-                {loading
-                  ? <ActivityIndicator size="small" color="rgba(255,255,255,0.6)" />
-                  : <Text style={s.submitText}>{t('voice.check_btn')}</Text>}
-              </LinearGradient>
-            </Pressable>
           </View>
+          <Pressable
+            onPress={submit}
+            disabled={loading || !canSubmit}
+            style={({ pressed }) => [s.submitWrap, pressed && s.pressed, (loading || !canSubmit) && s.disabled]}
+            accessibilityRole="button"
+            accessibilityLabel={t('voice.check_btn')}
+          >
+            <LinearGradient colors={GOLD} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.submitBtn}>
+              {loading
+                ? <ActivityIndicator size="small" color="#3D0A1A" />
+                : <Text style={s.submitText}>{t('voice.check_btn')}</Text>}
+            </LinearGradient>
+          </Pressable>
           {!canSubmit && <Text style={s.minDuration}>{t('voice.min_dur', { dur: formatSeconds(minDurationSec) })}</Text>}
         </View>
       )}
@@ -189,8 +207,13 @@ function inferAudioMeta(uri: string): { type: string; name: string } {
 }
 
 const s = StyleSheet.create({
-  card: { borderRadius: 22, padding: 20, gap: 8 },
-  center: { alignItems: 'center', gap: 12, paddingVertical: 8 },
+  // Deep plum glass + gold hairline — the inner-panel surface of the bank player
+  card: {
+    borderRadius: 18, padding: 16, gap: 8,
+    backgroundColor: 'rgba(42, 13, 66, 0.55)',
+    borderWidth: 1, borderColor: 'rgba(255, 224, 104, 0.22)',
+  },
+  center: { alignItems: 'center', gap: 12, paddingVertical: 6 },
 
   micWrap: { borderRadius: 40, overflow: 'hidden' },
   micBtn: { width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center' },
@@ -207,19 +230,42 @@ const s = StyleSheet.create({
   timerMax: { color: 'rgba(255,255,255,0.45)', fontSize: 16, fontWeight: '600' },
   recLabel: { color: '#f87171', fontSize: 11, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 1 },
 
-  playBtn: { width: 60, height: 60, borderRadius: 30, alignItems: 'center', justifyContent: 'center' },
-  duration: { color: 'rgba(255,255,255,0.55)', fontSize: 12, fontWeight: '500' },
+  pressed: { opacity: 0.86 },
+  disabled: { opacity: 0.45 },
+
+  // Recorded: compact row [play | duration | rerec] + full-width gold check
+  recordedRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  playBtn: {
+    width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: 'rgba(255,224,95,0.14)', borderWidth: 1, borderColor: 'rgba(255,224,95,0.36)',
+  },
+  durationBox: {
+    flex: 1, minHeight: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: 'rgba(65, 11, 71, 0.5)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.14)',
+  },
+  duration: { color: '#fff', fontSize: 14, fontWeight: '800', letterSpacing: 0.4 },
   minDuration: { color: '#f59e0b', fontSize: 12, fontWeight: '600', textAlign: 'center' },
 
-  actionsRow: { flexDirection: 'row', gap: 10 },
-  rerecBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderRadius: 14, paddingVertical: 11 },
-  rerecText: { color: 'rgba(255,255,255,0.7)', fontSize: 13, fontWeight: '700' },
-  submitWrap: { flex: 1.5, borderRadius: 14, overflow: 'hidden' },
-  submitBtn: { paddingVertical: 11, alignItems: 'center', justifyContent: 'center' },
-  submitText: { color: '#fff', fontSize: 14, fontWeight: '800' },
+  ghostBtn: {
+    backgroundColor: 'rgba(255,224,95,0.10)', borderWidth: 1, borderColor: 'rgba(255,224,95,0.34)',
+  },
+  ghostText: { color: '#FFE166', fontWeight: '900', fontSize: 13 },
+
+  rerecBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+    minHeight: 44, borderRadius: 14, paddingHorizontal: 13,
+    backgroundColor: 'rgba(255,224,95,0.10)', borderWidth: 1, borderColor: 'rgba(255,224,95,0.34)',
+  },
+  rerecText: { color: '#FFE166', fontSize: 12.5, fontWeight: '800' },
+
+  submitWrap: {
+    borderRadius: 15, overflow: 'hidden',
+    shadowColor: '#FFB338', shadowOpacity: 0.42, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 6,
+  },
+  submitBtn: { paddingVertical: 13, alignItems: 'center', justifyContent: 'center' },
+  submitText: { color: '#3D0A1A', fontSize: 14.5, fontWeight: '900' },
 
   deniedTitle: { color: '#fff', fontSize: 15, fontWeight: '800' },
   deniedText: { color: 'rgba(255,255,255,0.6)', fontSize: 13, fontWeight: '500' },
-  retryBtn: { borderRadius: 12, paddingHorizontal: 14, paddingVertical: 8, alignSelf: 'flex-start', marginTop: 4 },
-  retryText: { color: '#fff', fontSize: 13, fontWeight: '700' },
+  retryBtn: { borderRadius: 13, paddingHorizontal: 14, paddingVertical: 9, alignSelf: 'flex-start', marginTop: 4 },
 });

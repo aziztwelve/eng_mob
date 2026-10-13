@@ -44,6 +44,17 @@ export function IconCheck(p: IconProps) {
   return <Base {...p} strokeWidth={p.strokeWidth ?? 2.4}><Polyline points="20,6 9,17 4,12" /></Base>;
 }
 
+export function IconCalendar(p: IconProps) {
+  return (
+    <Base {...p}>
+      <Rect x={3} y={5} width={18} height={16} rx={3} />
+      <Line x1={8} y1={3} x2={8} y2={7} />
+      <Line x1={16} y1={3} x2={16} y2={7} />
+      <Line x1={3} y1={10} x2={21} y2={10} />
+    </Base>
+  );
+}
+
 export function IconChevronRight(p: IconProps) {
   return <Base {...p}><Polyline points="9,18 15,12 9,6" /></Base>;
 }
