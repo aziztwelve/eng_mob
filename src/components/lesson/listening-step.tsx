@@ -1,16 +1,18 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, TextInput, Pressable, ScrollView } from 'react-native';
+import { Text, View } from 'react-native';
 import { Volume2, Turtle } from 'lucide-react-native';
 import { SoundSlot } from '@/lib/audio';
 import { useTranslation } from 'react-i18next';
 import { FeedbackBar, type FeedbackState } from './FeedbackBar';
+import { SKY } from './sky-lesson-header';
+import { SkyCard, SkyIconButton, SkyInput, SkyLabel, SkyMissing, SkyStepLayout, skyFont } from './sky-ui';
 import { parseStepContent, type StepComponentProps } from './step-types';
 import type { ListeningContent } from '@/types/api';
 import { playWordTTS } from '@/lib/tts';
 
 /**
  * Listening: expo-audio plays audio_url; turtle-button = playbackRate 0.5.
- * Если audio_url нет — fallback на translation_hint.
+ * Если audio_url нет — fallback на TTS.
  */
 export function ListeningStep({ step, onSubmit, onContinue, isLast }: StepComponentProps) {
   const { t } = useTranslation();
@@ -20,11 +22,7 @@ export function ListeningStep({ step, onSubmit, onContinue, isLast }: StepCompon
   const [state, setState] = useState<FeedbackState>({ kind: 'idle' });
 
   if (!content) {
-    return (
-      <View className="p-6">
-        <Text className="text-muted-foreground">{t('lesson.parse_error')}</Text>
-      </View>
-    );
+    return <SkyMissing message={t('lesson.parse_error')} />;
   }
 
   const play = async (rate = 1) => {
@@ -57,54 +55,8 @@ export function ListeningStep({ step, onSubmit, onContinue, isLast }: StepCompon
   const locked = state.kind !== 'idle';
 
   return (
-    <View className="flex-1">
-    <ScrollView className="flex-1 px-4 pt-4" contentContainerClassName="pb-4" keyboardShouldPersistTaps="handled">
-      {content.instruction && (
-        <Text className="text-foreground font-bold text-base mb-4">{t('lesson.instruction.listening')}</Text>
-      )}
-
-      <View className="bg-[rgba(255,255,255,0.10)] rounded-2xl border border-[rgba(255,255,255,0.22)] p-4 mb-5 flex-row items-center gap-3">
-        {content.audio_url ? (
-          <>
-            <Pressable
-              onPress={() => play(1)}
-              className="bg-[#FFDF5E] w-16 h-16 rounded-full items-center justify-center"
-            >
-              <Volume2 size={28} color="#3D0A1A" />
-            </Pressable>
-            <Pressable
-              onPress={() => play(0.5)}
-              className="bg-[rgba(255,255,255,0.14)] border border-[rgba(255,255,255,0.24)] w-12 h-12 rounded-full items-center justify-center"
-            >
-              <Turtle size={20} color="#fff" />
-            </Pressable>
-          </>
-        ) : (
-          <Pressable
-            onPress={() => void playWordTTS(content.audio_text, content.language ?? 'en')}
-            className="bg-[#FFDF5E] w-16 h-16 rounded-full items-center justify-center"
-          >
-            <Volume2 size={28} color="#3D0A1A" />
-          </Pressable>
-        )}
-      </View>
-
-      <TextInput
-        value={text}
-        onChangeText={setText}
-        editable={!locked}
-        placeholder={t('lesson.listening_placeholder')}
-        placeholderTextColor="rgba(255,255,255,0.5)"
-        className="border-2 border-[rgba(255,255,255,0.22)] bg-[rgba(255,255,255,0.10)] rounded-2xl px-4 py-3 text-foreground font-bold mb-3"
-      />
-
-      {content.translation_hint && state.kind === 'idle' && (
-        <Text className="text-xs font-medium mb-4" style={{ color: 'rgba(255,255,255,0.75)' }}>
-          Подсказка: {content.translation_hint}
-        </Text>
-      )}
-    </ScrollView>
-      <View className="px-4 pb-3 pt-2">
+    <SkyStepLayout
+      footer={
         <FeedbackBar
           state={state}
           canSubmit={text.trim().length > 0}
@@ -112,7 +64,44 @@ export function ListeningStep({ step, onSubmit, onContinue, isLast }: StepCompon
           onContinue={onContinue}
           isLast={isLast}
         />
-      </View>
-    </View>
+      }
+    >
+      <SkyCard>
+        {content.instruction ? <SkyLabel>{t('lesson.instruction.listening')}</SkyLabel> : null}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+          {content.audio_url ? (
+            <>
+              <SkyIconButton size={64} onPress={() => play(1)} label={t('lesson.listen_again')}>
+                <Volume2 size={28} color="#FFFFFF" />
+              </SkyIconButton>
+              <SkyIconButton size={48} tone="white" onPress={() => play(0.5)} label="0.5x">
+                <Turtle size={22} color={SKY.blueDark} />
+              </SkyIconButton>
+            </>
+          ) : (
+            <SkyIconButton
+              size={64}
+              onPress={() => void playWordTTS(content.audio_text, content.language ?? 'en')}
+              label={t('lesson.listen_again')}
+            >
+              <Volume2 size={28} color="#FFFFFF" />
+            </SkyIconButton>
+          )}
+        </View>
+      </SkyCard>
+
+      <SkyInput
+        value={text}
+        onChangeText={setText}
+        editable={!locked}
+        placeholder={t('lesson.listening_placeholder')}
+      />
+
+      {content.translation_hint && state.kind === 'idle' ? (
+        <Text style={{ fontFamily: skyFont.medium, fontSize: 13, color: SKY.muted, marginTop: 10 }}>
+          {content.translation_hint}
+        </Text>
+      ) : null}
+    </SkyStepLayout>
   );
 }

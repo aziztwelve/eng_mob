@@ -1,3 +1,4 @@
+import { KeyboardLift } from '@/components/keyboard-lift';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
@@ -53,10 +54,11 @@ export default function WritingScreen() {
   const handleReset = () => { mut.reset(); setText(''); setPrompt(''); };
 
   return (
-    <View style={{ flex: 1 }}>
+    <KeyboardLift>
       <Stack.Screen options={{ headerShown: false }} />
       <StatusBar barStyle="light-content" />
       <ScrollView
+        keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 6, paddingBottom: 78 + insets.bottom }}
       >
@@ -134,7 +136,7 @@ export default function WritingScreen() {
           </View>
         )}
       </ScrollView>
-    </View>
+    </KeyboardLift>
   );
 }
 

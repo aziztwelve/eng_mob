@@ -1,0 +1,20 @@
+PASS route /onboarding/welcome
+PASS route /onboarding/goal
+PASS cannot continue before selection
+PASS route /onboarding/age
+PASS route /onboarding/level
+PASS route /onboarding/reminder-time
+PASS route /onboarding/signup
+PASS route /onboarding/reminder-time
+PASS back retains choice
+PASS route /onboarding/signup
+PASS signup empty form validation
+PASS route /onboarding/signup
+PASS retired paywall has no UI
+PASS route /onboarding/level
+PASS retired test redirects to level
+PASS route /auth/login
+PASS login empty form validation
+PASS login invalid inputs rejected without request
+PASS password visibility toggle
+PASS six-screen flow, removed links, selection persistence, signup and login validation

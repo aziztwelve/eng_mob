@@ -29,3 +29,10 @@ web-build/
 
 # Git (just in case)
 .git/
+
+# Local design explorations and QA evidence are not build inputs
+store-assets/
+design-explorations/
+docs/qa/
+.device*.png
+.tmp_qr/

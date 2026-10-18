@@ -1,22 +1,23 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, TextInput, FlatList, Pressable, ActivityIndicator, StyleSheet } from 'react-native';
-import { Stack, useLocalSearchParams } from 'expo-router';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { View, Text, FlatList, Pressable, ActivityIndicator, StyleSheet, BackHandler } from 'react-native';
+import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useQueries } from '@tanstack/react-query';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import {
-  Briefcase, TrendUp, Target, Airplane, ChatCircle, GraduationCap, Headphones,
+  Briefcase, TrendUp, Target, Airplane, ChatCircle, GraduationCap, Headphones, CaretLeft,
   type Icon as PhosphorIcon,
 } from 'phosphor-react-native';
 import { TracksApi } from '@/lib/api-client';
 import { useTracks } from '@/hooks/use-tracks';
 import { useOnboardingState } from '@/hooks/use-onboarding';
 import { useCompletedLessons } from '@/lib/lesson-progress';
-import { TrackPathCard } from '@/components/tracks/track-path-card';
-import { ProgressRing, MiniChart } from '@/components/tracks/progress-bits';
-import { glass, GOLD } from '@/components/sunset';
+import { CloudTrackPath } from '@/components/tracks/cloud-track-path';
+
 import type { Track } from '@/types/api';
+
+// Light panel for the Explore Levels design (white card with a blue border).
 
 const GOALS: { key: string; Icon: PhosphorIcon; tint: string }[] = [
   { key: 'work', Icon: Briefcase, tint: '#5B6BFF' },
@@ -54,13 +55,35 @@ export default function TracksScreen() {
     }
   }, [params.goal, params.level]);
 
+  // Hardware/system back: from a direction go back to the directions list first.
+  useFocusEffect(
+    useCallback(() => {
+      const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+        if (selectedGoal) {
+          setSelectedGoal(null);
+          setSearch('');
+          return true;
+        }
+        return false;
+      });
+      return () => sub.remove();
+    }, [selectedGoal]),
+  );
+  // Leaving the screen resets it to the directions list (no stale inner page on return).
+  useFocusEffect(
+    useCallback(() => () => {
+      setSelectedGoal(null);
+      setSearch('');
+    }, []),
+  );
+
   const onboarding = useOnboardingState();
   const language = onboarding.data?.target_language || undefined;
 
-  const { data, isLoading, error } = useTracks({
+  const { data, isLoading, error, refetch } = useTracks({
     search: search || undefined,
     language,
-    level: level?.toLowerCase(),
+    level: (level ?? (selectedGoal ? 'A1' : null))?.toLowerCase(),
     // API добавляет к трекам выбранной цели универсальные (motivation: []).
     motivation: selectedGoal ? [selectedGoal] : undefined,
     limit: 500,
@@ -81,7 +104,6 @@ export default function TracksScreen() {
     () => (selectedGoal ? (tracksByGoal.get(selectedGoal) ?? []) : []),
     [selectedGoal, tracksByGoal],
   );
-  const selectedGoalMeta = selectedGoal ? GOALS.find((goal) => goal.key === selectedGoal) : null;
   const goalTitle = (key: string) => t(`tracks.goals.${key}` as never);
 
   const { data: localCompleted } = useCompletedLessons();
@@ -103,123 +125,75 @@ export default function TracksScreen() {
     })),
   });
 
-  // Общий прогресс цели: завершённые уроки по всем её трекам.
-  const overall = useMemo(() => {
-    let total = 0;
-    let doneCount = 0;
-    trackQueries.forEach((query, i) => {
-      const lessons = query.data?.lessons ?? [];
-      const serverIds = progressQueries[i]?.data?.lessons.filter((l) => l.completed).map((l) => l.lesson_id) ?? [];
-      const doneSet = new Set<string>([...(localCompleted ?? []), ...serverIds]);
-      total += lessons.length;
-      doneCount += lessons.filter((lesson) => doneSet.has(lesson.id)).length;
-    });
-    return { total, doneCount, pct: total > 0 ? Math.round((doneCount / total) * 100) : 0 };
-  }, [trackQueries, progressQueries, localCompleted]);
-
   const completedFor = (i: number) => {
     const serverIds = progressQueries[i]?.data?.lessons.filter((l) => l.completed).map((l) => l.lesson_id) ?? [];
     return new Set<string>([...(localCompleted ?? []), ...serverIds]);
   };
 
+  const router = useRouter();
+
+  if (selectedGoal) return <View className="flex-1">
+    <Stack.Screen options={{ headerShown: false }} />
+    <CloudTrackPath key={selectedGoal} title={goalTitle(selectedGoal)} level={level ?? 'A1'}
+      items={selectedTracks.map((track, index) => ({
+        track,
+        lessons: [...(trackQueries[index]?.data?.lessons ?? [])].sort((a, b) => a.order_index - b.order_index).map(lesson => ({ id: lesson.id, completed: completedFor(index).has(lesson.id) })),
+        loading: trackQueries[index]?.isPending || progressQueries[index]?.isPending || false,
+        error: !!trackQueries[index]?.error || !!progressQueries[index]?.error,
+      }))}
+      loading={isLoading} error={!!error}
+      onRetry={() => { void refetch(); trackQueries.forEach(query => query.refetch()); progressQueries.forEach(query => query.refetch()); }}
+      onBack={() => { setSelectedGoal(null); setSearch(''); }}
+      onLevel={setLevel}
+      onOpenTrack={track => router.push(`/(tabs)/tracks/${track.code || track.id}`)}
+      onContinue={id => router.push(`/learn/${id}`)} />
+  </View>;
+
   const bottomPad = { paddingBottom: 78 + insets.bottom };
 
+  // Directions (goals) inside a level: sky background, icon tiles in two columns.
   return (
-    <View style={{ flex: 1 }}>
-      <Stack.Screen options={{ title: t('tracks.title_deep') }} />
+    <LinearGradient colors={['#A9E0FF', '#D6F0FF', '#FFFFFF']} locations={[0, 0.24, 0.56]} style={{ flex: 1 }}>
+      <Stack.Screen options={{ headerShown: false }} />
 
-      {selectedGoal ? (
-        /* Треки выбранной цели: прогресс-карточка в стиле AI-hub */
-        <FlatList
-          key={`tracks-${selectedGoal}`}
-          data={selectedTracks}
-          renderItem={({ item, index }) => (
-            <TrackPathCard
-              code={item.code || item.id}
-              title={item.title}
-              lessons={trackQueries[index]?.data?.lessons}
-              loading={trackQueries[index]?.isLoading}
-              completed={completedFor(index)}
-            />
-          )}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={{ paddingHorizontal: 18, paddingTop: 12, ...bottomPad }}
-          showsVerticalScrollIndicator={false}
-          ListHeaderComponent={
-            <View>
-              <View style={st.pathHeader}>
-                <Pressable
-                  onPress={() => { setSelectedGoal(null); setSearch(''); }}
-                  style={st.backCircle}
-                  hitSlop={8}
-                >
-                  <Text style={st.backCircleText}>‹</Text>
-                </Pressable>
-                <View style={{ flex: 1, marginLeft: 12, minWidth: 0 }}>
-                  <Text style={st.levelTitle} numberOfLines={1}>
-                    {selectedGoalMeta ? goalTitle(selectedGoalMeta.key) : ''}
-                  </Text>
-                  {level && (
-                    <Text style={st.levelSub} numberOfLines={1}>
-                      {level} · {t(`tracks.level_titles.${level}` as never)}
-                    </Text>
-                  )}
-                </View>
-                <View style={[st.progressPill, glass]}>
-                  <Text style={st.progressPillText}>{t('tracks.tracks_count', { count: selectedTracks.length })}</Text>
-                </View>
-              </View>
-
-              {/* Прогресс цели — карточка как «Твой прогресс с AI» */}
-              <View style={[st.progressCard, glass]}>
-                <ProgressRing pct={overall.pct} />
-                <View style={{ flex: 1 }}>
-                  <Text style={st.progressTitle}>{t('tracks.your_progress')}</Text>
-                  <Text style={st.progressText}>{t('tracks.lessons_done', { done: overall.doneCount, total: overall.total })}</Text>
-                  <Text style={st.progressText}>
-                    {overall.pct >= 100 ? t('tracks.level_done') : t('tracks.keep_going')}
-                  </Text>
-                </View>
-                <MiniChart pct={overall.pct} />
-              </View>
-
-              <View style={[st.search, glass]}>
-                <Text style={{ fontSize: 16 }}>🔍</Text>
-                <TextInput style={st.searchInput} placeholder={t('tracks.search')} placeholderTextColor="rgba(255,255,255,0.5)" value={search} onChangeText={setSearch} />
-              </View>
-            </View>
-          }
-        />
-      ) : (
-        <FlatList
-          key="goals-grid"
-          data={GOALS}
-          numColumns={2}
-          keyExtractor={(item) => item.key}
-          contentContainerStyle={[st.goalsGrid, bottomPad]}
-          columnWrapperStyle={st.goalRow}
-          ListHeaderComponent={
-            <View style={{ paddingHorizontal: 0 }}>
-              <Text style={st.title}>{t('tracks.title')}</Text>
-              <LinearGradient colors={GOLD} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={st.underline} />
-              <Text style={st.subtitle}>{t('tracks.pick_goal')}</Text>
-            </View>
-          }
-          renderItem={({ item }) => (
-            <Pressable onPress={() => setSelectedGoal(item.key)} style={[st.goalCard, glass]}>
-              <View style={[st.goalIcon, { backgroundColor: item.tint, shadowColor: item.tint }]}>
-                <item.Icon size={24} color="#fff" weight="fill" />
-              </View>
-              <Text style={st.goalTitle}>{goalTitle(item.key)}</Text>
-              <Text style={st.goalCount}>
-                {(tracksByGoal.get(item.key) ?? []).length
-                  ? t('tracks.tracks_count', { count: (tracksByGoal.get(item.key) ?? []).length })
-                  : t('tracks.soon')}
-              </Text>
+      <FlatList
+        key="goals-list"
+        data={GOALS}
+        keyExtractor={(item) => item.key}
+        contentContainerStyle={[st.goalsGrid, bottomPad]}
+        showsVerticalScrollIndicator={false}
+        ListHeaderComponent={
+          <View style={st.goalsTop}>
+            <Pressable onPress={() => router.back()} style={st.goalsBack} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('common.back')}>
+              <CaretLeft size={22} weight="bold" color="#171A1C" />
             </Pressable>
-          )}
-        />
-      )}
+            <View style={{ flex: 1 }}>
+              {level ? <Text style={st.goalsSub}>{level} · {t(`tracks.level_titles.${level}` as never)}</Text> : null}
+              <Text style={st.goalsTitle}>{t('tracks.goals_title')}</Text>
+            </View>
+          </View>
+        }
+        numColumns={2}
+        columnWrapperStyle={{ gap: 12, marginBottom: 12 }}
+        renderItem={({ item }) => {
+          const count = (tracksByGoal.get(item.key) ?? []).length;
+          const open = count > 0;
+          return (
+            <Pressable
+              disabled={!open}
+              onPress={() => setSelectedGoal(item.key)}
+              accessibilityRole="button"
+              style={[st.goalTile, !open && { opacity: 0.7 }]}
+            >
+              <View style={[st.goalTileIcon, { backgroundColor: open ? item.tint : '#B8C4CC' }]}>
+                <item.Icon size={26} weight="fill" color="#FFFFFF" />
+              </View>
+              <Text style={st.goalTileTitle} numberOfLines={2}>{goalTitle(item.key)}</Text>
+              <Text style={st.goalTileCount}>{open ? t('tracks.tracks_count', { count }) : t('tracks.soon')}</Text>
+            </Pressable>
+          );
+        }}
+      />
 
       {(isLoading || error) && !selectedGoal && (
         <View style={st.center}>
@@ -233,36 +207,46 @@ export default function TracksScreen() {
           )}
         </View>
       )}
-    </View>
+    </LinearGradient>
   );
 }
 
 const st = StyleSheet.create({
-  title: { color: '#fff', fontSize: 28, fontWeight: '900' },
+  title: { color: '#171A1C', fontSize: 28, fontWeight: '900' },
   underline: { width: 44, height: 3, borderRadius: 2, marginTop: 6 },
-  subtitle: { color: 'rgba(255,255,255,0.82)', fontSize: 13, fontWeight: '600', marginTop: 10 },
+  subtitle: { color: '#5D686F', fontSize: 13, fontWeight: '600', marginTop: 10 },
   search: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 12, marginTop: 14 },
-  searchInput: { flex: 1, color: '#fff', fontSize: 15, fontWeight: '600' },
+  searchInput: { flex: 1, color: '#171A1C', fontSize: 15, fontWeight: '600' },
 
   /* Шапка уровня */
   pathHeader: { flexDirection: 'row', alignItems: 'center' },
   backCircle: {
     width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.14)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.22)',
+    backgroundColor: '#FFFFFF', borderWidth: 1.5, borderColor: '#C9EDFF',
   },
-  backCircleText: { color: '#fff', fontSize: 24, fontWeight: '900', marginTop: -2 },
-  levelTitle: { color: '#fff', fontSize: 20, fontWeight: '900' },
-  levelSub: { color: 'rgba(255,255,255,0.72)', fontSize: 13, fontWeight: '700', marginTop: 2 },
+  backCircleText: { color: '#171A1C', fontSize: 24, fontWeight: '900', marginTop: -2 },
+  levelTitle: { color: '#171A1C', fontSize: 20, fontWeight: '900' },
+  levelSub: { color: '#5D686F', fontSize: 13, fontWeight: '700', marginTop: 2 },
   progressPill: { borderRadius: 14, paddingHorizontal: 12, paddingVertical: 8 },
-  progressPillText: { color: '#FFD84A', fontSize: 13, fontWeight: '900' },
+  progressPillText: { color: '#1AB3FF', fontSize: 13, fontWeight: '900' },
 
   /* Прогресс-карточка в стиле AI-hub */
-  progressCard: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 22, padding: 16, marginTop: 16 },
-  progressTitle: { color: '#fff', fontSize: 16, fontWeight: '900' },
-  progressText: { color: 'rgba(255,255,255,0.8)', fontSize: 12.5, fontWeight: '600', marginTop: 2 },
+  progressCard: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 16, padding: 12, marginTop: 12 },
+  pctCircle: { width: 48, height: 48, borderRadius: 24, borderWidth: 4, borderColor: '#59C8FF', alignItems: 'center', justifyContent: 'center' },
+  pctText: { color: '#171A1C', fontSize: 12, fontWeight: '900' },
+  progressTitle: { color: '#171A1C', fontSize: 16, fontWeight: '900' },
+  progressText: { color: '#5D686F', fontSize: 12.5, fontWeight: '600', marginTop: 2 },
 
   /* Сетки уровней / целей */
-  goalsGrid: { paddingHorizontal: 18, paddingTop: 4, paddingBottom: 40 },
+  goalsTop: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 18 },
+  goalsBack: { width: 44, height: 44, borderRadius: 15, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF', borderWidth: 1.5, borderBottomWidth: 4, borderColor: '#C9EDFF' },
+  goalsSub: { fontFamily: 'Nunito_800ExtraBold', fontSize: 12, color: '#2E5A74' },
+  goalsTitle: { fontFamily: 'Nunito_900Black', fontSize: 21, color: '#171A1C' },
+  goalTile: { width: '48.4%', flexGrow: 0, padding: 14, borderRadius: 22, backgroundColor: '#FFFFFF', borderWidth: 1.5, borderBottomWidth: 4, borderColor: '#D6EFFC' },
+  goalTileIcon: { width: 48, height: 48, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  goalTileTitle: { fontFamily: 'Nunito_900Black', fontSize: 16, lineHeight: 20, color: '#171A1C', marginTop: 10, minHeight: 40 },
+  goalTileCount: { fontFamily: 'Nunito_700Bold', fontSize: 12, color: '#5D686F', marginTop: 2 },
+  goalsGrid: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 40 },
   goalRow: { gap: 12, marginBottom: 12 },
   goalCard: { flex: 1, minHeight: 142, borderRadius: 20, padding: 16, justifyContent: 'space-between' },
   goalIcon: {

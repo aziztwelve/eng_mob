@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, ScrollView } from 'react-native';
-import { FeedbackBar, type FeedbackState } from './FeedbackBar';
-import { parseStepContent, type StepComponentProps } from './step-types';
+import { Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { FeedbackBar, type FeedbackState } from './FeedbackBar';
+import { SKY } from './sky-lesson-header';
+import { SkyCard, SkyLabel, SkyMissing, SkyOption, SkyStepLayout, resolveChoice, skyFont } from './sky-ui';
+import { parseStepContent, type StepComponentProps } from './step-types';
 import { stepInstruction } from '@/lib/step-titles';
 
 interface ChooseDefinitionContent {
@@ -18,7 +20,7 @@ export function ChooseDefinitionStep({ step, onSubmit, onContinue, isLast }: Ste
   const [state, setState] = useState<FeedbackState>({ kind: 'idle' });
 
   if (!content?.word || !content.options?.length) {
-    return <Text className="p-6 text-muted-foreground">{t('lesson.parse_error')}</Text>;
+    return <SkyMissing message={t('lesson.parse_error')} />;
   }
 
   const locked = state.kind !== 'idle';
@@ -37,25 +39,26 @@ export function ChooseDefinitionStep({ step, onSubmit, onContinue, isLast }: Ste
   };
 
   return (
-    <ScrollView className="flex-1 px-4 pt-4" contentContainerClassName="pb-4">
-      <Text className="text-muted-foreground text-sm font-bold mb-3">{stepInstruction(step.type, i18n.language)}</Text>
-      <View className="rounded-2xl border border-[rgba(255,255,255,0.22)] bg-[rgba(255,255,255,0.10)] p-5 mb-5 items-center">
-        <Text className="text-muted-foreground text-sm font-bold">{t('lesson.word_col')}</Text>
-        <Text className="text-foreground text-3xl font-black mt-1">{content.word}</Text>
+    <SkyStepLayout
+      footer={<FeedbackBar state={state} canSubmit={picked !== null} onSubmit={submit} onContinue={onContinue} isLast={isLast} />}
+    >
+      <SkyCard style={{ alignItems: 'center' }}>
+        <SkyLabel>{stepInstruction(step.type, i18n.language)}</SkyLabel>
+        <Text style={{ fontFamily: skyFont.bold, fontSize: 13, color: SKY.muted, marginTop: 4 }}>{t('lesson.word_col')}</Text>
+        <Text style={{ fontFamily: skyFont.title, fontSize: 32, color: SKY.ink, marginTop: 2 }}>{content.word}</Text>
+      </SkyCard>
+      <View style={{ gap: 12 }}>
+        {content.options.map((option, index) => (
+          <SkyOption
+            key={option.id}
+            label={option.text}
+            badge={String.fromCharCode(65 + index)}
+            disabled={locked}
+            onPress={() => setPicked(index)}
+            state={resolveChoice(picked === index, option.is_correct, state.kind)}
+          />
+        ))}
       </View>
-      <View className="gap-2 mb-5">
-        {content.options.map((option, index) => {
-          const selected = picked === index;
-          const correct = state.kind === 'wrong' && option.is_correct;
-          const wrong = state.kind === 'wrong' && selected;
-          return (
-            <Pressable key={option.id} disabled={locked} onPress={() => setPicked(index)} className={`rounded-2xl border-2 p-4 ${correct || (state.kind === 'correct' && selected) ? 'border-emerald-500 bg-emerald-500/15' : wrong ? 'border-red-500 bg-red-500/10' : selected ? 'border-[#FFDF5E] bg-[rgba(255,223,94,0.18)]' : 'border-[rgba(255,255,255,0.22)] bg-[rgba(255,255,255,0.12)]'}`}>
-              <Text className="text-foreground font-bold"><Text className="text-muted-foreground">{option.id}. </Text>{option.text}</Text>
-            </Pressable>
-          );
-        })}
-      </View>
-      <FeedbackBar state={state} canSubmit={picked !== null} onSubmit={submit} onContinue={onContinue} isLast={isLast} />
-    </ScrollView>
+    </SkyStepLayout>
   );
 }

@@ -11,7 +11,7 @@
  *
  * Контракт:
  *   analytics.track('paywall_seen', { goal: 'work' });
- *   analytics.identify(userID, { is_guest: true });
+ *   analytics.identify(userID, { plan: 'free' });
  *   analytics.reset();
  */
 
@@ -26,12 +26,11 @@ export type AnalyticsEvent =
   | 'paywall_seen'
   | 'paywall_chosen'
   | 'paywall_dismissed'
-  // Auth / claim
+  // Auth
   | 'signup_screen_viewed'
   | 'oauth_attempted'
   | 'oauth_succeeded'
   | 'oauth_failed'
-  | 'claim_skipped'
   // Placement
   | 'placement_started'
   | 'placement_completed'

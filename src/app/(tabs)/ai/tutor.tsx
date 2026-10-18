@@ -1,3 +1,4 @@
+import { KeyboardLift } from '@/components/keyboard-lift';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
@@ -46,10 +47,11 @@ export default function TutorScreen() {
   const handleReset = () => { mut.reset(); setQuestion(''); };
 
   return (
-    <View style={{ flex: 1 }}>
+    <KeyboardLift>
       <Stack.Screen options={{ headerShown: false }} />
       <StatusBar barStyle="light-content" />
       <ScrollView
+        keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 6, paddingBottom: 78 + insets.bottom }}
       >
@@ -109,7 +111,7 @@ export default function TutorScreen() {
           </View>
         )}
       </ScrollView>
-    </View>
+    </KeyboardLift>
   );
 }
 

@@ -1,3 +1,4 @@
+import { KeyboardLift } from '@/components/keyboard-lift';
 import React, { useState } from 'react';
 import { View, Text, TextInput, FlatList, Pressable, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -72,6 +73,7 @@ export default function CoursesScreen() {
 
   return (
     <View className="flex-1 bg-background">
+<KeyboardLift>
       {/* Header */}
       <View className="bg-card border-b-2 border-border px-4 pt-12 pb-4">
         <Text className="text-3xl font-black text-primary mb-4">
@@ -148,6 +150,7 @@ export default function CoursesScreen() {
           showsVerticalScrollIndicator={false}
         />
       )}
+</KeyboardLift>
     </View>
   );
 }

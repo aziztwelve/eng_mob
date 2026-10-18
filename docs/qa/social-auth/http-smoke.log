@@ -1,0 +1,6 @@
+GET /health: 200
+POST /api/v1/auth/social/google/challenge: 503
+POST /api/v1/auth/social/apple/challenge: 503
+POST /api/v1/auth/social/guest_fake/challenge: 400
+POST /api/v1/auth/social/google: 400
+POST /api/v1/auth/login: 400

@@ -1,3 +1,4 @@
+import { KeyboardLift } from '@/components/keyboard-lift';
 import React, { useState } from 'react';
 import { View, Text, ScrollView, Pressable, ActivityIndicator, TextInput, StyleSheet } from 'react-native';
 import { Stack, router } from 'expo-router';
@@ -7,7 +8,6 @@ import { useTranslation } from 'react-i18next';
 
 import { useFlashcards, useFlashcardStats, useSeedStarter } from '@/hooks/use-flashcards';
 import { AddFlashcardSheet } from '@/components/flashcards/AddFlashcardSheet';
-import { SuggestionsWidget } from '@/components/flashcards/SuggestionsWidget';
 import { GoalRing } from '@/components/flashcards/GoalRing';
 import type { Flashcard } from '@/types/api';
 
@@ -59,7 +59,8 @@ export default function FlashcardsHubScreen() {
         }}
       />
 
-      <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: 40, gap: 16 }}>
+      <KeyboardLift>
+<ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 18, paddingBottom: 40, gap: 16 }}>
         {/* Title */}
         <View>
           <Text style={st.title}>{t('fc.review_title')}</Text>
@@ -104,8 +105,6 @@ export default function FlashcardsHubScreen() {
               </Pressable>
             )}
 
-            <SuggestionsWidget targetLanguage="en" />
-
             {/* Search */}
             <View style={[st.card, st.searchRow]}>
               <Search size={20} color="rgba(255,255,255,0.7)" />
@@ -134,6 +133,7 @@ export default function FlashcardsHubScreen() {
           </>
         )}
       </ScrollView>
+</KeyboardLift>
 
       <AddFlashcardSheet visible={showAddSheet} onDismiss={() => setShowAddSheet(false)} />
     </View>

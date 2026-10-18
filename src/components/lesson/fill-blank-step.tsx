@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, TextInput, ScrollView } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { FeedbackBar, type FeedbackState } from './FeedbackBar';
+import { SKY } from './sky-lesson-header';
+import { SkyCard, SkyInput, SkyLabel, SkyMissing, SkyStepLayout, skyFont } from './sky-ui';
 import { parseStepContent, type StepComponentProps } from './step-types';
 import type { FillBlankContent } from '@/types/api';
 
@@ -16,11 +18,7 @@ export function FillBlankStep({ step, onSubmit, onContinue, isLast }: StepCompon
   const [state, setState] = useState<FeedbackState>({ kind: 'idle' });
 
   if (!content) {
-    return (
-      <View className="p-6">
-        <Text className="text-muted-foreground">{t('lesson.parse_error')}</Text>
-      </View>
-    );
+    return <SkyMissing message={t('lesson.parse_error')} />;
   }
 
   const locked = state.kind !== 'idle';
@@ -45,67 +43,11 @@ export function FillBlankStep({ step, onSubmit, onContinue, isLast }: StepCompon
   };
 
   const tplParts = content.sentence_template.split('___');
+  const textStyle = { fontFamily: skyFont.title, fontSize: 19, lineHeight: 28, color: SKY.ink } as const;
 
   return (
-    <View className="flex-1">
-    <ScrollView className="flex-1 px-4 pt-4" contentContainerClassName="pb-4" keyboardShouldPersistTaps="handled">
-      <Text className="text-foreground font-bold text-base mb-4">{t('lesson.instruction.fill_blank')}</Text>
-
-      <View className="bg-[rgba(255,255,255,0.10)] rounded-2xl border border-[rgba(255,255,255,0.22)] p-5 mb-5">
-        <View className="flex-row flex-wrap items-baseline">
-          {tplParts.map((part, i) => (
-            <React.Fragment key={i}>
-              <Text className="text-foreground text-lg font-black">{part}</Text>
-              {i < tplParts.length - 1 && (
-                <View className="mx-1 px-3 py-1 border-b-4 border-[#FFDF5E] min-w-[80px]">
-                  <Text className="text-foreground text-lg font-black text-center">
-                    {value || '___'}
-                  </Text>
-                </View>
-              )}
-            </React.Fragment>
-          ))}
-        </View>
-        {content.translation_hint && (
-          <Text className="text-sm font-medium mt-3" style={{ color: 'rgba(255,255,255,0.75)' }}>
-            {content.translation_hint}
-          </Text>
-        )}
-      </View>
-
-      {content.options && content.options.length > 0 ? (
-        <View className="flex-row flex-wrap gap-2 mb-5">
-          {content.options.map((opt) => (
-            <Pressable
-              key={opt}
-              disabled={locked}
-              onPress={() => {
-                setValue(opt);
-                void handleSubmit(opt);
-              }}
-              className={`px-4 py-3 rounded-2xl border-2 ${
-                value === opt
-                  ? 'border-[#FFDF5E] bg-[rgba(255,223,94,0.18)]'
-                  : 'border-[rgba(255,255,255,0.22)] bg-[rgba(255,255,255,0.12)]'
-              } ${locked ? 'opacity-70' : ''}`}
-            >
-              <Text className="font-bold text-foreground">{opt}</Text>
-            </Pressable>
-          ))}
-        </View>
-      ) : (
-        <TextInput
-          value={value}
-          editable={!locked}
-          onChangeText={setValue}
-          placeholder={t('lesson.answer_placeholder')}
-          placeholderTextColor="rgba(255,255,255,0.5)"
-          className="border-2 border-[rgba(255,255,255,0.22)] bg-[rgba(255,255,255,0.10)] rounded-2xl px-4 py-3 text-foreground font-bold mb-4"
-        />
-      )}
-
-    </ScrollView>
-      <View className="px-4 pb-3 pt-2">
+    <SkyStepLayout
+      footer={
         <FeedbackBar
           state={state}
           canSubmit={value.trim().length > 0}
@@ -113,7 +55,59 @@ export function FillBlankStep({ step, onSubmit, onContinue, isLast }: StepCompon
           onContinue={onContinue}
           isLast={isLast}
         />
-      </View>
-    </View>
+      }
+    >
+      <SkyCard>
+        <SkyLabel>{t('lesson.instruction.fill_blank')}</SkyLabel>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'baseline' }}>
+          {tplParts.map((part, i) => (
+            <React.Fragment key={i}>
+              <Text style={textStyle}>{part}</Text>
+              {i < tplParts.length - 1 && (
+                <View style={{ marginHorizontal: 4, minWidth: 80, paddingHorizontal: 10, borderBottomWidth: 3, borderBottomColor: SKY.blue }}>
+                  <Text style={[textStyle, { textAlign: 'center', color: SKY.blueDark }]}>{value || ' '}</Text>
+                </View>
+              )}
+            </React.Fragment>
+          ))}
+        </View>
+        {content.translation_hint ? (
+          <Text style={{ fontFamily: skyFont.medium, fontSize: 14, color: SKY.muted, marginTop: 10 }}>{content.translation_hint}</Text>
+        ) : null}
+      </SkyCard>
+
+      {content.options && content.options.length > 0 ? (
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+          {content.options.map((opt) => {
+            const sel = value === opt;
+            return (
+              <Pressable
+                key={opt}
+                disabled={locked}
+                onPress={() => {
+                  setValue(opt);
+                  void handleSubmit(opt);
+                }}
+                style={{
+                  paddingHorizontal: 18,
+                  paddingVertical: 12,
+                  borderRadius: 16,
+                  backgroundColor: sel ? '#EAF8FF' : '#FFFFFF',
+                  borderWidth: 1.5,
+                  borderBottomWidth: 4,
+                  borderColor: sel ? SKY.blue : '#DDE3E8',
+                  borderBottomColor: sel ? SKY.blue : '#D3DAE0',
+                  opacity: locked && !sel ? 0.6 : 1,
+                }}
+              >
+                <Text style={{ fontFamily: skyFont.strong, fontSize: 16, color: SKY.ink }}>{opt}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      ) : (
+        <SkyInput value={value} editable={!locked} onChangeText={setValue} placeholder={t('lesson.answer_placeholder')} />
+      )}
+    </SkyStepLayout>
   );
 }

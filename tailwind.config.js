@@ -40,6 +40,7 @@ module.exports = {
           heading: "#171A1C",
           body: "#5D686F",
           stroke: "#E3E6E8",
+          dim: "#ADB5BA",
           error: "#EB8787",
           "error-text": "#B34D4D",
         },

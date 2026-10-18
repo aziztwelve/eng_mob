@@ -2,19 +2,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { analytics } from './analytics';
 
-import type {
-  AgeBracket,
-  DailyCommitMinutes,
-  EmotionalReaction,
-  FutureRegret,
-  OnboardingStateResponse,
-  PainPoint,
-  PastBlocker,
-  PaywallChoice,
-  ProficiencyLevelProto,
-  ReminderSlot,
-  SpeakingSituation,
-} from '@/types/api';
+import type { AgeBracket, OnboardingStateResponse, ProficiencyLevelProto, ReminderSlot } from '@/types/api';
+import { cleanOnboardingPatch, retainedOnboardingStep } from './onboarding-policy';
+import { onboardingMutationQueue } from './onboarding-mutation-queue';
 
 /**
  * Локальный кэш состояния онбординга — **offline fallback only**.
@@ -46,21 +36,12 @@ export interface OnboardingState {
   native_language: string | null;
   level: ProficiencyLevel | null;
   daily_goal_xp: number | null;
-  notifications_prompted: boolean;
 
   // v3 (Oki-style):
   /** Первая (главная) goal из массива motivation — для personalized copy. */
   goal: string | null;
   age_bracket: AgeBracket | null;
-  daily_commit_minutes: DailyCommitMinutes | null;
-  pain_point: PainPoint | null;
-  speaking_situation: SpeakingSituation | null;
-  past_blocker: PastBlocker | null;
-  future_regret: FutureRegret | null;
-  emotional_reaction: EmotionalReaction | null;
   reminder_slot: ReminderSlot | null;
-  paywall_seen_at: string | null;
-  paywall_choice: PaywallChoice | null;
 
   /** Шаг, на котором пользователь остановился (для resume). */
   current_step: string | null;
@@ -72,18 +53,9 @@ const DEFAULT_STATE: OnboardingState = {
   native_language: null,
   level: null,
   daily_goal_xp: null,
-  notifications_prompted: false,
   goal: null,
   age_bracket: null,
-  daily_commit_minutes: null,
-  pain_point: null,
-  speaking_situation: null,
-  past_blocker: null,
-  future_regret: null,
-  emotional_reaction: null,
   reminder_slot: null,
-  paywall_seen_at: null,
-  paywall_choice: null,
   current_step: null,
 };
 
@@ -99,7 +71,7 @@ async function migrateLegacyV1(): Promise<void> {
     if (!v3) {
       // Только если v3 ещё нет — копируем v1 → v3.
       const parsed = JSON.parse(legacy) as Partial<OnboardingState>;
-      const merged: OnboardingState = { ...DEFAULT_STATE, ...parsed };
+      const merged: OnboardingState = { ...DEFAULT_STATE, ...cleanOnboardingPatch(parsed) };
       await AsyncStorage.setItem(ONBOARDING_KEY_V3, JSON.stringify(merged));
     }
     await AsyncStorage.removeItem(ONBOARDING_KEY_V1);
@@ -114,7 +86,11 @@ export async function getOnboardingState(): Promise<OnboardingState> {
     const raw = await AsyncStorage.getItem(ONBOARDING_KEY_V3);
     if (!raw) return DEFAULT_STATE;
     const parsed = JSON.parse(raw) as Partial<OnboardingState>;
-    return { ...DEFAULT_STATE, ...parsed };
+    const clean = cleanOnboardingPatch(parsed);
+    const state = { ...DEFAULT_STATE, ...clean, current_step: retainedOnboardingStep(clean.current_step) };
+    const serialized = JSON.stringify(state);
+    if (serialized !== raw) await AsyncStorage.setItem(ONBOARDING_KEY_V3, serialized);
+    return state;
   } catch {
     return DEFAULT_STATE;
   }
@@ -124,7 +100,8 @@ export async function patchOnboardingState(
   patch: Partial<OnboardingState>,
 ): Promise<OnboardingState> {
   const current = await getOnboardingState();
-  const next = { ...current, ...patch };
+  const next = { ...current, ...cleanOnboardingPatch(patch) };
+  next.current_step = retainedOnboardingStep(next.current_step);
   await AsyncStorage.setItem(ONBOARDING_KEY_V3, JSON.stringify(next));
   return next;
 }
@@ -142,6 +119,7 @@ export async function markOnboardingComplete(): Promise<void> {
 }
 
 export async function resetOnboarding(): Promise<void> {
+  await onboardingMutationQueue.clear();
   await AsyncStorage.removeItem(ONBOARDING_KEY_V3);
   await AsyncStorage.removeItem(ONBOARDING_KEY_V1);
 }
@@ -164,15 +142,7 @@ export async function mergeBackendState(remote: OnboardingStateResponse): Promis
     level: remote.proficiency_level ?? null,
     daily_goal_xp: remote.daily_goal_xp ?? null,
     age_bracket: remote.age_bracket ?? null,
-    daily_commit_minutes: remote.daily_commit_minutes ?? null,
-    pain_point: remote.pain_point ?? null,
-    speaking_situation: remote.speaking_situation ?? null,
-    past_blocker: remote.past_blocker ?? null,
-    future_regret: remote.future_regret ?? null,
-    emotional_reaction: remote.emotional_reaction ?? null,
     reminder_slot: remote.reminder_slot ?? null,
-    paywall_seen_at: remote.paywall_seen_at ?? null,
-    paywall_choice: remote.paywall_choice ?? null,
     completed_at: remote.onboarded_at ?? null,
   };
   return patchOnboardingState(patch);

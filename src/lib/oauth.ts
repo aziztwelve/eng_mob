@@ -1,154 +1,59 @@
-/**
- * oauth — обёртка для Google / Apple Sign-In.
- *
- * Возвращает унифицированный payload для backend `POST /auth/claim/oauth`:
- *   { provider: 'google'|'apple'|'guest_fake', id_token, email, display_name? }
- *
- * Конфигурация:
- *   - Google webClientId — `Constants.expoConfig.extra.googleWebClientId`
- *     (или env-var `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`).
- *     Если не задан — Google-кнопка возвращает null с сообщением (UI скрывает).
- *   - Apple — нужен только iOS (Android — кнопка скрывается).
- *
- * В Expo Go без EAS dev-build Google/Apple SDK не работают; компонент
- * показывает информационное сообщение и предлагает «Позже» (skip).
- */
-
-import { Platform } from 'react-native';
+import { Platform, TurboModuleRegistry } from 'react-native';
 import Constants from 'expo-constants';
-import * as AppleAuthentication from 'expo-apple-authentication';
-import {
-  GoogleSignin,
-  isSuccessResponse,
-  statusCodes,
-} from '@react-native-google-signin/google-signin';
+import { ApiClient } from './api-client';
+import type { AuthResponse } from '@/types/api';
 
-import type { ClaimGuestOAuthRequest } from '@/types/api';
+export type SocialProvider = 'google' | 'apple';
+export type SocialAuthResponse = AuthResponse & { created: boolean };
+export class SocialAuthCancelled extends Error {}
 
-let googleConfigured = false;
-
-function getGoogleWebClientId(): string | null {
-  const fromExtra = (Constants.expoConfig?.extra as Record<string, unknown> | undefined)
-    ?.googleWebClientId;
-  if (typeof fromExtra === 'string' && fromExtra.length > 0) return fromExtra;
-  const fromEnv = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
-  if (typeof fromEnv === 'string' && fromEnv.length > 0) return fromEnv;
-  return null;
+function clientId(name: 'googleWebClientId' | 'googleIosClientId'): string {
+  const extra = Constants.expoConfig?.extra?.[name];
+  const env = name === 'googleWebClientId' ? process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID : process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
+  return typeof extra === 'string' && extra.trim() ? extra.trim() : env?.trim() ?? '';
 }
 
-function ensureGoogleConfigured(): boolean {
-  if (googleConfigured) return true;
-  const webClientId = getGoogleWebClientId();
-  if (!webClientId) return false;
-  GoogleSignin.configure({
-    webClientId,
-    offlineAccess: false,
-    scopes: ['email', 'profile'],
-  });
-  googleConfigured = true;
-  return true;
+// A stale native build must still open the normal email login screen.
+function googleSdk(): typeof import('@react-native-google-signin/google-signin') {
+  if (!TurboModuleRegistry.get('RNGoogleSignin')) throw new Error('oauth_native_build_required');
+  // Native SDK must be loaded lazily so an older build can still open email login.
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  return require('@react-native-google-signin/google-signin');
 }
 
-export function isGoogleAvailable(): boolean {
-  return getGoogleWebClientId() !== null;
-}
-
-export async function isAppleAvailable(): Promise<boolean> {
-  if (Platform.OS !== 'ios') return false;
+export async function socialSignIn(provider: SocialProvider): Promise<SocialAuthResponse> {
+  if (provider === 'apple' && Platform.OS !== 'ios') throw new Error('oauth_unavailable');
+  if (provider === 'google') {
+    const webClientId = clientId('googleWebClientId');
+    const iosClientId = clientId('googleIosClientId');
+    if (!webClientId || (Platform.OS === 'ios' && !iosClientId)) throw new Error('oauth_not_configured');
+    const sdk = googleSdk();
+    sdk.GoogleSignin.configure({ webClientId, iosClientId: iosClientId || undefined, offlineAccess: true });
+    if (Platform.OS === 'android') await sdk.GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+    const challenge = await ApiClient.post<{ challenge_id: string; nonce: string }>(`/auth/social/google/challenge`, {});
+    try {
+      // A fresh code is exchanged exactly once by our backend.
+      await sdk.GoogleSignin.signOut();
+      const result = await sdk.GoogleSignin.signIn();
+      if (!sdk.isSuccessResponse(result)) throw new SocialAuthCancelled();
+      if (!result.data.serverAuthCode) throw new Error('oauth_no_token');
+      return await ApiClient.post<SocialAuthResponse>('/auth/social/google', { challenge_id: challenge.challenge_id, authorization_code: result.data.serverAuthCode });
+    } catch (error) {
+      if (sdk.isErrorWithCode(error) && (error.code === sdk.statusCodes.SIGN_IN_CANCELLED || error.code === sdk.statusCodes.IN_PROGRESS)) throw new SocialAuthCancelled();
+      throw error;
+    }
+  }
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const apple: typeof import('expo-apple-authentication') = require('expo-apple-authentication');
+  if (!await apple.isAvailableAsync()) throw new Error('oauth_unavailable');
+  const challenge = await ApiClient.post<{ challenge_id: string; nonce: string }>('/auth/social/apple/challenge', {});
   try {
-    return await AppleAuthentication.isAvailableAsync();
-  } catch {
-    return false;
-  }
-}
-
-export type OAuthResult =
-  | { ok: true; payload: ClaimGuestOAuthRequest }
-  | { ok: false; reason: 'cancelled' | 'unavailable' | 'no_token' | 'error'; message?: string };
-
-/**
- * signInWithGoogle — открывает native Google dialog, возвращает claim payload.
- *
- * Возможные причины отказа:
- *   - 'unavailable' — webClientId не задан или Google Play Services отсутствует.
- *   - 'cancelled'   — юзер закрыл native sheet.
- *   - 'no_token'    — Google не вернул idToken.
- *   - 'error'       — прочая ошибка SDK.
- */
-export async function signInWithGoogle(): Promise<OAuthResult> {
-  if (!ensureGoogleConfigured()) {
-    return { ok: false, reason: 'unavailable', message: 'Google webClientId не настроен' };
-  }
-  try {
-    if (Platform.OS === 'android') {
-      await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
-    }
-    const response = await GoogleSignin.signIn();
-    if (!isSuccessResponse(response)) {
-      return { ok: false, reason: 'cancelled' };
-    }
-    const idToken = response.data.idToken;
-    if (!idToken) return { ok: false, reason: 'no_token' };
-    const email = response.data.user.email ?? '';
-    const display_name = response.data.user.name ?? undefined;
-    return {
-      ok: true,
-      payload: { provider: 'google', id_token: idToken, email, display_name },
-    };
-  } catch (err) {
-    const code = (err as { code?: string }).code;
-    if (
-      code === statusCodes.SIGN_IN_CANCELLED ||
-      code === statusCodes.IN_PROGRESS
-    ) {
-      return { ok: false, reason: 'cancelled' };
-    }
-    return {
-      ok: false,
-      reason: 'error',
-      message: err instanceof Error ? err.message : 'Google sign-in error',
-    };
-  }
-}
-
-/**
- * signInWithApple — Apple OAuth (только iOS).
- *
- * Apple отдаёт email только при первом sign-in; при повторном — null.
- * Backend должен поддерживать lookup по `oauth_sub` (см. spec).
- */
-export async function signInWithApple(): Promise<OAuthResult> {
-  if (Platform.OS !== 'ios') {
-    return { ok: false, reason: 'unavailable', message: 'Apple Sign-In только на iOS' };
-  }
-  try {
-    const credential = await AppleAuthentication.signInAsync({
-      requestedScopes: [
-        AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
-        AppleAuthentication.AppleAuthenticationScope.EMAIL,
-      ],
-    });
-    const idToken = credential.identityToken;
-    if (!idToken) return { ok: false, reason: 'no_token' };
-    const email = credential.email ?? '';
-    const display_name = credential.fullName
-      ? [credential.fullName.givenName, credential.fullName.familyName]
-          .filter(Boolean)
-          .join(' ') || undefined
-      : undefined;
-    return {
-      ok: true,
-      payload: { provider: 'apple', id_token: idToken, email, display_name },
-    };
-  } catch (err) {
-    const code = (err as { code?: string }).code;
-    if (code === 'ERR_REQUEST_CANCELED') {
-      return { ok: false, reason: 'cancelled' };
-    }
-    return {
-      ok: false,
-      reason: 'error',
-      message: err instanceof Error ? err.message : 'Apple sign-in error',
-    };
+    const credential = await apple.signInAsync({ requestedScopes: [apple.AppleAuthenticationScope.FULL_NAME, apple.AppleAuthenticationScope.EMAIL], nonce: challenge.nonce, state: challenge.challenge_id });
+    if (!credential.identityToken || credential.state !== challenge.challenge_id) throw new Error('oauth_no_token');
+    const display_name = credential.fullName ? [credential.fullName.givenName, credential.fullName.familyName].filter(Boolean).join(' ').slice(0, 80) : undefined;
+    return await ApiClient.post<SocialAuthResponse>('/auth/social/apple', { challenge_id: challenge.challenge_id, identity_token: credential.identityToken, display_name });
+  } catch (error) {
+    if ((error as { code?: string }).code === 'ERR_REQUEST_CANCELED') throw new SocialAuthCancelled();
+    throw error;
   }
 }

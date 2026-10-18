@@ -1,0 +1,10 @@
+const fs = require('fs');
+const path = require('path');
+const root = path.resolve(__dirname, '..');
+const out = path.join(root, '.expo/wordbank-preview');
+fs.mkdirSync(path.join(out, 'fonts'), { recursive: true });
+const source = process.argv[2] || path.resolve(root, '../data/VOCABULARY BANK_Old/A1/lingoiq_a1_vocabulary_batch_001.json');
+fs.writeFileSync(path.join(out, 'fixture.json'), JSON.stringify(JSON.parse(fs.readFileSync(source)).entries[0]));
+for (const [weight, name] of [[400,'400Regular'],[600,'600SemiBold'],[700,'700Bold'],[800,'800ExtraBold'],[900,'900Black']]) fs.copyFileSync(path.join(root, `node_modules/@expo-google-fonts/nunito/${name}/Nunito_${name}.ttf`), path.join(out, `fonts/${weight}.ttf`));
+fs.writeFileSync(path.join(out, 'index.html'), '<!doctype html><html lang="ru"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/style.css"><title>Word bank · local QA</title></head><body><div id="root"></div><script src="/app.js"></script></body></html>');
+console.log('Prepared local QA fixture and fonts. No API calls or device connection.');

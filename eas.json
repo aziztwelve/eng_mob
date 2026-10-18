@@ -8,7 +8,9 @@
       "developmentClient": true,
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://api.lingoiq.online/api/v1"
+        "EXPO_PUBLIC_API_URL": "https://api.lingoiq.online/api/v1",
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "1052284386364-d5u68m1hb5ctle3q02rrpgsbmjjbajh9.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "1052284386364-i9o22tmcgpmc3cea730hntkdi9pu7em5.apps.googleusercontent.com"
       }
     },
     "preview": {
@@ -18,17 +20,25 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://api.lingoiq.online/api/v1"
+        "EXPO_PUBLIC_API_URL": "https://api.lingoiq.online/api/v1",
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "1052284386364-d5u68m1hb5ctle3q02rrpgsbmjjbajh9.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "1052284386364-i9o22tmcgpmc3cea730hntkdi9pu7em5.apps.googleusercontent.com"
       }
     },
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://api.lingoiq.online/api/v1"
+        "EXPO_PUBLIC_API_URL": "https://api.lingoiq.online/api/v1",
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "1052284386364-d5u68m1hb5ctle3q02rrpgsbmjjbajh9.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "1052284386364-i9o22tmcgpmc3cea730hntkdi9pu7em5.apps.googleusercontent.com"
       }
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "ascAppId": "6822121061"
+      }
+    }
   }
 }

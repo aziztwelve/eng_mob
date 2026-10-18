@@ -1,3 +1,4 @@
+import { KeyboardLift } from '@/components/keyboard-lift';
 import React, { useState } from 'react';
 import {
   Pressable,
@@ -46,10 +47,11 @@ export default function PronunciationScreen() {
   const handleReset = () => { mut.reset(); setResetSignal((n) => n + 1); };
 
   return (
-    <View style={{ flex: 1 }}>
+    <KeyboardLift>
       <Stack.Screen options={{ headerShown: false }} />
       <StatusBar barStyle="light-content" />
       <ScrollView
+        keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 6, paddingBottom: 78 + insets.bottom }}
       >
@@ -96,7 +98,7 @@ export default function PronunciationScreen() {
           <Result targetText={target} data={mut.data} onReset={handleReset} />
         )}
       </ScrollView>
-    </View>
+    </KeyboardLift>
   );
 }
 

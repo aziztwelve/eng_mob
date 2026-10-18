@@ -398,6 +398,10 @@ export interface VocabularyBankXPAward {
 }
 
 export interface VocabularyBankAttemptResponse {
+  can_advance?: boolean;
+  is_correct?: boolean;
+  score?: number;
+  assessment_mode?: 'checked' | 'practice' | 'legacy';
   progress: VocabularyBankProgress;
   /** true только если эта попытка завершила слово. */
   just_completed?: boolean;
@@ -516,20 +520,6 @@ export interface Track {
   updated_at?: string;
 }
 
-/** Статус трека в персональном плане пользователя (Phase 8). */
-export type UserTrackStatus = 'active' | 'locked' | 'completed';
-
-/** Элемент персонального плана: трек + статус/порядок/источник. */
-export interface MyTrack extends Track {
-  order_index: number;
-  status: UserTrackStatus | string;
-  source: string;
-}
-
-export interface MyTracksResponse {
-  tracks: MyTrack[];
-}
-
 export interface TrackWithLessons extends Track {
   lessons?: LessonDetails[];
 }
@@ -588,12 +578,6 @@ export interface TrackDictionaryResponse {
   track_code: string;
   entries: TrackVocabularyEntry[];
   total: number;
-}
-
-export interface AddTrackDictionaryResponse {
-  created: string[];
-  skipped: string[];
-  flashcards: Flashcard[];
 }
 
 export interface StepWithVideo {
@@ -1645,27 +1629,7 @@ export type ProficiencyLevelProto =
 export type AgeBracket =
   | '7-12' | '13-17' | '18-24' | '25-34' | '35-44' | '45-54' | '55+';
 
-export type DailyCommitMinutes = 5 | 10 | 15 | 25;
-
-export type PainPoint =
-  | 'fear_speaking' | 'lack_vocab' | 'listening' | 'grammar' | 'consistency';
-
-export type SpeakingSituation =
-  | 'freeze' | 'translate_in_head' | 'too_short' | 'avoid';
-
-export type PastBlocker =
-  | 'boring' | 'too_hard' | 'no_progress' | 'no_fit' | 'no_support';
-
-export type FutureRegret =
-  | 'stay_same' | 'limit_self' | 'pressure' | 'postpone';
-
-export type EmotionalReaction =
-  | 'lose_confidence' | 'upset' | 'burnout' | 'lost';
-
 export type ReminderSlot = 'morning' | 'day' | 'evening' | 'flex';
-
-export type PaywallChoice =
-  | 'annual' | 'monthly' | 'dismissed' | 'special_offer';
 
 /**
  * OnboardingStateResponse — DTO ответа gateway (плоский JSON, без wrappers).
@@ -1679,22 +1643,13 @@ export interface OnboardingStateResponse {
   daily_goal_xp?: number | null;
   motivation: string[];
   signup_source?: string | null;
-  placement_score?: number | null;
   date_of_birth?: string | null; // ISO YYYY-MM-DD
   onboarded_at?: string | null;  // ISO timestamp
   completed: boolean;
 
   // v3:
   age_bracket?: AgeBracket | null;
-  daily_commit_minutes?: DailyCommitMinutes | null;
-  pain_point?: PainPoint | null;
-  speaking_situation?: SpeakingSituation | null;
-  past_blocker?: PastBlocker | null;
-  future_regret?: FutureRegret | null;
-  emotional_reaction?: EmotionalReaction | null;
   reminder_slot?: ReminderSlot | null;
-  paywall_seen_at?: string | null;
-  paywall_choice?: PaywallChoice | null;
 }
 
 /**
@@ -1717,65 +1672,11 @@ export interface PatchOnboardingRequest {
   /** Используйте `motivationPatch()` из `lib/onboarding-patches`. */
   motivation_set?: boolean;
   signup_source?: string;
-  placement_score?: number;
   date_of_birth?: string;
 
   // v3:
   age_bracket?: AgeBracket;
-  daily_commit_minutes?: DailyCommitMinutes;
-  pain_point?: PainPoint;
-  speaking_situation?: SpeakingSituation;
-  past_blocker?: PastBlocker;
-  future_regret?: FutureRegret;
-  emotional_reaction?: EmotionalReaction;
   reminder_slot?: ReminderSlot;
-  paywall_seen_at?: string; // ISO timestamp
-  paywall_choice?: PaywallChoice;
-}
-
-/**
- * GuestSessionRequest — bootstrap анонимного юзера.
- * device_id — UUID v4, генерируется клиентом и хранится локально.
- */
-export interface GuestSessionRequest {
-  device_id: string;
-}
-
-export interface GuestSessionResponse {
-  user_id: string;
-  access_token: string;
-  refresh_token: string;
-  expires_at: string;
-  /** true если был создан новый user; false если переиспользован (idempotent). */
-  created: boolean;
-}
-
-/**
- * ClaimGuestRequest — email/password claim для онбординга v2 (web).
- * В mobile v3 используем OAuth (см. ниже).
- */
-export interface ClaimGuestRequest {
-  email: string;
-  password: string;
-  username: string;
-}
-
-export interface ClaimGuestResponse {
-  user_id: string;
-  access_token: string;
-  refresh_token: string;
-  expires_at: string;
-}
-
-/**
- * ClaimGuestOAuthRequest — OAuth claim (Google / Apple / guest_fake stub).
- * См. spec §2.4.
- */
-export interface ClaimGuestOAuthRequest {
-  provider: 'google' | 'apple' | 'guest_fake';
-  id_token: string;
-  email: string;
-  display_name?: string;
 }
 
 // ============================================================================
@@ -1785,7 +1686,7 @@ export interface ClaimGuestOAuthRequest {
 export interface Flashcard {
   id: string;
   user_id: string;
-  source: 'manual' | 'lesson' | 'mistake' | 'ai_suggestion';
+  source: 'manual' | 'lesson' | 'bank';
   vocabulary_id?: string;
   word: string;
   translation: string;
@@ -1869,7 +1770,7 @@ export interface BulkCreateFlashcardsRequest {
     target_language: string;
     definition?: string;
     example_sentence?: string;
-    source?: string;
+    source?: 'manual' | 'lesson' | 'bank';
     vocabulary_id?: string;
   }>;
 }
@@ -1887,28 +1788,4 @@ export interface PinForTodayRequest {
 export interface ListTodayQueueResponse {
   items: Flashcard[];
   queued_for_date: string;
-}
-
-export interface FlashcardSuggestion {
-  word: string;
-  translation: string;
-  definition?: string;
-  example_sentence?: string;
-  reason?: string;
-  vocabulary_id?: string;
-}
-
-export interface SuggestFlashcardsRequest {
-  level?: string;
-  goal?: string;
-  pain_point?: string;
-  target_language?: string;
-  native_language?: string;
-  count?: number;
-  exclude_words?: string[];
-}
-
-export interface SuggestFlashcardsResponse {
-  items: FlashcardSuggestion[];
-  exhausted: boolean;
 }

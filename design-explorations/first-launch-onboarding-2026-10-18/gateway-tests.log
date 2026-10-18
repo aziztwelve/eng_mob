@@ -1,0 +1,9 @@
+?   	github.com/elearning/gateway/cmd	[no test files]
+?   	github.com/elearning/gateway/internal/app	[no test files]
+?   	github.com/elearning/gateway/internal/client	[no test files]
+?   	github.com/elearning/gateway/internal/config	[no test files]
+?   	github.com/elearning/gateway/internal/config/env	[no test files]
+?   	github.com/elearning/gateway/internal/dto	[no test files]
+?   	github.com/elearning/gateway/internal/errors	[no test files]
+ok  	github.com/elearning/gateway/internal/handler	(cached)
+?   	github.com/elearning/gateway/internal/middleware	[no test files]

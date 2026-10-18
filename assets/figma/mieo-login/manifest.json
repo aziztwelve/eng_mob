@@ -1,0 +1,903 @@
+{
+  "source": "https://www.figma.com/design/BBEZuLQ2VnZlfC6p65sYxN/Mieo---Language-Learning?node-id=364-14961",
+  "fileKey": "BBEZuLQ2VnZlfC6p65sYxN",
+  "selectedNode": "364:14961",
+  "assets": [
+    {
+      "nodeId": "364:14961",
+      "kind": "export",
+      "format": "png",
+      "sizeBytes": 668856,
+      "file": "001-364-14961-export.png"
+    },
+    {
+      "nodeId": "364:14961",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 1013,
+      "file": "002-364-14961-svg.svg"
+    },
+    {
+      "nodeId": "364:14961",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 2823,
+      "file": "003-364-14961-svg.svg"
+    },
+    {
+      "nodeId": "364:14961",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 1378,
+      "file": "004-364-14961-svg.svg"
+    },
+    {
+      "nodeId": "364:14961",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 1074,
+      "file": "005-364-14961-svg.svg"
+    },
+    {
+      "nodeId": "364:14961",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 464,
+      "file": "006-364-14961-svg.svg"
+    },
+    {
+      "nodeId": "364:14961",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 368,
+      "file": "007-364-14961-svg.svg"
+    },
+    {
+      "nodeId": "364:14961",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 369,
+      "file": "008-364-14961-svg.svg"
+    },
+    {
+      "nodeId": "364:14961",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 1074,
+      "file": "009-364-14961-svg.svg"
+    },
+    {
+      "nodeId": "364:14961",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 500,
+      "file": "010-364-14961-svg.svg"
+    },
+    {
+      "nodeId": "364:14961",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 369,
+      "file": "011-364-14961-svg.svg"
+    },
+    {
+      "nodeId": "364:14961",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 482,
+      "file": "012-364-14961-svg.svg"
+    },
+    {
+      "nodeId": "364:14961",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 711,
+      "file": "013-364-14961-svg.svg"
+    },
+    {
+      "nodeId": "364:14961",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 662,
+      "file": "014-364-14961-svg.svg"
+    },
+    {
+      "nodeId": "364:14961",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 2245,
+      "file": "015-364-14961-svg.svg"
+    },
+    {
+      "nodeId": "364:14961",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 2010,
+      "file": "016-364-14961-svg.svg"
+    },
+    {
+      "nodeId": "364:14961",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 368,
+      "file": "017-364-14961-svg.svg"
+    },
+    {
+      "nodeId": "364:14961",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 9592,
+      "file": "018-364-14961-svg.svg"
+    },
+    {
+      "nodeId": "364:14961",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 235,
+      "file": "019-364-14961-svg.svg"
+    },
+    {
+      "nodeId": "364:14961",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 662,
+      "file": "020-364-14961-svg.svg"
+    },
+    {
+      "nodeId": "364:14961",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 368,
+      "file": "021-364-14961-svg.svg"
+    },
+    {
+      "nodeId": "364:14962",
+      "kind": "export",
+      "format": "png",
+      "sizeBytes": 21859,
+      "file": "022-364-14962-export.png"
+    },
+    {
+      "nodeId": "364:14962",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 4348,
+      "file": "023-364-14962-svg.svg"
+    },
+    {
+      "nodeId": "364:14962",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 2823,
+      "file": "024-364-14962-svg.svg"
+    },
+    {
+      "nodeId": "364:14962",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 2010,
+      "file": "025-364-14962-svg.svg"
+    },
+    {
+      "nodeId": "364:14962",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 2245,
+      "file": "026-364-14962-svg.svg"
+    },
+    {
+      "nodeId": "364:15069",
+      "kind": "export",
+      "format": "png",
+      "sizeBytes": 68537,
+      "file": "027-364-15069-export.png"
+    },
+    {
+      "nodeId": "364:15069",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 711,
+      "file": "028-364-15069-svg.svg"
+    },
+    {
+      "nodeId": "364:15069",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 500,
+      "file": "029-364-15069-svg.svg"
+    },
+    {
+      "nodeId": "364:15069",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 369,
+      "file": "030-364-15069-svg.svg"
+    },
+    {
+      "nodeId": "364:15069",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 662,
+      "file": "031-364-15069-svg.svg"
+    },
+    {
+      "nodeId": "364:15069",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 368,
+      "file": "032-364-15069-svg.svg"
+    },
+    {
+      "nodeId": "364:15069",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 1074,
+      "file": "033-364-15069-svg.svg"
+    },
+    {
+      "nodeId": "364:15069",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 369,
+      "file": "034-364-15069-svg.svg"
+    },
+    {
+      "nodeId": "364:15069",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 500,
+      "file": "035-364-15069-svg.svg"
+    },
+    {
+      "nodeId": "364:15069",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 369,
+      "file": "036-364-15069-svg.svg"
+    },
+    {
+      "nodeId": "364:15069",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 368,
+      "file": "037-364-15069-svg.svg"
+    },
+    {
+      "nodeId": "364:15069",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 624,
+      "file": "038-364-15069-svg.svg"
+    },
+    {
+      "nodeId": "364:15069",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 500,
+      "file": "039-364-15069-svg.svg"
+    },
+    {
+      "nodeId": "364:15069",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 235,
+      "file": "040-364-15069-svg.svg"
+    },
+    {
+      "nodeId": "364:15069",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 9592,
+      "file": "041-364-15069-svg.svg"
+    },
+    {
+      "nodeId": "364:15069",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 711,
+      "file": "042-364-15069-svg.svg"
+    },
+    {
+      "nodeId": "364:15069",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 662,
+      "file": "043-364-15069-svg.svg"
+    },
+    {
+      "nodeId": "364:15069",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 368,
+      "file": "044-364-15069-svg.svg"
+    },
+    {
+      "nodeId": "364:15069",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 1074,
+      "file": "045-364-15069-svg.svg"
+    },
+    {
+      "nodeId": "364:15069",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 1378,
+      "file": "046-364-15069-svg.svg"
+    },
+    {
+      "nodeId": "364:15069",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 482,
+      "file": "047-364-15069-svg.svg"
+    },
+    {
+      "nodeId": "364:15126",
+      "kind": "export",
+      "format": "png",
+      "sizeBytes": 13717,
+      "file": "048-364-15126-export.png"
+    },
+    {
+      "nodeId": "364:15126",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 482,
+      "file": "049-364-15126-svg.svg"
+    },
+    {
+      "nodeId": "364:15126",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 711,
+      "file": "050-364-15126-svg.svg"
+    },
+    {
+      "nodeId": "364:15126",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 500,
+      "file": "051-364-15126-svg.svg"
+    },
+    {
+      "nodeId": "364:15126",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 369,
+      "file": "052-364-15126-svg.svg"
+    },
+    {
+      "nodeId": "364:15126",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 369,
+      "file": "053-364-15126-svg.svg"
+    },
+    {
+      "nodeId": "364:15126",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 662,
+      "file": "054-364-15126-svg.svg"
+    },
+    {
+      "nodeId": "364:15126",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 500,
+      "file": "055-364-15126-svg.svg"
+    },
+    {
+      "nodeId": "364:15126",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 464,
+      "file": "056-364-15126-svg.svg"
+    },
+    {
+      "nodeId": "364:15126",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 662,
+      "file": "057-364-15126-svg.svg"
+    },
+    {
+      "nodeId": "364:15126",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 368,
+      "file": "058-364-15126-svg.svg"
+    },
+    {
+      "nodeId": "364:15126",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 368,
+      "file": "059-364-15126-svg.svg"
+    },
+    {
+      "nodeId": "364:15126",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 711,
+      "file": "060-364-15126-svg.svg"
+    },
+    {
+      "nodeId": "364:15126",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 369,
+      "file": "061-364-15126-svg.svg"
+    },
+    {
+      "nodeId": "364:15126",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 500,
+      "file": "062-364-15126-svg.svg"
+    },
+    {
+      "nodeId": "364:15126",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 368,
+      "file": "063-364-15126-svg.svg"
+    },
+    {
+      "nodeId": "364:15126",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 368,
+      "file": "064-364-15126-svg.svg"
+    },
+    {
+      "nodeId": "364:15126",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 464,
+      "file": "065-364-15126-svg.svg"
+    },
+    {
+      "nodeId": "364:15126",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 662,
+      "file": "066-364-15126-svg.svg"
+    },
+    {
+      "nodeId": "364:15126",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 482,
+      "file": "067-364-15126-svg.svg"
+    },
+    {
+      "nodeId": "366:15166",
+      "kind": "export",
+      "format": "png",
+      "sizeBytes": 8230,
+      "file": "068-366-15166-export.png"
+    },
+    {
+      "nodeId": "366:15191",
+      "kind": "export",
+      "format": "png",
+      "sizeBytes": 15738,
+      "file": "069-366-15191-export.png"
+    },
+    {
+      "nodeId": "366:15191",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 235,
+      "file": "070-366-15191-svg.svg"
+    },
+    {
+      "nodeId": "366:15191",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 9592,
+      "file": "071-366-15191-svg.svg"
+    },
+    {
+      "nodeId": "366:15191",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 624,
+      "file": "072-366-15191-svg.svg"
+    },
+    {
+      "nodeId": "366:15191",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 1074,
+      "file": "073-366-15191-svg.svg"
+    },
+    {
+      "nodeId": "366:15191",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 1378,
+      "file": "074-366-15191-svg.svg"
+    },
+    {
+      "nodeId": "366:15191",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 1074,
+      "file": "075-366-15191-svg.svg"
+    },
+    {
+      "nodeId": "366:15241",
+      "kind": "export",
+      "format": "png",
+      "sizeBytes": 5299,
+      "file": "076-366-15241-export.png"
+    },
+    {
+      "nodeId": "366:15241",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 1378,
+      "file": "077-366-15241-svg.svg"
+    },
+    {
+      "nodeId": "366:15241",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 1074,
+      "file": "078-366-15241-svg.svg"
+    },
+    {
+      "nodeId": "366:15241",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 1074,
+      "file": "079-366-15241-svg.svg"
+    },
+    {
+      "nodeId": "364:15104",
+      "kind": "export",
+      "format": "png",
+      "sizeBytes": 7078,
+      "file": "080-364-15104-export.png"
+    },
+    {
+      "nodeId": "364:15104",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 2992,
+      "file": "081-364-15104-svg.svg"
+    },
+    {
+      "nodeId": "364:15128",
+      "kind": "export",
+      "format": "png",
+      "sizeBytes": 3887,
+      "file": "082-364-15128-export.png"
+    },
+    {
+      "nodeId": "364:15128",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 369,
+      "file": "083-364-15128-svg.svg"
+    },
+    {
+      "nodeId": "364:15128",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 662,
+      "file": "084-364-15128-svg.svg"
+    },
+    {
+      "nodeId": "364:15128",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 500,
+      "file": "085-364-15128-svg.svg"
+    },
+    {
+      "nodeId": "364:15128",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 369,
+      "file": "086-364-15128-svg.svg"
+    },
+    {
+      "nodeId": "364:15128",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 500,
+      "file": "087-364-15128-svg.svg"
+    },
+    {
+      "nodeId": "364:15128",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 369,
+      "file": "088-364-15128-svg.svg"
+    },
+    {
+      "nodeId": "364:15128",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 662,
+      "file": "089-364-15128-svg.svg"
+    },
+    {
+      "nodeId": "364:15128",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 500,
+      "file": "090-364-15128-svg.svg"
+    },
+    {
+      "nodeId": "364:15128",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 662,
+      "file": "091-364-15128-svg.svg"
+    },
+    {
+      "nodeId": "364:15127",
+      "kind": "export",
+      "format": "png",
+      "sizeBytes": 3579,
+      "file": "092-364-15127-export.png"
+    },
+    {
+      "nodeId": "364:15127",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 711,
+      "file": "093-364-15127-svg.svg"
+    },
+    {
+      "nodeId": "364:15127",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 369,
+      "file": "094-364-15127-svg.svg"
+    },
+    {
+      "nodeId": "364:15127",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 464,
+      "file": "095-364-15127-svg.svg"
+    },
+    {
+      "nodeId": "364:15127",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 368,
+      "file": "096-364-15127-svg.svg"
+    },
+    {
+      "nodeId": "364:15127",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 368,
+      "file": "097-364-15127-svg.svg"
+    },
+    {
+      "nodeId": "364:15127",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 482,
+      "file": "098-364-15127-svg.svg"
+    },
+    {
+      "nodeId": "364:15127",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 482,
+      "file": "099-364-15127-svg.svg"
+    },
+    {
+      "nodeId": "364:15127",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 711,
+      "file": "100-364-15127-svg.svg"
+    },
+    {
+      "nodeId": "364:15127",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 662,
+      "file": "101-364-15127-svg.svg"
+    },
+    {
+      "nodeId": "364:15127",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 500,
+      "file": "102-364-15127-svg.svg"
+    },
+    {
+      "nodeId": "364:15127",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 464,
+      "file": "103-364-15127-svg.svg"
+    },
+    {
+      "nodeId": "364:15127",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 368,
+      "file": "104-364-15127-svg.svg"
+    },
+    {
+      "nodeId": "364:15127",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 368,
+      "file": "105-364-15127-svg.svg"
+    },
+    {
+      "nodeId": "366:15192",
+      "kind": "export",
+      "format": "png",
+      "sizeBytes": 3276,
+      "file": "106-366-15192-export.png"
+    },
+    {
+      "nodeId": "366:15192",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 235,
+      "file": "107-366-15192-svg.svg"
+    },
+    {
+      "nodeId": "366:15193",
+      "kind": "export",
+      "format": "png",
+      "sizeBytes": 162,
+      "file": "108-366-15193-export.png"
+    },
+    {
+      "nodeId": "366:15193",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 235,
+      "file": "109-366-15193-svg.svg"
+    },
+    {
+      "nodeId": "366:15195",
+      "kind": "export",
+      "format": "png",
+      "sizeBytes": 162,
+      "file": "110-366-15195-export.png"
+    },
+    {
+      "nodeId": "366:15195",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 234,
+      "file": "111-366-15195-svg.svg"
+    },
+    {
+      "nodeId": "366:15242",
+      "kind": "export",
+      "format": "png",
+      "sizeBytes": 2854,
+      "file": "112-366-15242-export.png"
+    },
+    {
+      "nodeId": "366:15242",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 1378,
+      "file": "113-366-15242-svg.svg"
+    },
+    {
+      "nodeId": "366:15246",
+      "kind": "export",
+      "format": "png",
+      "sizeBytes": 2465,
+      "file": "114-366-15246-export.png"
+    },
+    {
+      "nodeId": "366:15246",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 1074,
+      "file": "115-366-15246-svg.svg"
+    },
+    {
+      "nodeId": "366:15246",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 1074,
+      "file": "116-366-15246-svg.svg"
+    },
+    {
+      "nodeId": "364:14963",
+      "kind": "export",
+      "format": "png",
+      "sizeBytes": 149,
+      "file": "117-364-14963-export.png"
+    },
+    {
+      "nodeId": "364:14963",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 4348,
+      "file": "118-364-14963-svg.svg"
+    },
+    {
+      "nodeId": "364:14970",
+      "kind": "export",
+      "format": "png",
+      "sizeBytes": 6012,
+      "file": "119-364-14970-export.png"
+    },
+    {
+      "nodeId": "364:14970",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 4348,
+      "file": "120-364-14970-svg.svg"
+    },
+    {
+      "nodeId": "364:14977",
+      "kind": "export",
+      "format": "png",
+      "sizeBytes": 3284,
+      "file": "121-364-14977-export.png"
+    },
+    {
+      "nodeId": "364:14977",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 2823,
+      "file": "122-364-14977-svg.svg"
+    },
+    {
+      "nodeId": "364:14985",
+      "kind": "export",
+      "format": "png",
+      "sizeBytes": 149,
+      "file": "123-364-14985-export.png"
+    },
+    {
+      "nodeId": "364:14985",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 2010,
+      "file": "124-364-14985-svg.svg"
+    },
+    {
+      "nodeId": "364:14992",
+      "kind": "export",
+      "format": "png",
+      "sizeBytes": 149,
+      "file": "125-364-14992-export.png"
+    },
+    {
+      "nodeId": "364:14992",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 2245,
+      "file": "126-364-14992-svg.svg"
+    },
+    {
+      "nodeId": "364:14999",
+      "kind": "export",
+      "format": "png",
+      "sizeBytes": 2272,
+      "file": "127-364-14999-export.png"
+    },
+    {
+      "nodeId": "364:14999",
+      "kind": "svg",
+      "format": "svg",
+      "sizeBytes": 2245,
+      "file": "128-364-14999-svg.svg"
+    }
+  ]
+}

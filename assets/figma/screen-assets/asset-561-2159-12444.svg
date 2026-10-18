@@ -1,0 +1,19 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="120.461" height="86.4545" viewBox="0 0 120.461 86.4545" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Group 40126">
+<path id="Rectangle 125" d="M3.22761 26.3534C1.51233 12.3481 12.4404 1.23978e-05 26.5503 1.23978e-05C40.6602 1.23978e-05 51.5882 12.3481 49.8729 26.3533L47.94 42.1357C46.6163 52.9433 37.4386 61.0656 26.5503 61.0656C15.6619 61.0656 6.4842 52.9434 5.16054 42.1357L3.22761 26.3534Z" fill="#FFAC71"/>
+<g id="Rectangle 126" filter="url(#filter0_d_0_94)">
+<path d="M54.5935 37.2791C52.3379 18.7829 66.7721 2.48146 85.4053 2.48146C104.038 2.48146 118.473 18.7829 116.217 37.2791L113.634 58.459C111.894 72.7278 99.7798 83.4545 85.4053 83.4545C71.0308 83.4545 58.9165 72.7278 57.1764 58.459L54.5935 37.2791Z" fill="#FFAC71"/>
+</g>
+</g>
+<defs>
+<filter id="filter0_d_0_94" x="51.3608" y="2.48146" width="65.0889" height="83.973" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feOffset dx="-3" dy="3"/>
+<feComposite in2="hardAlpha" operator="out"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.65 0"/>
+<feBlend mode="soft-light" in2="BackgroundImageFix" result="effect1_dropShadow_0_94"/>
+<feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_0_94" result="shape"/>
+</filter>
+</defs>
+</svg>

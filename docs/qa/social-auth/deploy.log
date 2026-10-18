@@ -1,0 +1,56 @@
+From github.com:aziztwelve/eng_go
+ * branch              dev        -> FETCH_HEAD
+   85181fe1..ae6de7db  dev        -> origin/dev
+Updating 85181fe1..ae6de7db
+Fast-forward
+ deploy/env/auth.env.template                       |   9 +
+ docs/tasks/social-sign-in-2026-10-18.md            |  34 ++
+ scripts/test_social_auth_database.py               |  54 ++++
+ .../auth-service/internal/api/auth/v1/social.go    |  39 +++
+ .../internal/repository/auth/social.go             |  70 ++++
+ .../auth-service/internal/service/auth/claim.go    |  67 +---
+ .../internal/service/auth/claim_oauth_test.go      | 172 +---------
+ .../auth-service/internal/service/auth/service.go  |   4 +
+ .../auth-service/internal/service/auth/social.go   |  91 ++++++
+ .../internal/service/auth/social_test.go           | 110 +++++++
+ services/auth-service/internal/service/service.go  |   2 +
+ services/auth-service/internal/social/verifier.go  | 249 +++++++++++++++
+ .../auth-service/internal/social/verifier_test.go  | 140 ++++++++
+ .../migrations/005_social_auth_challenges.sql      |   8 +
+ services/gateway/internal/app/app.go               |   2 +
+ services/gateway/internal/client/auth.go           |   7 +
+ services/gateway/internal/handler/social_auth.go   |  63 ++++
+ .../gateway/internal/handler/social_auth_test.go   |  37 +++
+ shared/pkg/proto/auth/v1/auth.pb.go                | 351 ++++++++++++++++++---
+ shared/pkg/proto/auth/v1/auth_grpc.pb.go           |  80 ++++-
+ shared/proto/auth/v1/auth.proto                    |  18 ++
+ 21 files changed, 1334 insertions(+), 273 deletions(-)
+ create mode 100644 docs/tasks/social-sign-in-2026-10-18.md
+ create mode 100644 scripts/test_social_auth_database.py
+ create mode 100644 services/auth-service/internal/api/auth/v1/social.go
+ create mode 100644 services/auth-service/internal/repository/auth/social.go
+ create mode 100644 services/auth-service/internal/service/auth/social.go
+ create mode 100644 services/auth-service/internal/service/auth/social_test.go
+ create mode 100644 services/auth-service/internal/social/verifier.go
+ create mode 100644 services/auth-service/internal/social/verifier_test.go
+ create mode 100644 services/auth-service/migrations/005_social_auth_challenges.sql
+ create mode 100644 services/gateway/internal/handler/social_auth.go
+ create mode 100644 services/gateway/internal/handler/social_auth_test.go
+built auth-service
+built user-service
+built course-service
+built video-service
+built quiz-service
+built gamification-service
+built step-validation-service
+built srs-service
+built social-service
+built notifications-service
+built ai-service
+built gateway
+BEGIN
+CREATE TABLE
+CREATE INDEX
+COMMIT
+Stopped previous service processes: 12
+rmdir: failed to remove '/var/www/html/elearning/bin-social-JaaLW0': Directory not empty

@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, ScrollView } from 'react-native';
+import { Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { FeedbackBar, type FeedbackState } from './FeedbackBar';
+import { SKY } from './sky-lesson-header';
+import { SkyCard, SkyLabel, SkyMissing, SkyOption, SkyStepLayout, resolveChoice, skyFont } from './sky-ui';
 import { parseStepContent, type StepComponentProps } from './step-types';
 
 /**
@@ -16,6 +18,8 @@ interface QuizContentNew {
   explanation?: string;
 }
 
+const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
+
 export function QuizInteractiveStep({ step, onSubmit, onContinue, isLast }: StepComponentProps) {
   const { t } = useTranslation();
   const content = parseStepContent<QuizContentNew>(step);
@@ -23,13 +27,7 @@ export function QuizInteractiveStep({ step, onSubmit, onContinue, isLast }: Step
   const [state, setState] = useState<FeedbackState>({ kind: 'idle' });
 
   if (!content || !content.options) {
-    return (
-      <View className="p-6">
-        <Text className="text-muted-foreground">
-          Не phase-2 quiz формат (`{`{ options: [{ text, is_correct }] }`}`).
-        </Text>
-      </View>
-    );
+    return <SkyMissing message={t('lesson.parse_error')} />;
   }
 
   const locked = state.kind !== 'idle';
@@ -44,11 +42,7 @@ export function QuizInteractiveStep({ step, onSubmit, onContinue, isLast }: Step
       setState(
         resp.is_correct
           ? { kind: 'correct', explanation: resp.explanation ?? content.explanation }
-          : {
-              kind: 'wrong',
-              explanation: resp.explanation ?? content.explanation,
-              correctText,
-            },
+          : { kind: 'wrong', explanation: resp.explanation ?? content.explanation, correctText },
       );
     } catch (e) {
       console.error(e);
@@ -57,48 +51,34 @@ export function QuizInteractiveStep({ step, onSubmit, onContinue, isLast }: Step
   };
 
   return (
-    <ScrollView className="flex-1 px-4 pt-4" contentContainerClassName="pb-4">
-      {content.instruction && (
-        <Text className="text-muted-foreground text-sm font-bold mb-3">{t('lesson.instruction.quiz')}</Text>
-      )}
-      <View className="bg-[rgba(255,255,255,0.10)] rounded-2xl border border-[rgba(255,255,255,0.22)] p-4 mb-5">
-        <Text className="text-foreground text-lg font-black">{content.question}</Text>
-      </View>
+    <SkyStepLayout
+      footer={
+        <FeedbackBar
+          state={state}
+          canSubmit={picked !== null}
+          onSubmit={handleSubmit}
+          onContinue={onContinue}
+          isLast={isLast}
+        />
+      }
+    >
+      <SkyCard>
+        {content.instruction ? <SkyLabel>{t('lesson.instruction.quiz')}</SkyLabel> : null}
+        <Text style={{ fontFamily: skyFont.title, fontSize: 20, lineHeight: 27, color: SKY.ink }}>{content.question}</Text>
+      </SkyCard>
 
-      <View className="gap-2 mb-5">
-        {content.options.map((opt, i) => {
-          const isPicked = picked === i;
-          const showCorrect = state.kind === 'correct' && isPicked;
-          const showWrong = state.kind === 'wrong' && isPicked;
-          const showCorrectOnReveal = state.kind === 'wrong' && opt.is_correct;
-          return (
-            <Pressable
-              key={i}
-              disabled={locked}
-              onPress={() => setPicked(i)}
-              className={`rounded-2xl border-2 p-4 ${
-                showCorrect || showCorrectOnReveal
-                  ? 'border-emerald-500 bg-emerald-500/15'
-                  : showWrong
-                    ? 'border-red-500 bg-red-500/10'
-                    : isPicked
-                      ? 'border-[#FFDF5E] bg-[rgba(255,223,94,0.18)]'
-                      : 'border-[rgba(255,255,255,0.22)] bg-[rgba(255,255,255,0.12)]'
-              }`}
-            >
-              <Text className="font-bold text-foreground">{opt.text}</Text>
-            </Pressable>
-          );
-        })}
+      <View style={{ gap: 12 }}>
+        {content.options.map((opt, i) => (
+          <SkyOption
+            key={i}
+            label={opt.text}
+            badge={LETTERS[i]}
+            disabled={locked}
+            onPress={() => setPicked(i)}
+            state={resolveChoice(picked === i, opt.is_correct, state.kind)}
+          />
+        ))}
       </View>
-
-      <FeedbackBar
-        state={state}
-        canSubmit={picked !== null}
-        onSubmit={handleSubmit}
-        onContinue={onContinue}
-        isLast={isLast}
-      />
-    </ScrollView>
+    </SkyStepLayout>
   );
 }

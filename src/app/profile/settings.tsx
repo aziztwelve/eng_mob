@@ -1,19 +1,40 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, Switch, Pressable, StyleSheet } from 'react-native';
-import { Stack } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Modal, Pressable, ScrollView, Switch, Text, View, useWindowDimensions } from 'react-native';
+import { Stack, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { Globe } from 'lucide-react-native';
+import Toast from 'react-native-toast-message';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Bell, Check, ChevronLeft, ChevronRight, FileText, HelpCircle, Languages, LogOut, Moon, Shield, Trash2, User, Volume2 } from 'lucide-react-native';
 import { useFxPreferences } from '@/lib/fx-prefs';
 import { fx } from '@/lib/fx';
 import { getCurrentLang, setUiLang, type UiLang } from '@/lib/i18n';
-import { UI_LANGUAGES } from '@/lib/supported-languages';
-import { glass } from '@/components/sunset';
+import { useLogout } from '@/hooks/use-auth';
+
+// Figma "Profile Setting" (304:6117): "Other Settings" list.
+const LANG_NAMES: Record<UiLang, string> = { ru: 'Русский', en: 'English', kk: 'Қазақша' };
+
+function Row({ icon, label, right, onPress, disabled }: { icon: React.ReactNode; label: string; right?: React.ReactNode; onPress?: () => void; disabled?: boolean }) {
+  return (
+    <Pressable accessibilityRole={onPress ? 'button' : undefined} onPress={onPress} disabled={!onPress || disabled} className="flex-row items-center gap-4 py-3">
+      {icon}
+      <Text className="flex-1 font-nunito-semibold text-sm text-mieo-heading">{label}</Text>
+      {right}
+    </Pressable>
+  );
+}
+
+function Divider() {
+  return <View className="h-px w-full bg-mieo-stroke" />;
+}
 
 export default function SettingsScreen() {
+  const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { prefs, setPrefs } = useFxPreferences();
   const { t } = useTranslation();
+  const { width } = useWindowDimensions();
+  const contentWidth = Math.min(width, 375);
+  const { prefs, setPrefs } = useFxPreferences();
+  const logout = useLogout();
   const [lang, setLang] = useState<UiLang>(getCurrentLang());
 
   const changeLang = async (next: UiLang) => {
@@ -23,148 +44,65 @@ export default function SettingsScreen() {
     fx.tap();
   };
 
-  return (
-    <View style={{ flex: 1 }}>
-      <Stack.Screen options={{ title: t('profile.settings.title') }} />
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 40 + insets.bottom }}
-      >
-        <Text style={s.sectionLabel}>{t('profile.settings.language_section')}</Text>
+  const [langOpen, setLangOpen] = useState(false);
 
-        <View style={[glass, s.langCard]}>
-          <View style={s.langHead}>
-            <Globe size={20} color="#FFD84A" />
-            <Text style={s.langTitle}>{t('profile.settings.language')}</Text>
-          </View>
-          <View style={s.langRow}>
-            {UI_LANGUAGES.map((l) => {
-              const active = l.code === lang;
-              return (
-                <Pressable
-                  key={l.code}
-                  onPress={() => changeLang(l.code)}
-                  style={[s.langOption, active && s.langOptionActive]}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: active }}
-                >
-                  <Text style={s.langFlag}>{l.flag}</Text>
-                  <Text style={[s.langName, active && s.langNameActive]} numberOfLines={1}>
-                    {l.nameNative}
-                  </Text>
-                  {active && <View style={s.langDot} />}
-                </Pressable>
-              );
-            })}
-          </View>
-          <Text style={s.langNote}>
-            {t('profile.settings.language_note')}
-          </Text>
+  const comingSoon = () => Toast.show({ type: 'info', text1: t('profile.coming_soon') });
+
+  return (
+    <View className="flex-1 bg-mieo-bg">
+      <Stack.Screen options={{ headerShown: false }} />
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingTop: insets.top + 12, paddingBottom: 40, alignItems: 'center' }}>
+        <View className="flex-row items-center gap-4 px-4" style={{ width: contentWidth }}>
+          <Pressable accessibilityRole="button" accessibilityLabel={t('common.back')} onPress={() => router.back()} className="rounded-xl border-[1.5px] border-mieo-stroke bg-mieo-surface p-3">
+            <ChevronLeft size={24} color="#171A1C" />
+          </Pressable>
+          <Text className="font-nunito-extrabold text-[22px] text-mieo-heading">{t('profile.settings')}</Text>
         </View>
 
-        <Text style={s.sectionLabel}>{t('profile.settings.effects_section')}</Text>
-
-        <SettingsRow
-          emoji="📳"
-          title={t('profile.settings.haptics')}
-          description={t('profile.settings.haptics_desc')}
-          value={prefs.haptics}
-          onValueChange={(v) => {
-            void setPrefs({ haptics: v });
-            if (v) fx.tap();
-          }}
-        />
-
-        <SettingsRow
-          emoji="🔊"
-          title={t('profile.settings.sounds')}
-          description={t('profile.settings.sounds_desc')}
-          value={prefs.sounds}
-          onValueChange={(v) => {
-            void setPrefs({ sounds: v });
-            if (v) fx.onXPGain();
-          }}
-        />
-
-        <Text style={s.note}>
-          {t('profile.settings.note')}
-        </Text>
+        <View className="mt-6 px-4" style={{ width: contentWidth }}>
+          <Text className="mb-3 font-nunito-extrabold text-[22px] text-mieo-heading">{t('profile.other_settings')}</Text>
+          <View className="rounded-3xl border-[1.5px] border-mieo-stroke bg-mieo-surface px-4 py-2">
+            <Row icon={<User size={24} color="#171A1C" />} label={t('profile.edit_profile')} right={<ChevronRight size={20} color="#171A1C" />} onPress={() => router.push('/profile/edit' as never)} />
+            <Divider />
+            <Row icon={<Bell size={24} color="#171A1C" />} label={t('profile.disable_notifications')} right={<ChevronRight size={20} color="#171A1C" />} onPress={() => router.push('/profile/notifications')} />
+            <Divider />
+            <Row icon={<Moon size={24} color="#171A1C" />} label={t('profile.dark_mode')} right={<Switch value={false} disabled />} onPress={comingSoon} />
+            <Divider />
+            <Row icon={<Languages size={24} color="#171A1C" />} label={t('profile.language')} right={<Text className="font-nunito-semibold text-sm text-mieo-body">{LANG_NAMES[lang]}</Text>} onPress={() => setLangOpen(true)} />
+            <Divider />
+            <Row icon={<Volume2 size={24} color="#171A1C" />} label={t('profile.sounds')} right={<Switch value={prefs.sounds} onValueChange={(v) => setPrefs({ sounds: v })} />} />
+            <Divider />
+            <Row icon={<Volume2 size={24} color="#171A1C" />} label={t('profile.haptics')} right={<Switch value={prefs.haptics} onValueChange={(v) => setPrefs({ haptics: v })} />} />
+            <Divider />
+            <Row icon={<HelpCircle size={24} color="#171A1C" />} label={t('profile.help_support')} right={<ChevronRight size={20} color="#171A1C" />} onPress={comingSoon} />
+            <Divider />
+            <Row icon={<FileText size={24} color="#171A1C" />} label={t('profile.terms')} right={<ChevronRight size={20} color="#171A1C" />} onPress={comingSoon} />
+            <Divider />
+            <Row icon={<Shield size={24} color="#171A1C" />} label={t('profile.privacy')} right={<ChevronRight size={20} color="#171A1C" />} onPress={comingSoon} />
+            <Divider />
+            <Row icon={<LogOut size={24} color="#E26A6A" />} label={logout.isPending ? t('profile.logging_out') : t('profile.logout')} onPress={() => logout.mutate()} disabled={logout.isPending} />
+            <Divider />
+            <Row icon={<Trash2 size={24} color="#E26A6A" />} label={t('profile.delete_account')} right={<ChevronRight size={20} color="#E26A6A" />} onPress={() => router.push('/profile/delete-account' as never)} />
+          </View>
+        </View>
       </ScrollView>
+      {/* Language picker */}
+      <Modal visible={langOpen} animationType="slide" onRequestClose={() => setLangOpen(false)}>
+        <View className="flex-1 bg-mieo-bg">
+          <View className="flex-row items-center justify-center px-4 pt-16 pb-4">
+            <Text className="font-nunito-black text-2xl text-mieo-heading">{t('profile.language')}</Text>
+          </View>
+          {(['ru', 'en', 'kk'] as UiLang[]).map((code) => {
+            const selected = lang === code;
+            return (
+              <Pressable key={code} accessibilityRole="button" onPress={() => { void changeLang(code); setLangOpen(false); }} className={`mx-4 mb-4 h-[52px] flex-row items-center px-4 rounded-xl border-[1.5px] bg-mieo-surface ${selected ? 'border-mieo-primary' : 'border-mieo-dim'}`}>
+                <Text className="flex-1 font-nunito-semibold text-base text-mieo-heading">{LANG_NAMES[code]}</Text>
+                {selected && <Check size={20} color="#59C8FF" />}
+              </Pressable>
+            );
+          })}
+        </View>
+      </Modal>
     </View>
   );
 }
-
-function SettingsRow({
-  emoji,
-  title,
-  description,
-  value,
-  onValueChange,
-}: {
-  emoji: string;
-  title: string;
-  description: string;
-  value: boolean;
-  onValueChange: (v: boolean) => void;
-}) {
-  return (
-    <View style={[glass, s.row]}>
-      <Text style={{ fontSize: 24 }}>{emoji}</Text>
-      <View style={{ flex: 1 }}>
-        <Text style={s.rowTitle}>{title}</Text>
-        <Text style={s.rowDesc}>{description}</Text>
-      </View>
-      <Switch
-        value={value}
-        onValueChange={onValueChange}
-        trackColor={{ false: 'rgba(255,255,255,0.25)', true: '#FFB338' }}
-        thumbColor="#ffffff"
-        ios_backgroundColor="rgba(255,255,255,0.25)"
-      />
-    </View>
-  );
-}
-
-const s = StyleSheet.create({
-  sectionLabel: {
-    color: 'rgba(255,255,255,0.7)',
-    textTransform: 'uppercase',
-    fontSize: 12,
-    fontWeight: '900',
-    letterSpacing: 1,
-    marginTop: 6,
-    marginBottom: 2,
-  },
-  row: { borderRadius: 20, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12 },
-  rowTitle: { color: '#fff', fontWeight: '900', fontSize: 15, marginBottom: 3 },
-  rowDesc: { color: 'rgba(255,255,255,0.72)', fontSize: 12, lineHeight: 17 },
-  note: { color: 'rgba(255,255,255,0.6)', fontSize: 12, lineHeight: 18, marginTop: 10, paddingHorizontal: 4 },
-
-  /* Язык приложения */
-  langCard: { borderRadius: 20, padding: 16, gap: 12 },
-  langHead: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  langTitle: { color: '#fff', fontWeight: '900', fontSize: 15 },
-  langRow: { flexDirection: 'row', gap: 8 },
-  langOption: {
-    flex: 1,
-    alignItems: 'center',
-    gap: 6,
-    borderRadius: 14,
-    paddingVertical: 12,
-    paddingHorizontal: 6,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.18)',
-  },
-  langOptionActive: {
-    backgroundColor: 'rgba(255,216,74,0.14)',
-    borderColor: 'rgba(255,216,74,0.55)',
-  },
-  langFlag: { fontSize: 22 },
-  langName: { color: 'rgba(255,255,255,0.75)', fontSize: 12, fontWeight: '800' },
-  langNameActive: { color: '#FFD84A' },
-  langDot: {
-    width: 6, height: 6, borderRadius: 3, backgroundColor: '#FFD84A',
-  },
-  langNote: { color: 'rgba(255,255,255,0.55)', fontSize: 11.5, lineHeight: 16 },
-});

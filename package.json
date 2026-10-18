@@ -1,6 +1,6 @@
 {
   "name": "eng_mob",
-  "main": "expo-router/entry",
+  "main": "index.js",
   "version": "1.0.0",
   "scripts": {
     "start": "expo start",
@@ -51,13 +51,14 @@
     "i18next": "^26.2.0",
     "lottie-react-native": "~7.3.4",
     "lucide-react-native": "^1.8.0",
-    "nativewind": "^4.2.3",
+    "nativewind": "^4.2.7",
     "phosphor-react-native": "^3.0.6",
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "react-hook-form": "^7.72.1",
     "react-i18next": "^17.0.8",
     "react-native": "0.83.6",
+    "react-native-css-interop": "^0.2.7",
     "react-native-gesture-handler": "~2.30.0",
     "react-native-markdown-display": "^7.0.2",
     "react-native-paper": "^5.15.1",

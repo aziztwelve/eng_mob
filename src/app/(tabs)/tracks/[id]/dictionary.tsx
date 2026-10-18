@@ -1,14 +1,12 @@
+import { KeyboardLift } from '@/components/keyboard-lift';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
-import { BookOpen, Check, Search } from 'lucide-react-native';
-import Toast from 'react-native-toast-message';
+import { BookOpen, Search } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 
-import { useAddTrackDictionaryWords, useTrackDictionary } from '@/hooks/use-tracks';
+import { useTrackDictionary } from '@/hooks/use-tracks';
 
-const CTA = ['#A8243F', '#CC5A1F'] as const;
 const glass = {
   backgroundColor: 'rgba(255,255,255,0.14)',
   borderWidth: 1,
@@ -20,9 +18,7 @@ export default function TrackDictionaryScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [search, setSearch] = useState('');
   const [query, setQuery] = useState('');
-  const [selected, setSelected] = useState<Set<string>>(new Set());
   const dictionary = useTrackDictionary(id, query);
-  const addWords = useAddTrackDictionaryWords(id);
 
   useEffect(() => {
     const timer = setTimeout(() => setQuery(search.trim()), 250);
@@ -30,37 +26,11 @@ export default function TrackDictionaryScreen() {
   }, [search]);
 
   const entries = dictionary.data?.entries ?? [];
-  const available = entries.filter((entry) => !entry.added);
-  const selectedIDs = [...selected].filter((vocabularyID) => available.some((entry) => entry.vocabulary.id === vocabularyID));
-
-  const toggle = (vocabularyID: string) => {
-    setSelected((current) => {
-      const next = new Set(current);
-      if (next.has(vocabularyID)) next.delete(vocabularyID);
-      else next.add(vocabularyID);
-      return next;
-    });
-  };
-
-  const add = async (ids: string[]) => {
-    if (!ids.length) return;
-    try {
-      const result = await addWords.mutateAsync(ids);
-      setSelected(new Set());
-      Toast.show({
-        type: 'success',
-        text1: t('dict.added_toast'),
-        text2: t('dict.added_toast_d', { created: result.created.length, skipped: result.skipped.length }),
-      });
-    } catch {
-      Toast.show({ type: 'error', text1: t('dict.add_failed') });
-    }
-  };
-
   return (
     <View style={{ flex: 1 }}>
       <Stack.Screen options={{ title: t('dict.stack_title') }} />
-      <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
+      <KeyboardLift>
+<ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
         <View>
           <Text style={s.title}>{t('dict.title')}</Text>
           <Text style={s.subtitle}>{t('dict.subtitle')}</Text>
@@ -95,31 +65,20 @@ export default function TrackDictionaryScreen() {
           <View style={{ gap: 10 }}>
             <View style={s.listHeader}>
               <Text style={s.count}>{t('dict.words_count', { count: dictionary.data?.total ?? entries.length })}</Text>
-              {available.length > 0 && (
-                <Pressable onPress={() => setSelected(new Set(available.map((entry) => entry.vocabulary.id)))}>
-                  <Text style={s.link}>{t('dict.select_all')}</Text>
-                </Pressable>
-              )}
             </View>
             {entries.map((entry) => {
-              const checked = entry.added || selected.has(entry.vocabulary.id);
               return (
-                <Pressable
+                <View
                   key={entry.vocabulary.id}
-                  disabled={entry.added}
-                  onPress={() => toggle(entry.vocabulary.id)}
-                  style={[s.word, glass, checked && s.wordSelected]}
+                  style={[s.word, glass]}
                 >
                   <View style={{ flex: 1 }}>
                     <Text style={s.wordTitle}>{entry.vocabulary.word}</Text>
                     <Text style={s.translation}>{entry.vocabulary.translation}</Text>
                     {!!entry.vocabulary.transcription && <Text style={s.transcription}>{entry.vocabulary.transcription}</Text>}
                   </View>
-                  <View style={[s.checkbox, checked && s.checkboxChecked]}>
-                    {checked && <Check size={16} color={entry.added ? '#18351F' : '#3D0A1A'} strokeWidth={3} />}
-                  </View>
                   {entry.added && <Text style={s.added}>{t('dict.in_library')}</Text>}
-                </Pressable>
+                </View>
               );
             })}
           </View>
@@ -131,16 +90,8 @@ export default function TrackDictionaryScreen() {
           </Pressable>
         )}
       </ScrollView>
+</KeyboardLift>
 
-      {selectedIDs.length > 0 && (
-        <View style={s.footer}>
-          <Pressable disabled={addWords.isPending} onPress={() => add(selectedIDs)} style={s.ctaWrap}>
-            <LinearGradient colors={CTA} style={s.cta}>
-              {addWords.isPending ? <ActivityIndicator color="#fff" /> : <Text style={s.ctaText}>{t('dict.add_n', { count: selectedIDs.length })}</Text>}
-            </LinearGradient>
-          </Pressable>
-        </View>
-      )}
     </View>
   );
 }
@@ -155,12 +106,9 @@ const s = StyleSheet.create({
   count: { color: 'rgba(255,255,255,0.68)', fontSize: 13, fontWeight: '800' },
   link: { color: '#FFD84A', fontSize: 13, fontWeight: '900' },
   word: { flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: 19, padding: 14 },
-  wordSelected: { borderColor: 'rgba(255,216,74,0.7)', backgroundColor: 'rgba(255,216,74,0.12)' },
   wordTitle: { color: '#fff', fontSize: 17, fontWeight: '900' },
   translation: { color: 'rgba(255,255,255,0.78)', fontSize: 14, marginTop: 3 },
   transcription: { color: 'rgba(255,216,74,0.7)', fontSize: 12, marginTop: 3 },
-  checkbox: { width: 26, height: 26, borderRadius: 9, borderWidth: 1, borderColor: 'rgba(255,255,255,0.35)', alignItems: 'center', justifyContent: 'center' },
-  checkboxChecked: { backgroundColor: '#FFD84A', borderColor: '#FFD84A' },
   added: { color: '#9BE7AC', fontSize: 10, fontWeight: '900' },
   empty: { alignItems: 'center', gap: 9, borderRadius: 22, padding: 28, marginTop: 18 },
   emptyEmoji: { fontSize: 38 },
@@ -168,8 +116,4 @@ const s = StyleSheet.create({
   emptyText: { color: 'rgba(255,255,255,0.7)', fontSize: 13, textAlign: 'center', lineHeight: 18 },
   libraryLink: { alignItems: 'center', paddingVertical: 10 },
   libraryLinkText: { color: '#FFD84A', fontWeight: '900' },
-  footer: { position: 'absolute', left: 0, right: 0, bottom: 0, padding: 16, backgroundColor: 'rgba(35,8,28,0.94)' },
-  ctaWrap: { borderRadius: 18, overflow: 'hidden' },
-  cta: { minHeight: 56, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 18 },
-  ctaText: { color: '#fff', fontSize: 16, fontWeight: '900' },
 });

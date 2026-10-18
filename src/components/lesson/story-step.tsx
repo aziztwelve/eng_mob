@@ -1,37 +1,35 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, ScrollView, Image, StyleSheet } from 'react-native';
+import { View, Text, Image, StyleSheet } from 'react-native';
 import Markdown from 'react-native-markdown-display';
 import { useTranslation } from 'react-i18next';
 import { FeedbackBar, type FeedbackState } from './FeedbackBar';
+import { SKY } from './sky-lesson-header';
+import { SkyCard, SkyMissing, SkyOption, SkyStepLayout, skyFont } from './sky-ui';
 import { parseStepContent, type StepComponentProps } from './step-types';
 import type { StoryContent, StoryScene } from '@/types/api';
 
 /**
- * Markdown-стили для двух вариантов в story (main / translation).
- * Цвета из tailwind.config.js (foreground / muted-foreground / primary).
- *
- * `body` — обёртка всего markdown. `paragraph`/`heading*`/`bullet_list`
- * наследуют от body, остальное (bold/italic/code/link) переопределяем.
+ * Markdown-стили для двух вариантов в story (main / translation) на светлом фоне.
  */
 const mdMain = StyleSheet.create({
-  body: { color: '#ffffff', fontSize: 18, fontWeight: '900', lineHeight: 26 },
+  body: { color: SKY.ink, fontFamily: skyFont.title, fontSize: 18, lineHeight: 26 },
   paragraph: { marginTop: 0, marginBottom: 6 },
-  heading1: { fontSize: 22, fontWeight: '900', marginVertical: 4 },
-  heading2: { fontSize: 20, fontWeight: '900', marginVertical: 4 },
-  heading3: { fontSize: 18, fontWeight: '900', marginVertical: 4 },
-  strong: { fontWeight: '900' },
-  em: { fontStyle: 'italic', fontWeight: '900' },
-  link: { color: '#FFD84A', textDecorationLine: 'underline' },
+  heading1: { fontSize: 22, marginVertical: 4 },
+  heading2: { fontSize: 20, marginVertical: 4 },
+  heading3: { fontSize: 18, marginVertical: 4 },
+  strong: { fontFamily: skyFont.title },
+  em: { fontStyle: 'italic' },
+  link: { color: SKY.blueDark, textDecorationLine: 'underline' },
   code_inline: {
-    color: '#ffffff',
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    color: SKY.ink,
+    backgroundColor: '#EEF2F5',
     fontFamily: 'monospace',
     paddingHorizontal: 4,
     borderRadius: 4,
   },
   code_block: {
-    color: '#ffffff',
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    color: SKY.ink,
+    backgroundColor: '#EEF2F5',
     fontFamily: 'monospace',
     padding: 8,
     borderRadius: 8,
@@ -42,14 +40,14 @@ const mdMain = StyleSheet.create({
 });
 
 const mdTranslation = StyleSheet.create({
-  body: { color: '#8B98B0', fontSize: 14, fontWeight: '500', lineHeight: 20 },
+  body: { color: SKY.muted, fontFamily: skyFont.medium, fontSize: 14, lineHeight: 20 },
   paragraph: { marginTop: 0, marginBottom: 4 },
-  strong: { color: '#ffffff', fontWeight: '700' },
+  strong: { color: SKY.ink, fontFamily: skyFont.bold },
   em: { fontStyle: 'italic' },
-  link: { color: '#FFD84A', textDecorationLine: 'underline' },
+  link: { color: SKY.blueDark, textDecorationLine: 'underline' },
   code_inline: {
-    color: '#8B98B0',
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    color: SKY.muted,
+    backgroundColor: '#EEF2F5',
     fontFamily: 'monospace',
     paddingHorizontal: 3,
     borderRadius: 4,
@@ -71,11 +69,7 @@ export function StoryStep({ step, onSubmit, onContinue, isLast }: StepComponentP
   const [state, setState] = useState<FeedbackState>({ kind: 'idle' });
 
   if (!content || scenes.length === 0) {
-    return (
-      <View className="p-6">
-        <Text className="text-muted-foreground">{t('lesson.parse_error')}</Text>
-      </View>
-    );
+    return <SkyMissing message={t('lesson.parse_error')} />;
   }
 
   const scene: StoryScene = scenes[sceneIdx];
@@ -109,90 +103,97 @@ export function StoryStep({ step, onSubmit, onContinue, isLast }: StepComponentP
     else setSceneIdx(sceneIdx + 1);
   };
 
-  if (state.kind === 'correct' || state.kind === 'wrong') {
+  const finished = state.kind === 'correct' || state.kind === 'wrong';
+  const title = content.title ? (
+    <Text style={{ fontFamily: skyFont.title, fontSize: 24, color: SKY.ink, marginBottom: 12 }}>{content.title}</Text>
+  ) : null;
+
+  if (finished) {
     return (
-      <ScrollView className="flex-1 px-4 pt-4" contentContainerClassName="pb-4">
-        {content.title && (
-          <Text className="text-2xl font-black text-foreground mb-4">{content.title}</Text>
-        )}
-        <FeedbackBar
-          state={state}
-          canSubmit={false}
-          onSubmit={() => {}}
-          onContinue={onContinue}
-          isLast={isLast}
-        />
-      </ScrollView>
+      <SkyStepLayout
+        footer={<FeedbackBar state={state} canSubmit={false} onSubmit={() => {}} onContinue={onContinue} isLast={isLast} />}
+      >
+        {title}
+        <SkyCard style={{ gap: 12 }}>
+          {scenes
+            .filter((sc) => sc.text && sc.type !== 'choice')
+            .map((sc, i) => (
+              <View key={i}>
+                {sc.character ? (
+                  <Text style={{ fontFamily: skyFont.strong, fontSize: 12, letterSpacing: 0.7, textTransform: 'uppercase', color: SKY.blueDark }}>{sc.character}</Text>
+                ) : null}
+                <Text style={{ fontFamily: skyFont.strong, fontSize: 16, lineHeight: 22, color: SKY.ink }}>{sc.text}</Text>
+              </View>
+            ))}
+        </SkyCard>
+      </SkyStepLayout>
     );
   }
 
   return (
-    <ScrollView className="flex-1 px-4 pt-4" contentContainerClassName="pb-4">
-      {content.title && (
-        <Text className="text-2xl font-black text-foreground mb-3">{content.title}</Text>
-      )}
+    <SkyStepLayout
+      footer={
+        isChoice ? null : (
+          <FeedbackBar
+            state={state}
+            canSubmit
+            onSubmit={handleNext}
+            onContinue={onContinue}
+            isLast={isLast}
+            submitLabel={lastScene ? t('lesson.feedback.finish') : t('lesson.feedback.next')}
+          />
+        )
+      }
+    >
+      {title}
 
-      {/* Прогресс */}
-      <View className="flex-row gap-1 mb-4">
+      <View style={{ flexDirection: 'row', gap: 6, marginBottom: 14 }}>
         {scenes.map((_, i) => (
           <View
             key={i}
-            className={`h-1.5 flex-1 rounded-full ${
-              i <= sceneIdx ? 'bg-primary' : 'bg-muted'
-            }`}
+            style={{ flex: 1, height: 8, borderRadius: 4, backgroundColor: i <= sceneIdx ? SKY.blue : '#FFFFFF', borderWidth: 1, borderColor: SKY.line }}
           />
         ))}
       </View>
 
-      <View className="bg-card rounded-2xl border-2 border-border p-4 mb-4">
+      <SkyCard>
         {scene.image_url ? (
           <Image
             source={{ uri: scene.image_url }}
-            className="w-full aspect-video rounded-xl mb-3 bg-muted"
+            style={{ width: '100%', aspectRatio: 16 / 9, borderRadius: 14, marginBottom: 12, backgroundColor: '#EEF2F5' }}
             resizeMode="cover"
           />
         ) : null}
-        {scene.character && (
-          <Text className="text-xs font-bold text-muted-foreground uppercase mb-1">
+        {scene.character ? (
+          <Text style={{ fontFamily: skyFont.strong, fontSize: 12, letterSpacing: 0.7, textTransform: 'uppercase', color: SKY.blueDark, marginBottom: 4 }}>
             {scene.character}
           </Text>
-        )}
-        {scene.text && (
-          <Markdown style={mdMain}>{scene.text}</Markdown>
-        )}
-        {scene.translation && (
-          <View className="mt-1">
+        ) : null}
+        {scene.text ? <Markdown style={mdMain}>{scene.text}</Markdown> : null}
+        {scene.translation ? (
+          <View style={{ marginTop: 4 }}>
             <Markdown style={mdTranslation}>{scene.translation}</Markdown>
           </View>
-        )}
-        {isChoice && scene.question && (
-          <Text className="text-foreground font-bold text-base mt-3">{scene.question}</Text>
-        )}
-      </View>
+        ) : null}
+        {isChoice && scene.question ? (
+          <Text style={{ fontFamily: skyFont.strong, fontSize: 16, color: SKY.ink, marginTop: 12 }}>{scene.question}</Text>
+        ) : null}
+      </SkyCard>
 
       {isChoice && scene.options ? (
-        <View className="gap-2 mb-5">
+        <View style={{ gap: 12 }}>
           {scene.options.map((opt, i) => (
-            <Pressable
+            <SkyOption
               key={i}
+              label={opt.text}
+              badge={String.fromCharCode(65 + i)}
+              state="idle"
               disabled={state.kind === 'submitting'}
               onPress={() => handleChoice(i)}
-              className="rounded-2xl border-2 border-border bg-card p-4"
-            >
-              <Text className="font-bold text-foreground">{opt.text}</Text>
-            </Pressable>
+            />
           ))}
         </View>
-      ) : (
-        <FeedbackBar
-          state={state}
-          canSubmit
-          onSubmit={handleNext}
-          onContinue={onContinue}
-          isLast={isLast}
-          submitLabel={lastScene ? t('lesson.feedback.finish') : t('lesson.feedback.next')}
-        />
-      )}
-    </ScrollView>
+      ) : null}
+    </SkyStepLayout>
   );
 }

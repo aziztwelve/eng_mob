@@ -1,1 +1,1 @@
-export { default } from "./home-candy";
+export { default } from "@/components/home/home-map";

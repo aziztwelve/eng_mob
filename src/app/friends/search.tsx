@@ -1,3 +1,4 @@
+import { KeyboardLift } from '@/components/keyboard-lift';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -75,7 +76,8 @@ export default function FriendsSearchScreen() {
   return (
     <View className="flex-1 bg-background">
       <Stack.Screen options={{ title: t('friends.search') }} />
-      <ScrollView contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 80 }}>
+      <KeyboardLift>
+<ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 80 }}>
         <Pressable
           onPress={() => router.back()}
           className="flex-row items-center gap-1 self-start active:opacity-60"
@@ -164,6 +166,7 @@ export default function FriendsSearchScreen() {
           </View>
         )}
       </ScrollView>
+</KeyboardLift>
     </View>
   );
 }

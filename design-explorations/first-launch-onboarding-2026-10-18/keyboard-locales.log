@@ -1,0 +1,6 @@
+CAPTURE signup focused password with native keyboard
+PASS native Back closes keyboard without leaving signup
+PASS English level strings
+PASS Kazakh reminder strings
+PASS hardware Back returns signup to reminder
+PASS native keyboard, language smoke checks and landscape capture; RU and portrait restored

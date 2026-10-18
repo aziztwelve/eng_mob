@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { Check, ChevronRight, Headphones, Play, Volume2 } from 'lucide-react-native';
 import { ActivityContent } from '@/types/api';
 import { playWordTTS } from '@/lib/tts';
@@ -7,6 +7,8 @@ import { VoiceRecorder } from '@/components/ai/voice-recorder';
 import { ChatInput } from '@/components/ai/chat-input';
 import { useCheckPronunciation, useSendMessage, useStartConversation } from '@/hooks/use-ai';
 import { useTranslation } from 'react-i18next';
+import { SKY } from './sky-lesson-header';
+import { SkyCard, SkyInput, SkyLabel, skyFont } from './sky-ui';
 
 interface ActivityStepProps {
   content: ActivityContent;
@@ -29,14 +31,51 @@ function text(record: Record<string, unknown>, key: string): string {
   return typeof record[key] === 'string' ? record[key] : '';
 }
 
-function Card({ children }: { children: React.ReactNode }) {
-  return <View className="rounded-3xl border border-white/15 bg-white/10 p-5">{children}</View>;
-}
+const ink = { fontFamily: skyFont.strong, color: SKY.ink } as const;
 
 function Action({ label, onPress, disabled = false }: { label: string; onPress: () => void; disabled?: boolean }) {
   return (
-    <Pressable disabled={disabled} onPress={onPress} className={`items-center rounded-2xl px-4 py-3 ${disabled ? 'bg-white/10' : 'bg-[#ffb338]'}`}>
-      <Text className={`font-black ${disabled ? 'text-white/40' : 'text-[#07162c]'}`}>{label}</Text>
+    <Pressable
+      disabled={disabled}
+      onPress={onPress}
+      style={{
+        height: 52,
+        borderRadius: 16,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: 16,
+        backgroundColor: disabled ? '#E3E8EC' : SKY.blue,
+        borderBottomWidth: 4,
+        borderBottomColor: disabled ? '#CDD4D9' : SKY.blueDark,
+      }}
+    >
+      <Text style={{ fontFamily: skyFont.strong, fontSize: 15, color: disabled ? '#8A949B' : '#FFFFFF' }}>{label}</Text>
+    </Pressable>
+  );
+}
+
+/** White secondary button with an icon (listen / repeat / play). */
+function Ghost({ label, icon, onPress, filled = false }: { label: string; icon: React.ReactNode; onPress: () => void; filled?: boolean }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={{
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        height: 48,
+        borderRadius: 16,
+        backgroundColor: filled ? SKY.blue : '#FFFFFF',
+        borderWidth: 1.5,
+        borderBottomWidth: 4,
+        borderColor: filled ? SKY.blue : '#DDE3E8',
+        borderBottomColor: filled ? SKY.blueDark : '#D3DAE0',
+      }}
+    >
+      {icon}
+      <Text style={{ fontFamily: skyFont.strong, fontSize: 14, color: filled ? '#FFFFFF' : SKY.ink }}>{label}</Text>
     </Pressable>
   );
 }
@@ -103,18 +142,16 @@ export function ActivityStep({ content, stepId }: ActivityStepProps) {
   };
 
   const renderWarmUp = () => (
-    <Card>
-      <Text className="text-xs font-bold uppercase tracking-wider text-[#ffdf5e]">{t('lesson_act.answer')}</Text>
-      <Text className="mt-2 text-lg font-black text-white">{prompt}</Text>
-      <TextInput
-        value={answer}
-        onChangeText={setAnswer}
-        placeholder={t('lesson.answer_ph')}
-        placeholderTextColor="rgba(255,255,255,0.35)"
-        className="mt-4 rounded-2xl border border-white/20 bg-[#07162c] px-4 py-3 text-base text-white"
-      />
-      <View className="mt-3"><Action label={answer.trim() ? t('lesson_act.answer_ready') : t('lesson_act.write_answer')} disabled={!answer.trim()} onPress={() => {}} /></View>
-    </Card>
+    <SkyCard style={{ marginBottom: 0 }}>
+      <SkyLabel>{t('lesson_act.answer')}</SkyLabel>
+      <Text style={[ink, { fontSize: 18, lineHeight: 25 }]}>{prompt}</Text>
+      <View style={{ marginTop: 14 }}>
+        <SkyInput value={answer} onChangeText={setAnswer} placeholder={t('lesson.answer_ph')} />
+      </View>
+      <View style={{ marginTop: 12 }}>
+        <Action label={answer.trim() ? t('lesson_act.answer_ready') : t('lesson_act.write_answer')} disabled={!answer.trim()} onPress={() => {}} />
+      </View>
+    </SkyCard>
   );
 
   const renderVocabulary = () => {
@@ -122,21 +159,19 @@ export function ActivityStep({ content, stepId }: ActivityStepProps) {
     const word = text(currentWord, 'word');
     const wordPrompt = text(currentWord, 'prompt');
     return (
-      <Card>
-        <Text className="text-xs font-bold uppercase tracking-wider text-[#ffdf5e]">{vocabIndex + 1} / {vocabulary.length}</Text>
-        <Text className="mt-3 text-4xl font-black text-white">{word}</Text>
-        <Text className="mt-2 text-base text-white/70">{wordPrompt}</Text>
-        {revealed && <Text className="mt-5 text-base leading-6 text-white">Say it aloud, then tap next.</Text>}
-        <View className="mt-5 flex-row gap-3">
-          <Pressable onPress={() => void playWordTTS(word, 'en')} className="flex-1 flex-row items-center justify-center gap-2 rounded-2xl border border-white/20 bg-white/10 py-3">
-            <Volume2 size={18} color="#ffdf5e" /><Text className="font-bold text-white">{t('lesson_act.listen')}</Text>
-          </Pressable>
-          <Pressable onPress={() => setRevealed(true)} className="flex-1 flex-row items-center justify-center gap-2 rounded-2xl bg-[#1b3056] py-3">
-            <Play size={16} color="#fff" /><Text className="font-bold text-white">{t('lesson_act.repeat')}</Text>
-          </Pressable>
+      <SkyCard style={{ marginBottom: 0 }}>
+        <SkyLabel>{vocabIndex + 1} / {vocabulary.length}</SkyLabel>
+        <Text style={{ fontFamily: skyFont.title, fontSize: 36, color: SKY.ink, marginTop: 6 }}>{word}</Text>
+        <Text style={{ fontFamily: skyFont.medium, fontSize: 15, color: SKY.muted, marginTop: 6 }}>{wordPrompt}</Text>
+        {revealed && <Text style={{ fontFamily: skyFont.medium, fontSize: 15, lineHeight: 22, color: SKY.ink, marginTop: 14 }}>{t('lesson.say_aloud')}</Text>}
+        <View style={{ flexDirection: 'row', gap: 10, marginTop: 16 }}>
+          <Ghost label={t('lesson_act.listen')} icon={<Volume2 size={18} color={SKY.blueDark} />} onPress={() => void playWordTTS(word, 'en')} />
+          <Ghost filled label={t('lesson_act.repeat')} icon={<Play size={16} color="#FFFFFF" />} onPress={() => setRevealed(true)} />
         </View>
-        <View className="mt-3"><Action label={vocabIndex === vocabulary.length - 1 ? t('lesson_act.words_done') : t('lesson_act.next_word')} onPress={() => { setVocabIndex((index) => Math.min(index + 1, vocabulary.length - 1)); setRevealed(false); }} /></View>
-      </Card>
+        <View style={{ marginTop: 12 }}>
+          <Action label={vocabIndex === vocabulary.length - 1 ? t('lesson_act.words_done') : t('lesson_act.next_word')} onPress={() => { setVocabIndex((index) => Math.min(index + 1, vocabulary.length - 1)); setRevealed(false); }} />
+        </View>
+      </SkyCard>
     );
   };
 
@@ -144,70 +179,150 @@ export function ActivityStep({ content, stepId }: ActivityStepProps) {
     if (!currentQuestion) return null;
     const correct = text(currentQuestion, 'answer');
     return (
-      <View className="gap-4">
-        <Card>
-          <Text className="text-xs font-bold uppercase tracking-wider text-[#ffdf5e]">{t('lesson_act.listen_first')}</Text>
-          <Text className="mt-2 text-base leading-6 text-white">{t('lesson_act.listen_first_desc')}</Text>
-          <Pressable onPress={() => void playWordTTS(script, 'en')} className="mt-4 flex-row items-center justify-center gap-2 rounded-2xl bg-[#1b3056] py-3">
-            <Headphones size={18} color="#fff" /><Text className="font-bold text-white">{t('lesson_act.play_audio')}</Text>
-          </Pressable>
-          {listeningChecked && <Pressable onPress={() => setShowTranscript((value) => !value)} className="mt-3"><Text className="text-center font-bold text-[#ffdf5e]">{showTranscript ? t('lesson_act.hide_text') : t('lesson_act.show_text')}</Text></Pressable>}
-          {showTranscript && <Text className="mt-3 text-base leading-6 text-white/80">{script}</Text>}
-        </Card>
-        <Card>
-          <Text className="text-lg font-black text-white">{text(currentQuestion, 'question')}</Text>
-          <View className="mt-4 gap-2">
+      <View>
+        <SkyCard>
+          <SkyLabel>{t('lesson_act.listen_first')}</SkyLabel>
+          <Text style={{ fontFamily: skyFont.medium, fontSize: 15, lineHeight: 22, color: SKY.ink }}>{t('lesson_act.listen_first_desc')}</Text>
+          <View style={{ flexDirection: 'row', marginTop: 14 }}>
+            <Ghost filled label={t('lesson_act.play_audio')} icon={<Headphones size={18} color="#FFFFFF" />} onPress={() => void playWordTTS(script, 'en')} />
+          </View>
+          {listeningChecked && (
+            <Pressable onPress={() => setShowTranscript((value) => !value)} style={{ marginTop: 12 }}>
+              <Text style={{ textAlign: 'center', fontFamily: skyFont.strong, color: SKY.blueDark }}>{showTranscript ? t('lesson_act.hide_text') : t('lesson_act.show_text')}</Text>
+            </Pressable>
+          )}
+          {showTranscript && <Text style={{ fontFamily: skyFont.medium, fontSize: 15, lineHeight: 22, color: SKY.muted, marginTop: 12 }}>{script}</Text>}
+        </SkyCard>
+        <SkyCard style={{ marginBottom: 0 }}>
+          <Text style={[ink, { fontSize: 18, lineHeight: 25 }]}>{text(currentQuestion, 'question')}</Text>
+          <View style={{ marginTop: 14, gap: 10 }}>
             {allAnswers.map((option) => {
               const isSelected = selectedAnswer === option;
               const isCorrect = listeningChecked && option === correct;
               const isWrong = listeningChecked && isSelected && option !== correct;
-              return <Pressable key={option} disabled={listeningChecked} onPress={() => setSelectedAnswer(option)} className={`rounded-2xl border p-4 ${isCorrect ? 'border-[#58cc02] bg-[#58cc02]/15' : isWrong ? 'border-red-400 bg-red-400/15' : isSelected ? 'border-[#ffdf5e] bg-[#ffdf5e]/10' : 'border-white/15 bg-white/5'}`}><Text className="text-base font-semibold text-white">{option}</Text></Pressable>;
+              const bg = isCorrect ? '#E9FBEF' : isWrong ? '#FFECEC' : isSelected ? '#EAF8FF' : '#FFFFFF';
+              const bd = isCorrect ? SKY.green : isWrong ? SKY.red : isSelected ? SKY.blue : '#DDE3E8';
+              return (
+                <Pressable
+                  key={option}
+                  disabled={listeningChecked}
+                  onPress={() => setSelectedAnswer(option)}
+                  style={{ padding: 14, borderRadius: 16, backgroundColor: bg, borderWidth: 1.5, borderBottomWidth: 4, borderColor: bd }}
+                >
+                  <Text style={[ink, { fontSize: 16 }]}>{option}</Text>
+                </Pressable>
+              );
             })}
           </View>
-          {!listeningChecked ? <View className="mt-4"><Action label={t('lesson_act.check')} disabled={!selectedAnswer} onPress={() => setListeningChecked(true)} /></View> : <View className="mt-4"><Action label={listeningIndex === questions.length - 1 ? t('lesson_act.listening_done') : t('lesson_act.next_q')} onPress={() => { setListeningIndex((index) => Math.min(index + 1, questions.length - 1)); setSelectedAnswer(''); setListeningChecked(false); }} /></View>}
-        </Card>
+          <View style={{ marginTop: 14 }}>
+            {!listeningChecked ? (
+              <Action label={t('lesson_act.check')} disabled={!selectedAnswer} onPress={() => setListeningChecked(true)} />
+            ) : (
+              <Action label={listeningIndex === questions.length - 1 ? t('lesson_act.listening_done') : t('lesson_act.next_q')} onPress={() => { setListeningIndex((index) => Math.min(index + 1, questions.length - 1)); setSelectedAnswer(''); setListeningChecked(false); }} />
+            )}
+          </View>
+        </SkyCard>
       </View>
     );
   };
 
   const renderVoicePractice = () => (
-    <View className="gap-4">
-      <Card>
-        <Text className="text-xs font-bold uppercase tracking-wider text-[#ffdf5e]">{t('lesson_act.say_phrase')}</Text>
-        <Text className="mt-2 text-2xl font-black leading-8 text-white">{model}</Text>
-        <Pressable onPress={() => void playWordTTS(model, 'en')} className="mt-4 flex-row items-center justify-center gap-2 rounded-2xl bg-[#1b3056] py-3">
-          <Volume2 size={18} color="#fff" /><Text className="font-bold text-white">{t('lesson_act.hear_sample')}</Text>
-        </Pressable>
-      </Card>
-      <VoiceRecorder key={model} loading={pronunciation.isPending} minDurationSec={isMission ? Number(body.minimum_seconds ?? 0) : 0} onSubmit={(audio) => void checkPronunciation(audio)} />
-      {pronunciation.data && <Card><Text className="text-xl font-black text-[#58cc02]">{t('lesson.accuracy', { v: Math.round(pronunciation.data.accuracy_score * 100) })}</Text><Text className="mt-2 text-base text-white/80">{pronunciation.data.feedback || pronunciation.data.transcribed_text}</Text></Card>}
-      {content.activity_type === 'repeat_after_me' && models.length > 1 && <Action label={phraseIndex === models.length - 1 ? t('lesson_act.phrases_done') : t('lesson_act.next_phrase')} onPress={() => { setPhraseIndex((index) => Math.min(index + 1, models.length - 1)); pronunciation.reset(); }} />}
+    <View>
+      <SkyCard>
+        <SkyLabel>{t('lesson_act.say_phrase')}</SkyLabel>
+        <Text style={{ fontFamily: skyFont.title, fontSize: 24, lineHeight: 32, color: SKY.ink }}>{model}</Text>
+        <View style={{ flexDirection: 'row', marginTop: 14 }}>
+          <Ghost filled label={t('lesson_act.hear_sample')} icon={<Volume2 size={18} color="#FFFFFF" />} onPress={() => void playWordTTS(model, 'en')} />
+        </View>
+      </SkyCard>
+      <VoiceRecorder light key={model} loading={pronunciation.isPending} minDurationSec={isMission ? Number(body.minimum_seconds ?? 0) : 0} onSubmit={(audio) => void checkPronunciation(audio)} />
+      {pronunciation.isError && (
+        <View style={{ marginTop: 16, padding: 14, borderRadius: 18, backgroundColor: '#FFECEC', borderWidth: 1.5, borderColor: '#FFC9CC' }}>
+          <Text style={{ fontFamily: skyFont.bold, fontSize: 14, lineHeight: 20, color: '#B4232A' }}>{t('lesson.check_failed')}</Text>
+        </View>
+      )}
+      {pronunciation.data && (
+        <SkyCard style={{ marginTop: 16, marginBottom: 0 }}>
+          <Text style={{ fontFamily: skyFont.title, fontSize: 20, color: SKY.green }}>{t('lesson.accuracy', { v: Math.round(pronunciation.data.accuracy_score * 100) })}</Text>
+          <Text style={{ fontFamily: skyFont.medium, fontSize: 15, color: SKY.muted, marginTop: 6 }}>{pronunciation.data.feedback || pronunciation.data.transcribed_text}</Text>
+        </SkyCard>
+      )}
+      {content.activity_type === 'repeat_after_me' && models.length > 1 && (
+        <View style={{ marginTop: 16 }}>
+          <Action label={phraseIndex === models.length - 1 ? t('lesson_act.phrases_done') : t('lesson_act.next_phrase')} onPress={() => { setPhraseIndex((index) => Math.min(index + 1, models.length - 1)); pronunciation.reset(); }} />
+        </View>
+      )}
     </View>
   );
 
   const renderDialogue = () => (
-    <Card>
-      <Text className="text-xs font-bold uppercase tracking-wider text-[#ffdf5e]">{t('lesson_act.guided_dialogue')}</Text>
-      <View className="mt-4 gap-3">
+    <SkyCard style={{ marginBottom: 0 }}>
+      <SkyLabel>{t('lesson_act.guided_dialogue')}</SkyLabel>
+      <View style={{ marginTop: 8, gap: 10 }}>
         {dialogue.slice(0, dialogueIndex + 1).map((line, index) => {
           const speaker = text(line, 'speaker');
           const lineText = text(line, 'text');
-          return <Pressable key={`${speaker}-${index}`} onPress={() => void playWordTTS(lineText, 'en')} className={`rounded-2xl p-4 ${speaker === 'A' ? 'bg-[#1b3056]' : 'bg-white/10'}`}><Text className="text-xs font-bold text-[#ffdf5e]">{speaker}</Text><Text className="mt-1 text-base text-white">{lineText}</Text></Pressable>;
+          const mine = speaker === 'A';
+          return (
+            <Pressable
+              key={`${speaker}-${index}`}
+              onPress={() => void playWordTTS(lineText, 'en')}
+              style={{ padding: 14, borderRadius: 16, backgroundColor: mine ? '#EAF8FF' : '#FFFFFF', borderWidth: 1.5, borderBottomWidth: 4, borderColor: mine ? SKY.blue : '#DDE3E8' }}
+            >
+              <Text style={{ fontFamily: skyFont.strong, fontSize: 12, color: SKY.blueDark }}>{speaker}</Text>
+              <Text style={[ink, { fontSize: 16, marginTop: 2 }]}>{lineText}</Text>
+            </Pressable>
+          );
         })}
       </View>
-      <View className="mt-4"><Action label={dialogueIndex === dialogue.length - 1 ? t('lesson_act.dialogue_done') : t('lesson_act.next_line')} onPress={() => setDialogueIndex((index) => Math.min(index + 1, dialogue.length - 1))} /></View>
-    </Card>
+      <View style={{ marginTop: 14 }}>
+        <Action label={dialogueIndex === dialogue.length - 1 ? t('lesson_act.dialogue_done') : t('lesson_act.next_line')} onPress={() => setDialogueIndex((index) => Math.min(index + 1, dialogue.length - 1))} />
+      </View>
+    </SkyCard>
   );
 
   const renderRoleplay = () => (
-    <View className="gap-4">
-      <Card>
-        <Text className="text-xs font-bold uppercase tracking-wider text-[#ffdf5e]">{t('lesson_act.ai_talk')}</Text>
-        <Text className="mt-2 text-lg font-black text-white">{text(body, 'scenario') || prompt}</Text>
-        {phrases.length > 0 && <Text className="mt-3 text-sm leading-5 text-white/70">{t('lesson_act.try_use')}{' '}{phrases.join(' ')}</Text>}
-        {!conversationId && <View className="mt-4"><Action label={startConversation.isPending ? t('lesson_act.starting_ai') : t('lesson_act.start_talk')} disabled={startConversation.isPending} onPress={() => void beginRoleplay()} /></View>}
-      </Card>
-      {conversationId && <Card><View className="gap-3">{chatLines.map((line, index) => <View key={`${line.role}-${index}`} className={`self-${line.role === 'user' ? 'end' : 'start'} max-w-[90%] rounded-2xl p-3 ${line.role === 'user' ? 'bg-[#ffb338]' : 'bg-[#1b3056]'}`}><Text className={line.role === 'user' ? 'text-[#07162c]' : 'text-white'}>{line.content}</Text></View>)}</View><View className="mt-4"><ChatInput loading={sendMessage.isPending} language="en" placeholder={t('lesson.reply_ph')} onSend={(message) => sendRoleplayMessage(message)} /></View></Card>}
+    <View>
+      <SkyCard>
+        <SkyLabel>{t('lesson_act.ai_talk')}</SkyLabel>
+        <Text style={[ink, { fontSize: 18, lineHeight: 25 }]}>{text(body, 'scenario') || prompt}</Text>
+        {phrases.length > 0 && (
+          <Text style={{ fontFamily: skyFont.medium, fontSize: 14, lineHeight: 20, color: SKY.muted, marginTop: 10 }}>
+            {t('lesson_act.try_use')}{' '}{phrases.join(' ')}
+          </Text>
+        )}
+        {!conversationId && (
+          <View style={{ marginTop: 14 }}>
+            <Action label={startConversation.isPending ? t('lesson_act.starting_ai') : t('lesson_act.start_talk')} disabled={startConversation.isPending} onPress={() => void beginRoleplay()} />
+          </View>
+        )}
+      </SkyCard>
+      {conversationId && (
+        <SkyCard style={{ marginBottom: 0 }}>
+          <View style={{ gap: 10 }}>
+            {chatLines.map((line, index) => {
+              const user = line.role === 'user';
+              return (
+                <View
+                  key={`${line.role}-${index}`}
+                  style={{
+                    alignSelf: user ? 'flex-end' : 'flex-start',
+                    maxWidth: '90%',
+                    padding: 12,
+                    borderRadius: 16,
+                    backgroundColor: user ? SKY.blue : '#EAF8FF',
+                  }}
+                >
+                  <Text style={{ fontFamily: skyFont.bold, fontSize: 15, color: user ? '#FFFFFF' : SKY.ink }}>{line.content}</Text>
+                </View>
+              );
+            })}
+          </View>
+          <View style={{ marginTop: 14 }}>
+            <ChatInput light loading={sendMessage.isPending} language="en" placeholder={t('lesson.reply_ph')} onSend={(message) => sendRoleplayMessage(message)} />
+          </View>
+        </SkyCard>
+      )}
     </View>
   );
 
@@ -220,15 +335,37 @@ export function ActivityStep({ content, stepId }: ActivityStepProps) {
   if (content.activity_type === 'ai_roleplay') interaction = renderRoleplay();
 
   return (
-    <ScrollView className="flex-1 px-5 py-4" contentContainerClassName="gap-4 pb-8">
-      <View className="rounded-3xl border border-white/15 bg-white/10 p-5">
-        <Text className="text-xs font-bold uppercase tracking-wider text-[#ffdf5e]">{content.activity_type.replaceAll('_', ' ')}</Text>
-        <Text className="mt-2 text-lg font-black text-white">{content.instructions}</Text>
-        {content.estimated_seconds > 0 && <Text className="mt-3 text-sm text-white/60">About {content.estimated_seconds} seconds</Text>}
-      </View>
+    <ScrollView
+      style={{ flex: 1 }}
+      contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 32 }}
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
+    >
+      <SkyCard>
+        <SkyLabel>{content.activity_type.replaceAll('_', ' ')}</SkyLabel>
+        <Text style={[ink, { fontSize: 18, lineHeight: 25 }]}>{content.instructions}</Text>
+        {content.estimated_seconds > 0 && (
+          <Text style={{ fontFamily: skyFont.medium, fontSize: 13, color: SKY.muted, marginTop: 10 }}>
+            {t('lesson.about_seconds', { n: content.estimated_seconds })}
+          </Text>
+        )}
+      </SkyCard>
       {interaction}
-      {content.success_criteria.length > 0 && <Card><Text className="text-base font-black text-white">{t('lesson_act.your_goal')}</Text>{content.success_criteria.map((criterion) => <View key={criterion} className="mt-3 flex-row gap-2"><Check size={16} color="#58cc02" /><Text className="flex-1 text-sm leading-5 text-white/75">{criterion}</Text></View>)}</Card>}
-      <View className="flex-row items-center gap-2"><ChevronRight size={18} color="#ffdf5e" /><Text className="flex-1 text-sm text-white/60">{t('lesson_act.finish_hint')}</Text></View>
+      {content.success_criteria.length > 0 && (
+        <SkyCard style={{ marginTop: 16, marginBottom: 0 }}>
+          <Text style={[ink, { fontFamily: skyFont.title, fontSize: 16 }]}>{t('lesson_act.your_goal')}</Text>
+          {content.success_criteria.map((criterion) => (
+            <View key={criterion} style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
+              <Check size={16} color={SKY.green} />
+              <Text style={{ flex: 1, fontFamily: skyFont.medium, fontSize: 14, lineHeight: 20, color: SKY.muted }}>{criterion}</Text>
+            </View>
+          ))}
+        </SkyCard>
+      )}
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 16 }}>
+        <ChevronRight size={18} color={SKY.blueDark} />
+        <Text style={{ flex: 1, fontFamily: skyFont.medium, fontSize: 14, color: SKY.muted }}>{t('lesson_act.finish_hint')}</Text>
+      </View>
     </ScrollView>
   );
 }

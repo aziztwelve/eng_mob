@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView } from 'react-native';
+import { Text } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { FeedbackBar, type FeedbackState } from './FeedbackBar';
 import { DraggableWordBank } from './draggable-word-bank';
+import { SKY } from './sky-lesson-header';
+import { SkyCard, SkyMissing, SkyStepLayout, skyFont } from './sky-ui';
 import { parseStepContent, type StepComponentProps } from './step-types';
 import type { TranslateContent } from '@/types/api';
 
@@ -22,13 +24,7 @@ export function TranslateStep({ step, onSubmit, onContinue, isLast }: StepCompon
   const [state, setState] = useState<FeedbackState>({ kind: 'idle' });
 
   if (!content) {
-    return (
-      <View className="p-6">
-        <Text className="text-muted-foreground">
-          Не удалось распарсить translate content.
-        </Text>
-      </View>
-    );
+    return <SkyMissing message={t('lesson.parse_error')} />;
   }
 
   const locked = state.kind !== 'idle';
@@ -54,16 +50,20 @@ export function TranslateStep({ step, onSubmit, onContinue, isLast }: StepCompon
   };
 
   return (
-    <ScrollView
-      className="flex-1 px-4 pt-4"
-      contentContainerClassName="pb-4"
+    <SkyStepLayout
+      footer={
+        <FeedbackBar
+          state={state}
+          canSubmit={picked.length > 0}
+          onSubmit={handleSubmit}
+          onContinue={onContinue}
+          isLast={isLast}
+        />
+      }
     >
-      <View className="bg-[rgba(255,255,255,0.10)] rounded-2xl border border-[rgba(255,255,255,0.22)] p-4 mb-5">
-        <Text className="text-foreground text-lg font-black">{content.source_text}</Text>
-        <Text className="text-sm font-medium mt-2" style={{ color: 'rgba(255,255,255,0.75)' }}>
-          {t('lesson.instruction.translate')}
-        </Text>
-      </View>
+      <SkyCard>
+        <Text style={{ fontFamily: skyFont.title, fontSize: 21, lineHeight: 28, color: SKY.ink }}>{content.source_text}</Text>
+      </SkyCard>
 
       <DraggableWordBank
         bank={bank}
@@ -72,14 +72,6 @@ export function TranslateStep({ step, onSubmit, onContinue, isLast }: StepCompon
         disabled={locked}
         emptyHint={t('lesson.word_bank_hint')}
       />
-
-      <FeedbackBar
-        state={state}
-        canSubmit={picked.length > 0}
-        onSubmit={handleSubmit}
-        onContinue={onContinue}
-        isLast={isLast}
-      />
-    </ScrollView>
+    </SkyStepLayout>
   );
 }

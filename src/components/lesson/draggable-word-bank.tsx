@@ -2,6 +2,7 @@ import React, { useCallback, useRef } from 'react';
 import { View, Text, LayoutChangeEvent } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useTranslation } from 'react-i18next';
+import { SKY } from './sky-lesson-header';
 import Animated, {
   measure,
   runOnJS,
@@ -115,10 +116,22 @@ export function DraggableWordBank({
       {/* Answer area (top) */}
       <Animated.View
         ref={answerRef}
-        className="min-h-[80px] rounded-2xl border-2 border-dashed border-[rgba(255,255,255,0.30)] bg-[rgba(255,255,255,0.06)] p-3 mb-4 flex-row flex-wrap gap-2"
+        style={{
+          minHeight: 96,
+          flexDirection: 'row',
+          flexWrap: 'wrap',
+          gap: 8,
+          padding: 14,
+          marginBottom: 20,
+          borderRadius: 24,
+          backgroundColor: '#FFFFFF',
+          borderWidth: 1.5,
+          borderBottomWidth: 4,
+          borderColor: SKY.card,
+        }}
       >
         {picked.length === 0 ? (
-          <Text className="text-sm font-medium m-auto" style={{ color: 'rgba(255,255,255,0.65)' }}>
+          <Text style={{ margin: 'auto', fontFamily: 'Nunito_600SemiBold', fontSize: 14, color: SKY.muted }}>
             {emptyHint ?? t('lesson.word_bank_hint')}
           </Text>
         ) : (
@@ -143,7 +156,7 @@ export function DraggableWordBank({
       {/* Bank (bottom) */}
       <Animated.View
         ref={bankRef}
-        className="flex-row flex-wrap gap-2 mb-5"
+        style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20, minHeight: 56 }}
       >
         {available.map((bankIndex) => (
           <DraggableWord
@@ -277,10 +290,21 @@ function DraggableWord({
     <GestureDetector gesture={composed}>
       <Animated.View
         onLayout={handleLayout}
-        style={style}
-        className="px-3 py-2 rounded-xl border border-[rgba(255,255,255,0.24)] bg-[rgba(255,255,255,0.14)]"
+        style={[
+          style,
+          {
+            paddingHorizontal: 14,
+            paddingVertical: 9,
+            borderRadius: 14,
+            backgroundColor: from === 'answer' ? '#EAF8FF' : '#FFFFFF',
+            borderWidth: 1.5,
+            borderBottomWidth: 4,
+            borderColor: from === 'answer' ? SKY.blue : '#DDE3E8',
+            borderBottomColor: from === 'answer' ? SKY.blue : '#D3DAE0',
+          },
+        ]}
       >
-        <Text className="font-bold text-foreground">{label}</Text>
+        <Text style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 16, color: SKY.ink }}>{label}</Text>
       </Animated.View>
     </GestureDetector>
   );

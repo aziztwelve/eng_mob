@@ -1,10 +1,12 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, Pressable, ScrollView } from 'react-native';
+import { Text, View } from 'react-native';
 import { Volume2 } from 'lucide-react-native';
 import { SoundSlot } from '@/lib/audio';
 import { useTranslation } from 'react-i18next';
 import { FeedbackBar, type FeedbackState } from './FeedbackBar';
 import { DraggableWordBank } from './draggable-word-bank';
+import { SKY } from './sky-lesson-header';
+import { SkyCard, SkyIconButton, SkyLabel, SkyMissing, SkyStepLayout, skyFont } from './sky-ui';
 import { parseStepContent, type StepComponentProps } from './step-types';
 import type { TapWordsContent } from '@/types/api';
 import { playWordTTS } from '@/lib/tts';
@@ -22,11 +24,7 @@ export function TapWordsStep({ step, onSubmit, onContinue, isLast }: StepCompone
   const [state, setState] = useState<FeedbackState>({ kind: 'idle' });
 
   if (!content) {
-    return (
-      <View className="p-6">
-        <Text className="text-muted-foreground">{t('lesson.parse_error')}</Text>
-      </View>
-    );
+    return <SkyMissing message={t('lesson.parse_error')} />;
   }
 
   const locked = state.kind !== 'idle';
@@ -68,23 +66,33 @@ export function TapWordsStep({ step, onSubmit, onContinue, isLast }: StepCompone
   };
 
   return (
-    <ScrollView className="flex-1 px-4 pt-4" contentContainerClassName="pb-4">
-      {content.instruction && (
-        <Text className="text-foreground font-bold text-base mb-4">{t('lesson.instruction.tap_words')}</Text>
-      )}
-
-      <View className="bg-[rgba(255,255,255,0.10)] rounded-2xl border border-[rgba(255,255,255,0.22)] p-4 mb-5 flex-row items-center gap-3">
+    <SkyStepLayout
+      footer={
+        <FeedbackBar
+          state={state}
+          canSubmit={picked.length > 0}
+          onSubmit={handleSubmit}
+          onContinue={onContinue}
+          isLast={isLast}
+        />
+      }
+    >
+      <SkyCard>
         {content.audio_url || content.audio_text ? (
-          <Pressable
-            onPress={play}
-            className="bg-[#FFDF5E] w-16 h-16 rounded-full items-center justify-center"
-          >
-            <Volume2 size={28} color="#3D0A1A" />
-          </Pressable>
+          <>
+            {content.instruction ? <SkyLabel>{t('lesson.instruction.tap_words')}</SkyLabel> : null}
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+              <SkyIconButton size={64} onPress={play} label={t('lesson.listen_again')}>
+                <Volume2 size={28} color="#FFFFFF" />
+              </SkyIconButton>
+            </View>
+          </>
         ) : (
-          <Text className="text-foreground font-bold text-base">{content.audio_text}</Text>
+          <Text style={{ fontFamily: skyFont.title, fontSize: 20, lineHeight: 27, color: SKY.ink }}>
+            {t('lesson.instruction.tap_words')}
+          </Text>
         )}
-      </View>
+      </SkyCard>
 
       <DraggableWordBank
         bank={bank}
@@ -93,14 +101,6 @@ export function TapWordsStep({ step, onSubmit, onContinue, isLast }: StepCompone
         disabled={locked}
         emptyHint={t('lesson.word_bank_hint')}
       />
-
-      <FeedbackBar
-        state={state}
-        canSubmit={picked.length > 0}
-        onSubmit={handleSubmit}
-        onContinue={onContinue}
-        isLast={isLast}
-      />
-    </ScrollView>
+    </SkyStepLayout>
   );
 }

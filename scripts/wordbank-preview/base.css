@@ -1,0 +1,9 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@font-face{font-family:Nunito_400Regular;src:url('/fonts/400.ttf')}
+@font-face{font-family:Nunito_600SemiBold;src:url('/fonts/600.ttf')}
+@font-face{font-family:Nunito_700Bold;src:url('/fonts/700.ttf')}
+@font-face{font-family:Nunito_800ExtraBold;src:url('/fonts/800.ttf')}
+@font-face{font-family:Nunito_900Black;src:url('/fonts/900.ttf')}
+*{box-sizing:border-box}body{margin:0;background:#eaf5fa;font-family:Nunito_400Regular,sans-serif}:where(.rn-view){display:flex;flex-direction:column;position:relative;min-width:0;flex-shrink:0}button{display:flex;flex-shrink:0}button:disabled{cursor:default}textarea,input{min-width:0;width:100%}button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid #247fa8;outline-offset:3px}.qa-controls{display:flex;gap:8px;padding:8px;flex-wrap:wrap;align-items:center;justify-content:center}.qa-controls button{background:white;border:1px solid #adcdda;border-radius:8px;padding:6px 9px}.qa-controls select{padding:6px}#device{width:375px;height:762px;margin:auto;background:white;display:flex;flex-direction:column;overflow:hidden}.qa-recorder{padding:20px;border:1px solid #c9edff;border-radius:16px;background:white;display:grid;gap:8px;text-align:center}#qa-events{max-width:500px;margin:8px auto;font-size:13px}@media(max-width:400px){#device{width:100%;height:calc(100dvh - 95px)}}

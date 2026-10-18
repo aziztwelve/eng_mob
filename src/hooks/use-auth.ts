@@ -59,8 +59,7 @@ export const useLogin = () => {
         text1: 'Welcome back!',
       });
       // Логин = возвращающийся пользователь (он уже регистрировался и
-      // проходил онбординг). Ведём сразу в приложение; guest-gate в
-      // (tabs) пропустит, т.к. токен не гостевой.
+      // Returning registered user — go straight to the app.
       router.replace('/(tabs)');
     },
     onError: (error: any) => {

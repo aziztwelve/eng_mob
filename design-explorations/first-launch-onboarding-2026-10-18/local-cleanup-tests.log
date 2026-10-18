@@ -1,0 +1,12 @@
+✔ migrates old saved answers without losing the retained profile or completion (179.628738ms)
+✔ purges retired-only offline entries and sends only retained parts of mixed patches (29.466587ms)
+✔ a fresh onboarding also clears an offline queue from the previous attempt (48.697328ms)
+✔ offline retry preserves retained answers while retired data stays removed (25.447429ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 674.866962

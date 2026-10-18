@@ -1,0 +1,15 @@
+?   	github.com/elearning/auth-service/cmd	[no test files]
+?   	github.com/elearning/auth-service/internal/api/auth/v1	[no test files]
+?   	github.com/elearning/auth-service/internal/app	[no test files]
+?   	github.com/elearning/auth-service/internal/config	[no test files]
+?   	github.com/elearning/auth-service/internal/config/env	[no test files]
+?   	github.com/elearning/auth-service/internal/converter	[no test files]
+?   	github.com/elearning/auth-service/internal/cron	[no test files]
+?   	github.com/elearning/auth-service/internal/model	[no test files]
+?   	github.com/elearning/auth-service/internal/repository	[no test files]
+?   	github.com/elearning/auth-service/internal/repository/auth	[no test files]
+?   	github.com/elearning/auth-service/internal/repository/converter	[no test files]
+?   	github.com/elearning/auth-service/internal/repository/model	[no test files]
+?   	github.com/elearning/auth-service/internal/service	[no test files]
+ok  	github.com/elearning/auth-service/internal/service/auth	1.021s
+ok  	github.com/elearning/auth-service/internal/social	1.097s

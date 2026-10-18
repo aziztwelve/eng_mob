@@ -2,7 +2,7 @@
   "expo": {
     "name": "LingoIQ",
     "slug": "engmob",
-    "version": "1.0.3",
+    "version": "1.0",
     "orientation": "default",
     "icon": "./assets/images/icon.png",
     "scheme": "engmob",
@@ -13,7 +13,8 @@
       "usesAppleSignIn": true,
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
-      }
+      },
+      "appleTeamId": "24DB6F692V"
     },
     "android": {
       "adaptiveIcon": {
@@ -35,10 +36,10 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#2E0A4A",
+          "backgroundColor": "#FAFAFA",
           "android": {
-            "image": "./assets/images/splash-icon.png",
-            "imageWidth": 300
+            "image": "./assets/images/lingoiq-splash-mark.png",
+            "imageWidth": 288
           }
         }
       ],
@@ -67,8 +68,14 @@
       "expo-apple-authentication",
       "expo-secure-store",
       "expo-image",
-      "expo-audio",
-      "expo-video"
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "LingoIQ \u0438\u0441\u043f\u043e\u043b\u044c\u0437\u0443\u0435\u0442 \u043c\u0438\u043a\u0440\u043e\u0444\u043e\u043d, \u0447\u0442\u043e\u0431\u044b \u0437\u0430\u043f\u0438\u0441\u0430\u0442\u044c \u0432\u0430\u0448\u0435 \u043f\u0440\u043e\u0438\u0437\u043d\u043e\u0448\u0435\u043d\u0438\u0435 \u0438 \u043f\u0440\u043e\u0432\u0435\u0440\u0438\u0442\u044c \u0435\u0433\u043e."
+        }
+      ],
+      "expo-video",
+      "./plugins/with-native-brand-splash.cjs"
     ],
     "experiments": {
       "typedRoutes": true,

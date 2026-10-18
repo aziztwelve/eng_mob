@@ -1,13 +1,16 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { View, Text, Pressable, ScrollView } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { Check, X } from 'phosphor-react-native';
 import { FeedbackBar, type FeedbackState } from './FeedbackBar';
+import { SKY } from './sky-lesson-header';
+import { SkyStepLayout } from './sky-ui';
 import { parseStepContent, type StepComponentProps } from './step-types';
 import type { MatchPairsContent } from '@/types/api';
 
 /**
  * Match Pairs: две колонки, перемешанные. Tap → tap → проверка локально.
- * Все собраны → submit.
+ * Все собраны → submit. Оформление: Game Play (Figma 246:15988), вариант «Маскот».
  */
 export function MatchPairsStep({ step, onSubmit, onContinue, isLast }: StepComponentProps) {
   const { t } = useTranslation();
@@ -82,55 +85,94 @@ export function MatchPairsStep({ step, onSubmit, onContinue, isLast }: StepCompo
     }
   };
 
-  const Cell = ({ idx, side, text }: { idx: number; side: 'L' | 'R'; text: string }) => {
+  const renderCell = (idx: number, side: 'L' | 'R', text: string) => {
     const isMatched = matched.includes(idx);
     const isSelected = side === 'L' ? selectedL === idx : selectedR === idx;
     const isWrong = wrongFlash && isSelected;
+
+    let bg = '#FFFFFF';
+    let border = '#DDE3E8';
+    let shadow = '#D3DAE0';
+    let dot = '#EEF2F5';
+    if (isSelected) { bg = '#EAF8FF'; border = SKY.blue; shadow = SKY.blue; dot = SKY.blue; }
+    if (isWrong) { bg = '#FFECEC'; border = SKY.red; shadow = SKY.red; dot = SKY.red; }
+    if (isMatched) { bg = '#E9FBEF'; border = SKY.green; shadow = SKY.green; dot = SKY.green; }
+
     return (
       <Pressable
+        key={`${side}-${idx}`}
         disabled={isMatched || state.kind !== 'idle'}
         onPress={() => (side === 'L' ? setSelectedL(idx) : setSelectedR(idx))}
-        className={`rounded-2xl border-2 px-3 py-4 mb-2 items-center ${
-          isMatched
-            ? 'border-emerald-500 bg-emerald-500/15 opacity-60'
-            : isWrong
-              ? 'border-red-500 bg-red-500/10'
-              : isSelected
-                ? 'border-[#FFDF5E] bg-[rgba(255,223,94,0.18)]'
-                : 'border-[rgba(255,255,255,0.22)] bg-[rgba(255,255,255,0.12)]'
-        }`}
+        style={{
+          minHeight: 48,
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 8,
+          paddingVertical: 6,
+          paddingLeft: 8,
+          paddingRight: 10,
+          borderRadius: 14,
+          backgroundColor: bg,
+          borderWidth: 1.5,
+          borderColor: border,
+          borderBottomWidth: 4,
+          borderBottomColor: shadow,
+          opacity: isMatched ? 0.7 : 1,
+        }}
       >
-        <Text className="font-bold text-foreground">{text}</Text>
+        <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: dot, alignItems: 'center', justifyContent: 'center' }}>
+          {isMatched ? <Check size={12} weight="bold" color="#FFFFFF" /> : isWrong ? <X size={12} weight="bold" color="#FFFFFF" /> : null}
+        </View>
+        <Text style={{ flex: 1, fontFamily: 'Nunito_800ExtraBold', fontSize: 14, lineHeight: 17, color: SKY.ink }}>{text}</Text>
       </Pressable>
     );
   };
 
+  const colLabel = { fontFamily: 'Nunito_800ExtraBold', fontSize: 11, letterSpacing: 0.9, textTransform: 'uppercase', color: SKY.blueDark, paddingHorizontal: 4 } as const;
+
   return (
-    <ScrollView className="flex-1 px-4 pt-4" contentContainerClassName="pb-4">
-      {content.instruction && (
-        <Text className="text-foreground font-bold text-base mb-4">{t('lesson.instruction.match_pairs')}</Text>
-      )}
-      <View className="flex-row gap-3 mb-5">
-        <View className="flex-1">
-          {pairs.map((p, i) => (
-            <Cell key={`l-${i}`} idx={i} side="L" text={p.left} />
-          ))}
-        </View>
-        <View className="flex-1">
-          {rightOrder.map((i) => (
-            <Cell key={`r-${i}`} idx={i} side="R" text={pairs[i].right} />
-          ))}
-        </View>
+    <SkyStepLayout
+      footer={
+        <FeedbackBar
+          variant="sky"
+          state={state}
+          canSubmit={allMatched}
+          onSubmit={handleSubmit}
+          onContinue={onContinue}
+          isLast={isLast}
+          submitLabel={t('lesson.feedback.done')}
+        />
+      }
+    >
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 12 }}>
+        {pairs.map((_, i) => (
+          <View
+            key={i}
+            style={{
+              width: 12,
+              height: 12,
+              borderRadius: 6,
+              backgroundColor: i < matched.length ? SKY.green : '#FFFFFF',
+              borderWidth: 1.5,
+              borderColor: i < matched.length ? SKY.green : '#B9DDF0',
+            }}
+          />
+        ))}
+        <Text style={{ marginLeft: 6, fontFamily: 'Nunito_800ExtraBold', fontSize: 13, color: SKY.muted }}>
+          {matched.length}/{pairs.length}
+        </Text>
       </View>
 
-      <FeedbackBar
-        state={state}
-        canSubmit={allMatched}
-        onSubmit={handleSubmit}
-        onContinue={onContinue}
-        isLast={isLast}
-        submitLabel={t('lesson.feedback.done')}
-      />
-    </ScrollView>
+      <View style={{ flexDirection: 'row', gap: 14, marginBottom: 20 }}>
+        <View style={{ flex: 1, gap: 8 }}>
+          <Text style={colLabel}>{t('lesson.match_words')}</Text>
+          {pairs.map((p, i) => renderCell(i, 'L', p.left))}
+        </View>
+        <View style={{ flex: 1, gap: 8 }}>
+          <Text style={colLabel}>{t('lesson.match_translations')}</Text>
+          {rightOrder.map((i) => renderCell(i, 'R', pairs[i].right))}
+        </View>
+      </View>
+    </SkyStepLayout>
   );
 }

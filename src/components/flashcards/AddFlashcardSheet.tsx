@@ -1,3 +1,4 @@
+import { useKeyboardHeight } from '@/hooks/use-keyboard-height';
 import React, { useState } from 'react';
 import { Modal, Pressable, Text, View, TextInput, ScrollView, ActivityIndicator } from 'react-native';
 import Animated, { FadeIn, SlideInDown } from 'react-native-reanimated';
@@ -20,6 +21,7 @@ export interface AddFlashcardSheetProps {
 }
 
 export function AddFlashcardSheet({ visible, onDismiss }: AddFlashcardSheetProps) {
+  const keyboardHeight = useKeyboardHeight();
 
   const { t } = useTranslation();
   const [word, setWord] = useState('');
@@ -63,8 +65,9 @@ export function AddFlashcardSheet({ visible, onDismiss }: AddFlashcardSheetProps
         <Animated.View
           entering={SlideInDown.duration(280)}
           className="bg-background rounded-t-3xl border-t-2 border-border max-h-[85%]"
+          style={{ marginBottom: keyboardHeight }}
         >
-          <ScrollView contentContainerStyle={{ padding: 20, gap: 16 }}>
+          <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 20, gap: 16 }}>
             {/* Header */}
             <View className="flex-row items-center justify-between">
               <Text className="text-foreground font-black text-2xl">{t('cards.add_title')}</Text>

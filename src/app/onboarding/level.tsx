@@ -6,30 +6,23 @@ import { OnboardingShell } from '@/components/onboarding/OnboardingShell';
 import { useOnboardingStep } from '@/hooks/use-onboarding-step';
 import type { ProficiencyLevelProto } from '@/types/api';
 
-const TOTAL_STEPS = 12;
+const TOTAL_STEPS = 6;
 
-type LevelChoice = ProficiencyLevelProto | 'placement_test';
+type LevelChoice = ProficiencyLevelProto;
 
-const LEVEL_ORDER: LevelChoice[] = ['beginner', 'a1', 'a2', 'b1', 'b2', 'just_for_fun', 'placement_test'];
+const LEVEL_ORDER: LevelChoice[] = ['beginner', 'a1', 'a2', 'b1', 'b2', 'just_for_fun'];
 const LEVEL_EMOJI: Record<LevelChoice, string> = {
-  beginner: '🌱', a1: '🌿', a2: '🌳', b1: '🌲', b2: '🏔️', just_for_fun: '🎈', placement_test: '📝',
+  beginner: '🌱', a1: '🌿', a2: '🌳', b1: '🌲', b2: '🏔️', just_for_fun: '🎈',
 };
 
 export default function LevelScreen() {
   const { t } = useTranslation();
 
-  // `placement_test` — особый случай: patch без proficiency_level,
-  // переход на отдельный экран теста. В остальных случаях — обычный
-  // patch + переход на daily-commit.
   const { value, setValue, submitting, canContinue, handleContinue } =
     useOnboardingStep<LevelChoice>({
       step: 'level',
-      next: (v) =>
-        v === 'placement_test' ? '/onboarding/placement-test' : '/onboarding/daily-commit',
-      buildPatch: (v) =>
-        v === 'placement_test' ? {} : { proficiency_level: v },
-      // placement_test — это не сохранённое значение, а маршрутный
-      // выбор; гидратируем только реальные уровни.
+      next: '/onboarding/reminder-time',
+      buildPatch: (v) => ({ proficiency_level: v }),
       loadValue: (s) => s.level,
     });
 
@@ -47,7 +40,7 @@ export default function LevelScreen() {
   return (
     <OnboardingShell
       trackKey="level"
-      step={3}
+      step={4}
       total={TOTAL_STEPS}
       title={t('onboarding.level.title')}
       subtitle={t('onboarding.level.subtitle')}

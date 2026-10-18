@@ -1,0 +1,5 @@
+PASS Android login only Google visible; native Google module true
+PASS localized missing-configuration message and controls re-enabled
+PASS Google tap returns safely on unconfigured build; no account credentials submitted
+PASS signup social button and scroll accessible
+PASS returned phone to login

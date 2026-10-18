@@ -1,6 +1,6 @@
 import { Platform } from 'react-native';
 
-import { ApiClient, handleUnauthorized } from './api-client';
+import { ApiClient, handleUnauthorized, tryRefreshTokens } from './api-client';
 import { AuthService } from './auth-service';
 import type {
   AIQuotaStatus,
@@ -50,6 +50,23 @@ export interface PronunciationAudioInput {
   type: string;
   /** Например, 'recording.m4a'. */
   name: string;
+}
+
+/**
+ * Multipart POST в обход ApiClient: подставляет Bearer, а при 401 один раз
+ * обновляет токены (refresh) и повторяет запрос — иначе просроченный
+ * access-токен разлогинивал пользователя при записи голоса.
+ */
+async function postMultipart(url: string, body: FormData): Promise<Response> {
+  const send = async () => {
+    const headers: Record<string, string> = {};
+    const token = await AuthService.getAccessToken();
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    return fetch(url, { method: 'POST', headers, body });
+  };
+  let res = await send();
+  if (res.status === 401 && (await tryRefreshTokens())) res = await send();
+  return res;
 }
 
 export const AIApi = {
@@ -133,15 +150,7 @@ export const AIApi = {
     if (input.language) fd.append('language', input.language);
     if (input.step_id) fd.append('step_id', input.step_id);
 
-    const headers: Record<string, string> = {};
-    const token = await AuthService.getAccessToken();
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-
-    const res = await fetch(`${API_BASE_URL}/ai/pronunciation/check`, {
-      method: 'POST',
-      headers,
-      body: fd,
-    });
+    const res = await postMultipart(`${API_BASE_URL}/ai/pronunciation/check`, fd);
 
     if (!res.ok) {
       // Direct fetch обходит ApiClient.request, поэтому 401-redirect
@@ -188,15 +197,7 @@ export const AIApi = {
     if (input.encoding) fd.append('encoding', input.encoding);
     if (input.sample_rate) fd.append('sample_rate', String(input.sample_rate));
 
-    const headers: Record<string, string> = {};
-    const token = await AuthService.getAccessToken();
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-
-    const res = await fetch(`${API_BASE_URL}/ai/stt`, {
-      method: 'POST',
-      headers,
-      body: fd,
-    });
+    const res = await postMultipart(`${API_BASE_URL}/ai/stt`, fd);
 
     if (!res.ok) {
       if (res.status === 401) {

@@ -6,7 +6,7 @@ import { OnboardingShell } from '@/components/onboarding/OnboardingShell';
 import { useOnboardingStep } from '@/hooks/use-onboarding-step';
 import { motivationPatch } from '@/lib/onboarding-patches';
 
-const TOTAL_STEPS = 12;
+const TOTAL_STEPS = 6;
 
 type Goal =
   | 'work' | 'exam' | 'travel' | 'speaking' | 'study'
@@ -45,7 +45,7 @@ export default function GoalScreen() {
   return (
     <OnboardingShell
       trackKey="goal"
-      step={1}
+      step={2}
       total={TOTAL_STEPS}
       title={t('onboarding.goal.title')}
       subtitle={t('onboarding.goal.subtitle')}

@@ -8,7 +8,6 @@ import type {
   BulkCreateFlashcardsRequest,
   ListFlashcardsRequest,
   PinForTodayRequest,
-  SuggestFlashcardsRequest,
   FlashcardReviewRequest,
 } from '@/types/api';
 
@@ -16,7 +15,6 @@ import type {
 export const FLASHCARDS_KEY = ['flashcards'] as const;
 export const FLASHCARD_STATS_KEY = ['flashcards', 'stats'] as const;
 export const TODAY_QUEUE_KEY = ['flashcards', 'today'] as const;
-export const FLASHCARD_SUGGESTIONS_KEY = ['flashcards', 'suggestions'] as const;
 
 /** Список flashcards с фильтрами */
 export function useFlashcards(params?: ListFlashcardsRequest) {
@@ -60,17 +58,6 @@ export function useTodayQueue(queuedForDate?: string, includeSrs = false) {
     queryFn: () => FlashcardsApi.listToday(queuedForDate, includeSrs),
     enabled: isAuthenticated,
     staleTime: 30 * 1000,
-  });
-}
-
-/** AI suggestions для новых карточек */
-export function useFlashcardSuggestions(params?: SuggestFlashcardsRequest) {
-  const { isAuthenticated } = useIsAuthenticated();
-  return useQuery({
-    queryKey: [...FLASHCARD_SUGGESTIONS_KEY, params],
-    queryFn: () => FlashcardsApi.suggestions(params),
-    enabled: isAuthenticated && !!params,
-    staleTime: 5 * 60 * 1000,
   });
 }
 

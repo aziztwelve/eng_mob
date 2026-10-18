@@ -1,204 +1,149 @@
 import React, { useMemo } from 'react';
-import { View, Text, Pressable, ScrollView, StatusBar } from 'react-native';
+import { View, Text, Pressable, ScrollView, Image, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useLogout, useCurrentUser } from '@/hooks/use-auth';
+import { Award, Flame, Gem, Heart, Settings, Zap } from 'lucide-react-native';
+import { useCurrentUser } from '@/hooks/use-auth';
 import { useUserStats } from '@/hooks/use-user-stats';
-import { useDailyGoal } from '@/hooks/use-daily-goal';
 import { useMyAchievements, useAchievements } from '@/hooks/use-achievements';
+import { useMistakes } from '@/hooks/use-srs';
 import { useOnboardingState } from '@/hooks/use-onboarding';
-import { DailyGoalRing } from '@/components/gamification';
-import { tsToDate } from '@/lib/api-client';
 import { languageNameForUi, type UiLanguage } from '@/lib/supported-languages';
-import { glass, GOLD, SunsetHeader, SunsetSubhead, CtaButton } from '@/components/sunset';
 
-/** Человекочитаемый уровень из значения онбординга (CEFR / слово). */
-function levelText(level?: string | null): string {
-  if (!level) return '';
-  const cefr = ['a1', 'a2', 'b1', 'b2', 'c1'];
-  if (cefr.includes(level)) return level.toUpperCase();
-  if (level === 'beginner') return 'Beginner';
-  if (level === 'just_for_fun') return '';
-  return level.toUpperCase();
-}
+// Hero: top part of the Figma "Profile" frame (mascot + clouds), exported from 304:2746.
+const heroImage = require('../../../assets/figma/screens/Light__Profile__Profile__304-2746.png');
+const HERO_W = 375;
+const HERO_H = 1169;
+const HERO_CROP = 245;
+// Figma status bar (9:41) baked into the export; hidden by the crop.
+const STATUS_BAR = 50;
 
-/** Сужает код UI-локали до поддерживаемого набора. */
+/** Двухбуквенный код UI-локали, поддерживаемый приложением. */
 function uiLang(code?: string): UiLanguage {
   const c = (code ?? 'ru').slice(0, 2).toLowerCase();
   return c === 'en' || c === 'kk' ? (c as UiLanguage) : 'ru';
 }
 
-function streakUnitKey(streak: number): string {
-  const mod10 = streak % 10;
-  const mod100 = streak % 100;
-  if (mod10 === 1 && mod100 !== 11) return 'profile.day_1';
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return 'profile.day_2';
-  return 'profile.day_5';
-}
-
-const MENU = [
-  { emoji: '📊', label: 'profile.stats',        href: '/profile/stats' },
-  { emoji: '🔥', label: 'profile.streak',       href: '/profile/streak' },
-  { emoji: '💪', label: 'profile.strength',     href: '/profile/strength' },
-  { emoji: '🔔', label: 'profile.notifications', href: '/profile/notifications' },
-  { emoji: '📖', label: 'profile.lockscreen_words', href: '/profile/lockscreen-words' },
-  { emoji: '⚙️', label: 'profile.settings',     href: '/profile/settings' },
-] as const;
-
 export default function ProfileScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { t, i18n } = useTranslation();
-  const logout = useLogout();
+  const { width } = useWindowDimensions();
+  const contentWidth = Math.min(width, 375);
+  const heroScale = contentWidth / HERO_W;
+
   const { data: user } = useCurrentUser();
   const { data: stats } = useUserStats();
-  const { data: dailyGoal } = useDailyGoal();
   const { data: onboarding } = useOnboardingState();
   const mine = useMyAchievements();
   const all = useAchievements();
+  const mistakes = useMistakes({ resolved: 'unresolved', limit: 1 });
 
-  const unlocked = useMemo(() => {
-    return (mine.data?.achievements ?? [])
-      .slice()
-      .sort((a, b) => {
-        const da = tsToDate(a.unlocked_at)?.getTime() ?? 0;
-        const db = tsToDate(b.unlocked_at)?.getTime() ?? 0;
-        return db - da;
-      })
-      .slice(0, 4);
-  }, [mine.data]);
-
-  // Реальные «ещё не открытые» достижения: каталог минус уже полученные.
-  const locked = useMemo(() => {
-    const unlockedIds = new Set(
-      (mine.data?.achievements ?? []).map((ua) => ua.achievement.id),
-    );
-    return (all.data?.achievements ?? [])
-      .filter((a) => !unlockedIds.has(a.id))
-      .slice(0, 6);
-  }, [all.data, mine.data]);
-
-  const streak = stats?.current_streak ?? 0;
-
-  // Дневная цель — из реального daily-goal (today), а не из weekly_xp.
-  const xpGoal = dailyGoal?.target_xp ?? dailyGoal?.today?.goal ?? 20;
-  const xpToday = dailyGoal?.today?.xp_earned ?? 0;
-  const xpLeft = Math.max(0, xpGoal - xpToday);
-  const goalDone = xpToday >= xpGoal;
-
-  // Язык + уровень — из состояния онбординга (backend SoT), не статика.
   const ui = uiLang(i18n.language);
-  const langName = onboarding?.target_language
-    ? languageNameForUi(onboarding.target_language, ui)
-    : '';
-  const lvl = levelText(onboarding?.level);
-  const streakPart =
-    streak > 0
-      ? t('profile.in_streak', { count: streak, unit: t(streakUnitKey(streak) as never) })
-      : t('profile.start_streak');
-  const subtitle = [langName, lvl, streakPart].filter(Boolean).join(' · ');
-
+  const course = onboarding?.target_language ? languageNameForUi(onboarding.target_language, ui) : '';
   const displayName = user?.name || user?.username || t('profile.student');
+  const mistakeCount = mistakes.data?.total ?? mistakes.data?.mistakes?.length ?? 0;
+
+  const achievements = useMemo(() => {
+    const unlocked = (mine.data?.achievements ?? []).map((ua) => ({ id: ua.achievement.id, title: ua.achievement.title, locked: false }));
+    const unlockedIds = new Set(unlocked.map((u) => u.id));
+    const locked = (all.data?.achievements ?? [])
+      .filter((a) => !unlockedIds.has(a.id))
+      .map((a) => ({ id: a.id, title: a.title, locked: true }));
+    return [...unlocked, ...locked].slice(0, 6);
+  }, [mine.data, all.data]);
+
+  const statTiles = [
+    { key: 'xp', icon: Zap, color: '#FFB020', value: stats?.total_xp ?? 0, label: t('profile.total_xp') },
+    { key: 'streak', icon: Flame, color: '#FF7A3D', value: stats?.current_streak ?? 0, label: t('profile.day_streak') },
+    { key: 'gems', icon: Gem, color: '#36B6FF', value: stats?.gems ?? 0, label: t('profile.gems') },
+    { key: 'hearts', icon: Heart, color: '#FF4B7E', value: stats?.hearts ?? 0, label: t('profile.hearts') },
+  ];
 
   return (
-    <View style={{ flex: 1 }}>
-      <StatusBar barStyle="light-content" />
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 6, paddingBottom: 78 + insets.bottom }}
-      >
-        <SunsetHeader title={t('profile.title')} />
+    <View className="flex-1 bg-mieo-bg">
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 110 + insets.bottom, alignItems: 'center' }}>
+        {/* Hero */}
+        <View style={{ width: contentWidth, height: HERO_CROP * heroScale, overflow: 'hidden' }}>
+          <Image source={heroImage} style={{ width: contentWidth, height: HERO_H * heroScale, marginTop: -STATUS_BAR * heroScale }} resizeMode="cover" />
+        </View>
 
-        {/* Identity card */}
-        <View style={[glass, { borderRadius: 20, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 12 }]}>
-          <LinearGradient colors={GOLD} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ width: 64, height: 64, borderRadius: 22, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ fontSize: 32 }}>🦉</Text>
-          </LinearGradient>
-          <View style={{ flex: 1 }}>
-            <Text style={{ color: '#fff', fontWeight: '900', fontSize: 19 }}>
-              {displayName}
-            </Text>
-            <Text style={{ color: 'rgba(255,255,255,0.78)', fontSize: 13, fontWeight: '600', marginTop: 3 }}>
-              {subtitle}
-            </Text>
+        {/* Name + email */}
+        <View className="items-center gap-1 px-4" style={{ width: contentWidth, marginTop: -8 }}>
+          <Text className="font-nunito-extrabold text-[22px] text-center text-mieo-heading">{displayName}</Text>
+          {!!user?.email && <Text className="font-nunito-medium text-sm text-mieo-body">{user.email}</Text>}
+        </View>
+
+        {/* Courses / following / followers */}
+        <View className="flex-row items-start gap-6 rounded-2xl border-[1.5px] border-[#C9EDFF] bg-mieo-surface px-5 py-3 mt-3" style={{ width: contentWidth - 32 }}>
+          <View className="gap-2">
+            <Text className="font-nunito-medium text-sm text-mieo-body">{t('profile.courses')}</Text>
+            <Text className="font-nunito-semibold text-sm text-mieo-heading">{course || '—'}</Text>
+          </View>
+          <View className="w-px self-stretch bg-mieo-stroke" />
+          <View className="gap-2">
+            <Text className="font-nunito-medium text-sm text-mieo-body">{t('profile.following')}</Text>
+            <Text className="font-nunito-extrabold text-base text-mieo-heading">—</Text>
+          </View>
+          <View className="gap-2">
+            <Text className="font-nunito-medium text-sm text-mieo-body">{t('profile.followers')}</Text>
+            <Text className="font-nunito-extrabold text-base text-mieo-heading">—</Text>
           </View>
         </View>
 
-        {/* Daily goal card */}
-        <View style={[glass, { borderRadius: 20, padding: 13, flexDirection: 'row', alignItems: 'center', gap: 14, marginTop: 12 }]}>
-          <DailyGoalRing size={100} />
-          <View style={{ flex: 1 }}>
-            <Text style={{ color: '#fff', fontWeight: '900', fontSize: 16 }}>
-              {goalDone ? t('profile.goal_done') : t('profile.goal_almost')}
-            </Text>
-            <Text style={{ color: 'rgba(255,255,255,0.78)', fontSize: 13, fontWeight: '600', marginTop: 4 }}>
-              {goalDone ? t('profile.great_job') : t('profile.xp_left', { xp: xpLeft })}
-            </Text>
-            {!goalDone && (
-              <View style={{ marginTop: 12 }}>
-                <CtaButton label={t('profile.finish_goal')} onPress={() => router.push('/(tabs)/practice')} />
+        {/* Stat tiles */}
+        <View className="flex-row flex-wrap justify-between gap-y-3 px-4 mt-4" style={{ width: contentWidth }}>
+          {statTiles.map((s) => {
+            const Icon = s.icon;
+            return (
+              <View key={s.key} className="h-[68px] w-[163px] flex-row items-center gap-3 rounded-2xl border-[1.5px] border-[#C9EDFF] bg-mieo-surface px-3">
+                <View className="h-9 w-9 items-center justify-center rounded-xl bg-[#F5FCFF]">
+                  <Icon size={20} color={s.color} />
+                </View>
+                <View>
+                  <Text className="font-nunito-extrabold text-lg text-mieo-heading">{s.value}</Text>
+                  <Text className="font-nunito-medium text-xs text-mieo-primary-full">{s.label}</Text>
+                </View>
               </View>
-            )}
-          </View>
+            );
+          })}
+        </View>
+
+        {/* Mistakes & practice */}
+        <View className="gap-3 px-4 mt-5" style={{ width: contentWidth }}>
+          <Text className="font-nunito-extrabold text-lg text-mieo-heading">{t('profile.mistakes_practice')}</Text>
+          <Pressable onPress={() => router.push('/(tabs)/practice/mistakes' as never)} className="flex-row items-center gap-3 rounded-2xl border-[1.5px] border-[#F0A5A5] bg-mieo-surface px-4 py-3">
+            <Heart size={24} color="#E26A6A" />
+            <Text className="flex-1 font-nunito-extrabold text-base text-mieo-heading">{t('profile.mistakes_count', { count: mistakeCount })}</Text>
+          </Pressable>
         </View>
 
         {/* Achievements */}
-        <SunsetSubhead title={t('profile.achievements')} linkLabel={t('profile.all')} onLink={() => router.push('/profile/achievements')} />
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {unlocked.map((ua) => (
-            <View key={ua.achievement.id} style={[glass, { width: 72, height: 84, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginRight: 10, gap: 4 }]}>
-              <Text style={{ fontSize: 26 }}>🏅</Text>
-              <Text style={{ color: 'rgba(255,255,255,0.78)', fontSize: 10, fontWeight: '800', textAlign: 'center' }} numberOfLines={2}>
-                {ua.achievement.title}
-              </Text>
-            </View>
-          ))}
-          {locked.map((a) => (
-            <View key={a.id} style={[glass, { width: 72, height: 84, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginRight: 10, gap: 4, opacity: 0.45 }]}>
-              <Text style={{ fontSize: 26 }}>🔒</Text>
-              <Text style={{ color: 'rgba(255,255,255,0.78)', fontSize: 10, fontWeight: '800', textAlign: 'center' }} numberOfLines={2}>
-                {a.title}
-              </Text>
-            </View>
-          ))}
-        </ScrollView>
-
-        {/* Menu */}
-        <View style={{ gap: 10, marginTop: 14 }}>
-          {MENU.map((item) => (
-            <Pressable
-              key={item.href}
-              onPress={() => router.push(item.href as any)}
-              style={[glass, { flexDirection: 'row', alignItems: 'center', padding: 11, gap: 12, borderRadius: 18 }]}
-            >
-              <View style={{
-                width: 44, height: 44, borderRadius: 14,
-                backgroundColor: 'rgba(255,255,255,0.18)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)',
-                alignItems: 'center', justifyContent: 'center',
-              }}>
-                <Text style={{ fontSize: 20 }}>{item.emoji}</Text>
-              </View>
-              <Text style={{ flex: 1, color: '#fff', fontWeight: '800', fontSize: 15 }}>{t(item.label as never)}</Text>
-              <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 22 }}>›</Text>
+        <View className="gap-3 px-4 mt-5" style={{ width: contentWidth }}>
+          <View className="flex-row items-center justify-between">
+            <Text className="font-nunito-extrabold text-lg text-mieo-heading">{t('profile.achievements')}</Text>
+            <Pressable onPress={() => router.push('/profile/achievements')}>
+              <Text className="font-nunito-semibold text-sm text-mieo-body">{t('profile.view_all')}</Text>
             </Pressable>
-          ))}
+          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 16 }}>
+            {achievements.map((a) => (
+              <View key={a.id} className={`h-[96px] w-[92px] items-center justify-center gap-1.5 rounded-2xl border-[1.5px] border-mieo-stroke bg-mieo-surface p-2 ${a.locked ? 'opacity-40' : ''}`}>
+                <Award size={28} color={a.locked ? '#9AA5AD' : '#FFB020'} />
+                <Text numberOfLines={2} className="text-center font-nunito-extrabold text-xs text-mieo-heading">{a.title}</Text>
+              </View>
+            ))}
+          </ScrollView>
         </View>
 
-        {/* Logout */}
-        <Pressable
-          onPress={() => logout.mutate()}
-          disabled={logout.isPending}
-          style={[glass, {
-            borderRadius: 16, paddingVertical: 13, alignItems: 'center',
-            borderColor: 'rgba(255,111,160,0.4)', marginTop: 12,
-          }]}
-        >
-          <Text style={{ color: '#FF6FA0', fontWeight: '900', fontSize: 15 }}>
-            {logout.isPending ? t('profile.logging_out') : t('profile.logout')}
-          </Text>
-        </Pressable>
+        {/* Settings */}
+        <View className="w-full items-center px-4 mt-5">
+          <Pressable onPress={() => router.push('/profile/settings')} className="w-full min-h-[46px] flex-row items-center justify-center gap-2 rounded-2xl border-2 border-mieo-dim bg-mieo-surface px-6 py-2.5">
+            <Settings size={18} color="#171A1C" />
+            <Text className="font-nunito-extrabold text-base text-mieo-heading">{t('profile.settings_btn')}</Text>
+          </Pressable>
+        </View>
       </ScrollView>
     </View>
   );

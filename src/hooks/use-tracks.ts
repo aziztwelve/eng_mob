@@ -1,17 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { TracksApi, MyTracksApi } from '@/lib/api-client';
-import { FLASHCARDS_KEY, FLASHCARD_STATS_KEY } from '@/hooks/use-flashcards';
+import { ActiveTrackApi, TracksApi } from '@/lib/api-client';
 import type { TrackFilters } from '@/types/api';
-
-/** Персональный план треков юзера (Phase 8). Бэкенд лениво генерирует план
- *  по профилю (level + language + goal), если его ещё нет. */
-export function useMyTracks() {
-  return useQuery({
-    queryKey: ['my-tracks'],
-    queryFn: () => MyTracksApi.list(),
-    staleTime: 60 * 1000,
-  });
-}
 
 /** Список публикованных треков с фильтрами. */
 export function useTracks(filters?: TrackFilters) {
@@ -19,6 +8,26 @@ export function useTracks(filters?: TrackFilters) {
     queryKey: ['tracks', filters],
     queryFn: () => TracksApi.list(filters),
     staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useActiveTrack() {
+  return useQuery({
+    queryKey: ['active-track'],
+    queryFn: ActiveTrackApi.get,
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+}
+
+export function useSetActiveTrack() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (trackId: string) => ActiveTrackApi.set(trackId),
+    onSuccess: (_data, trackId) => {
+      queryClient.invalidateQueries({ queryKey: ['active-track'] });
+      queryClient.invalidateQueries({ queryKey: ['track', trackId, true] });
+    },
   });
 }
 
@@ -53,17 +62,5 @@ export function useTrackDictionary(idOrCode: string, search = '') {
     queryFn: () => TracksApi.dictionary(idOrCode, search),
     enabled: !!idOrCode,
     staleTime: 60 * 1000,
-  });
-}
-
-export function useAddTrackDictionaryWords(idOrCode: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (vocabularyIds: string[]) => TracksApi.addDictionaryWords(idOrCode, vocabularyIds),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['trackDictionary', idOrCode] });
-      queryClient.invalidateQueries({ queryKey: FLASHCARDS_KEY });
-      queryClient.invalidateQueries({ queryKey: FLASHCARD_STATS_KEY });
-    },
   });
 }

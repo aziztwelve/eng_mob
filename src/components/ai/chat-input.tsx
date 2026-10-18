@@ -73,7 +73,10 @@ export function ChatInput({
   placeholder,
   showMic = true,
   language,
+  light = false,
 }: {
+  /** Светлое (sky) оформление для шагов урока. */
+  light?: boolean;
   onSend: (content: string, wantAudio: boolean) => void | Promise<void>;
   loading?: boolean;
   placeholder?: string;
@@ -97,7 +100,11 @@ export function ChatInput({
   useEffect(() => {
     return () => {
       if (tickRef.current) clearInterval(tickRef.current);
-      if (recorder.isRecording) void recorder.stop().catch(() => {});
+      try {
+        if (recorder.isRecording) void recorder.stop().catch(() => {});
+      } catch {
+        /* released */
+      }
     };
   }, []);
 
@@ -179,23 +186,23 @@ export function ChatInput({
   const micBusy = loading || transcribing;
 
   return (
-    <View style={[s.wrap, glass]}>
+    <View style={[s.wrap, light ? L.wrap : glass]}>
       <TextInput
         value={text}
         onChangeText={setText}
         placeholder={transcribing ? 'Распознаём речь…' : placeholder}
-        placeholderTextColor="rgba(255,255,255,0.35)"
+        placeholderTextColor={light ? '#8A949B' : 'rgba(255,255,255,0.35)'}
         editable={!loading && !transcribing}
         multiline
         numberOfLines={1}
-        style={s.input}
+        style={[s.input, light && L.input]}
       />
 
       {showMic && (
         <Pressable
           onPress={recording ? stopRecAndTranscribe : startRec}
           disabled={micBusy}
-          style={[s.iconBtn, recording ? s.iconBtnRec : glass]}
+          style={[s.iconBtn, recording ? s.iconBtnRec : light ? L.icon : glass]}
           accessibilityLabel={recording ? 'Stop recording' : 'Voice input'}
         >
           {transcribing ? (
@@ -203,20 +210,20 @@ export function ChatInput({
           ) : recording ? (
             <Square size={15} color="#f87171" fill="#f87171" />
           ) : (
-            <Mic size={17} color="rgba(255,255,255,0.55)" />
+            <Mic size={17} color={light ? '#2FA8E6' : 'rgba(255,255,255,0.55)'} />
           )}
         </Pressable>
       )}
 
       <Pressable onPress={submit} disabled={!canSubmit || loading} style={s.sendWrap}>
         <LinearGradient
-          colors={canSubmit ? CTA : ['rgba(255,255,255,0.12)', 'rgba(255,255,255,0.12)']}
+          colors={canSubmit ? (light ? ['#59C8FF', '#2FA8E6'] : CTA) : light ? ['#E3E8EC', '#E3E8EC'] : ['rgba(255,255,255,0.12)', 'rgba(255,255,255,0.12)']}
           style={s.sendBtn}
         >
           {loading ? (
             <ActivityIndicator size="small" color="#fff" />
           ) : (
-            <Send size={17} color={canSubmit ? '#fff' : 'rgba(255,255,255,0.4)'} />
+            <Send size={17} color={canSubmit ? '#fff' : light ? '#8A949B' : 'rgba(255,255,255,0.4)'} />
           )}
         </LinearGradient>
       </Pressable>
@@ -268,4 +275,10 @@ const s = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: 14,
   },
+});
+
+const L = StyleSheet.create({
+  wrap: { backgroundColor: '#FFFFFF', borderWidth: 1.5, borderBottomWidth: 4, borderColor: '#DDE3E8', borderBottomColor: '#D3DAE0' },
+  input: { color: '#171A1C' },
+  icon: { backgroundColor: '#EAF8FF', borderWidth: 1, borderColor: '#59C8FF' },
 });

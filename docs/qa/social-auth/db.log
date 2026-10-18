@@ -1,0 +1,10 @@
+BEGIN
+CREATE TABLE
+CREATE INDEX
+DO
+                                          ?column?                                          
+--------------------------------------------------------------------------------------------
+ PASS: nonce expiry/provider/replay and identity/email uniqueness; all fixtures rolled back
+(1 row)
+
+ROLLBACK

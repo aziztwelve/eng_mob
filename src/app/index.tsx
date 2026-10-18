@@ -15,11 +15,8 @@ import { AuthService } from '@/lib/auth-service';
  *   2. Onboarded или V3 kill-switch выключен → `/(tabs)`.
  *   3. Иначе → `/onboarding/welcome`.
  *
- * Раньше тут был legacy экран SIGN IN / CREATE ACCOUNT для случая
- * «нет токена». После lazy-guest-creation (см. `ensureGuestSession`)
- * этот экран больше не нужен — наш `/onboarding/welcome` сам
- * предлагает «Начать учиться» (создаст гостя) и «У меня уже есть
- * аккаунт. Войти» (уйдёт в `/auth/login`).
+ * Пользователь без registered token проходит локальный onboarding и затем
+ * обязательную регистрацию. Основной интерфейс доступен только с token.
  */
 export default function IndexScreen() {
   const router = useRouter();
@@ -27,33 +24,27 @@ export default function IndexScreen() {
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      const [onboarded, token, guest] = await Promise.all([
+      const [onboarded, token] = await Promise.all([
         isOnboarded(),
         AuthService.getAccessToken(),
-        AuthService.isGuestSession(),
       ]);
       if (cancelled) return;
       const v3Enabled = isOnboardingV3Enabled();
 
-      // Зарегистрированный юзер с токеном — всегда в app, даже если
-      // локальный completed_at сбросился (переустановка, очистка storage).
-      if (token && !guest) {
+      // Зарегистрированный юзер с токеном — всегда в app.
+      if (token) {
         router.replace('/(tabs)');
         return;
       }
 
       if (onboarded || !v3Enabled) {
-        // Уже прошёл онбординг (или V3 выключен) — пускаем в основной
-        // app. Если токена нет (например, юзер переустановил приложение
-        // после флага onboarded в старом install'е) — `/(tabs)` сам
-        // редиректнёт обратно через свой guard.
-        router.replace('/(tabs)');
+        // Локальный onboarding без registered token должен продолжить
+        // обязательную регистрацию, а не открывать guest UI.
+        router.replace('/onboarding/signup');
         return;
       }
 
       // Не onboarded — показываем welcome.
-      // ensureGuestSession() будет вызвана лениво при первом тапе
-      // «Начать учиться» (см. usePatchOnboardingV3 → ensureGuestSession).
       router.replace('/onboarding/welcome');
     })();
     return () => {

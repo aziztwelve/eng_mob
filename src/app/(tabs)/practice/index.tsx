@@ -1,529 +1,75 @@
-import React, { useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Pressable,
-  StatusBar,
-} from "react-native";
-import { useRouter, Stack } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
-import { LinearGradient } from "expo-linear-gradient";
-import Svg, { Path, Circle, Ellipse } from "react-native-svg";
-import { ActivityIndicator } from "react-native";
-
-import { useFlashcards, useFlashcardStats, useSeedStarter } from "@/hooks/use-flashcards";
-import { useTracks, useTrack } from "@/hooks/use-tracks";
-import { useOnboardingState } from "@/hooks/use-onboarding";
-import { useUserStats } from "@/hooks/use-user-stats";
-import { useHearts } from "@/hooks/use-hearts";
-import VocabularyBankTab from "@/components/vocabulary/VocabularyBankTab";
-import { IconFlame, IconGem, IconHeart } from "@/components/ui/icons";
-import type { Flashcard, Track } from "@/types/api";
+import { KeyboardLift } from '@/components/keyboard-lift';
+import React, { useState } from 'react';
+import { ScrollView, StatusBar, StyleSheet, View } from 'react-native';
+import { Stack } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
 
-/* ------------------------------------------------------------------ */
-/* Palette (Sunset Lava)                                               */
-/* ------------------------------------------------------------------ */
-const GRAD = ["#2E0A4A", "#6A1252", "#A8243F", "#C9521F"] as const;
-const GRAD_LOC = [0, 0.38, 0.7, 0.96] as const;
-const CTA = ["#A8243F", "#CC5A1F"] as const;
-const GOLD = ["#FFDF5E", "#FFB338"] as const;
+import { useUserStats } from '@/hooks/use-user-stats';
+import { useHearts } from '@/hooks/use-hearts';
+import VocabularyBankTab from '@/components/vocabulary/VocabularyBankTab';
+import { SKY } from '@/components/lesson/sky-lesson-header';
+import { PracticeHeader, type PracticeTab } from '@/components/practice/practice-ui';
+import { TracksTab } from '@/components/practice/tracks-tab';
+import { CoursesTab } from '@/components/practice/courses-tab';
+import { WordsTab } from '@/components/practice/words-tab';
 
-const glass = {
-  backgroundColor: "rgba(255,255,255,0.14)",
-  borderWidth: 1,
-  borderColor: "rgba(255,255,255,0.22)",
-} as const;
-
-/* ------------------------------------------------------------------ */
-/* Data                                                                */
-/* ------------------------------------------------------------------ */
-type TabName = "tracks" | "courses" | "words" | "bank";
-
-const TABS: { key: TabName; labelKey: string }[] = [
-  { key: "tracks", labelKey: "practice.tab_tracks" },
-  { key: "courses", labelKey: "practice.tab_courses" },
-  { key: "words", labelKey: "practice.tab_words" },
-  { key: "bank", labelKey: "practice.tab_bank" },
-];
-
-// Уровни CEFR — вход в каталог треков.
-const LEVELS = ["A1", "A2", "B1", "B2", "C1"] as const;
-
-/** Русская плюрализация «N трек(а/ов)». */
-function nTracksKey(count: number): string {
-  const mod10 = count % 10;
-  const mod100 = count % 100;
-  if (mod10 === 1 && mod100 !== 11) return "practice.n_tracks_1";
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return "practice.n_tracks_2";
-  return "practice.n_tracks_5";
-}
-
-/* ------------------------------------------------------------------ */
-/* Small parts                                                         */
-/* ------------------------------------------------------------------ */
-
-function Owl() {
-  return (
-    <Svg width={78} height={82} viewBox="0 0 90 95">
-      <Path d="M18 31C15 19 20 11 20 11c8 5 12 11 14 16h22c2-5 6-11 14-16 0 0 5 8 2 20 7 8 11 19 11 31 0 21-17 31-38 31S7 83 7 62c0-12 4-23 11-31Z" fill="#8a542d" />
-      <Ellipse cx={45} cy={62} rx={27} ry={30} fill="#c98e61" />
-      <Circle cx={33} cy={40} r={16} fill="#f5e6d2" />
-      <Circle cx={57} cy={40} r={16} fill="#f5e6d2" />
-      <Circle cx={33} cy={40} r={9} fill="#33221a" />
-      <Circle cx={57} cy={40} r={9} fill="#33221a" />
-      <Circle cx={36} cy={37} r={3} fill="white" />
-      <Circle cx={60} cy={37} r={3} fill="white" />
-      <Path d="M38 52h14L45 62 38 52Z" fill="#ff9c00" />
-    </Svg>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/* Screen                                                              */
-/* ------------------------------------------------------------------ */
+/**
+ * Practice page in the Figma-based sky style: stats + icon tabs on top, then
+ * the selected tab (tracks path, courses teaser, quick word review, word bank).
+ */
 export default function LessonsScreen() {
   const { t } = useTranslation();
-  const router = useRouter();
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
-  const [activeTab, setActiveTab] = useState<TabName>("tracks");
+  const [activeTab, setActiveTab] = useState<PracticeTab>('tracks');
 
-  // Геймификация: реальные данные с бэкенда (как на главной).
   const { data: stats } = useUserStats();
   const { data: hearts } = useHearts();
   const streak = stats?.current_streak ?? 0;
-  const heartsCount = hearts?.unlimited ? "∞" : (hearts?.hearts ?? stats?.hearts ?? 0);
-  const xp = stats?.total_xp ?? 0;
+  const heartsCount = hearts?.unlimited ? '∞' : (hearts?.hearts ?? stats?.hearts ?? 0);
+  const gems = stats?.gems ?? 0;
+
+  const labels: Record<PracticeTab, string> = {
+    tracks: t('practice.tab_tracks'),
+    courses: t('practice.tab_courses'),
+    words: t('practice.tab_words'),
+    bank: t('practice.tab_bank'),
+  };
 
   return (
-    <LinearGradient colors={GRAD} locations={GRAD_LOC} style={s.root}>
+    <LinearGradient colors={[SKY.top, SKY.mid, '#FFFFFF']} locations={[0, 0.3, 0.6]} style={st.root}>
       <Stack.Screen options={{ headerShown: false }} />
-      <StatusBar barStyle="light-content" />
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={[s.scroll, { paddingBottom: 20 + tabBarHeight + insets.bottom }]}
-      >
-        {/* top: stats + avatar (line icons, no emoji) */}
-        <View style={s.top}>
-          <View style={s.stats}>
-            <View style={[s.stat, glass]}>
-              <IconFlame size={13} color="#FF9F45" />
-              <Text style={s.statText}>{streak}</Text>
-            </View>
-            <View style={[s.stat, glass]}>
-              <IconHeart size={13} color="#FF6B81" />
-              <Text style={s.statText}>{heartsCount}</Text>
-            </View>
-            <View style={[s.stat, glass]}>
-              <IconGem size={13} color="#7ED7FF" />
-              <Text style={s.statText}>{xp}</Text>
-            </View>
-          </View>
-          <View style={s.avatar}>
-            <Text style={s.avatarLetter}>K</Text>
-          </View>
-        </View>
-
-        {/* tabs */}
+      <StatusBar barStyle="dark-content" />
+      <KeyboardLift>
         <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={s.tabs}
-          accessibilityRole="tablist"
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[st.scroll, { paddingBottom: 20 + tabBarHeight + insets.bottom }]}
         >
-          {TABS.map((tab) => {
-            const active = tab.key === activeTab;
-            return (
-              <Pressable key={tab.key} onPress={() => setActiveTab(tab.key)}>
-                {active ? (
-                  <LinearGradient colors={["#A8243F", "#CC5A1F"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[s.tab, s.tabActive]}>
-                    <Text style={[s.tabText, s.tabTextActive]}>{t(tab.labelKey)}</Text>
-                  </LinearGradient>
-                ) : (
-                  <View style={[s.tab, glass]}>
-                    <Text style={s.tabText}>{t(tab.labelKey)}</Text>
-                  </View>
-                )}
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-
-        {activeTab === "tracks" ? (
-          <>
-            {/* subhead */}
-            <View style={s.subhead}>
-              <View>
-                <Text style={s.subheadTitle}>{t('practice.levels_tracks')}</Text>
-                <LinearGradient colors={GOLD} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.subheadUnderline} />
-              </View>
-            </View>
-
-            {/* tracks (под уровень аккаунта, из БД) */}
-            <LevelGoals />
-
-            {/* banner */}
-            <View style={[s.banner, glass]}>
-              <Owl />
-              <View style={s.bannerMain}>
-                <Text style={s.bannerTitle}>{t('practice.keep_learning')}</Text>
-                <Text style={s.bannerText}>{t('practice.keep_learning_text')}</Text>
-                <Pressable>
-                  <LinearGradient colors={CTA} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.remind}>
-                    <Text style={s.remindText}>{t('practice.reminder')}</Text>
-                  </LinearGradient>
-                </Pressable>
-              </View>
-            </View>
-          </>
-        ) : activeTab === "words" ? (
-          <MyWordsTab />
-        ) : activeTab === "bank" ? (
-          <VocabularyBankTab />
-        ) : (
-          <View style={s.empty}>
-            <Text style={s.emptyEmoji}>📚</Text>
-            <Text style={s.emptyText}>{t('practice.courses_soon')}</Text>
+          <PracticeHeader
+            active={activeTab}
+            onChange={setActiveTab}
+            labels={labels}
+            streak={streak}
+            hearts={heartsCount}
+            gems={gems}
+          />
+          <View>
+            {activeTab === 'tracks' ? <TracksTab /> : null}
+            {activeTab === 'courses' ? <CoursesTab /> : null}
+            {activeTab === 'words' ? <WordsTab /> : null}
+            {activeTab === 'bank' ? <VocabularyBankTab /> : null}
           </View>
-        )}
-      </ScrollView>
+        </ScrollView>
+      </KeyboardLift>
     </LinearGradient>
   );
 }
 
-/* ------------------------------------------------------------------ */
-/* «Мои треки» — треки из БД (уровень пока не привязываем) */
-/* ------------------------------------------------------------------ */
-function LevelGoals() {
-  const { t } = useTranslation();
-  const router = useRouter();
-  const onboarding = useOnboardingState();
-  const language = onboarding.data?.target_language || undefined;
-  const { data, isLoading } = useTracks({ language, limit: 500 });
-  const tracks = data?.tracks ?? [];
-
-  if (isLoading) {
-    return <ActivityIndicator color="#FFD84A" style={{ marginVertical: 24 }} />;
-  }
-  if (tracks.length === 0) {
-    return (
-      <View style={[trk.empty, glass]}>
-        <Text style={{ fontSize: 40 }}>🧭</Text>
-        <Text style={trk.emptyText}>{t('practice.no_tracks_level')}</Text>
-      </View>
-    );
-  }
-
-  const countByLevel = new Map<string, number>();
-  tracks.forEach((track) => {
-    const lvl = (track.level ?? "").toUpperCase();
-    if (lvl) countByLevel.set(lvl, (countByLevel.get(lvl) ?? 0) + 1);
-  });
-
-  // 2-колоночная сетка уровней (стиль goals-grid из /tracks).
-  return <View style={s.levelGrid}>
-    {LEVELS.map((lvl) => {
-      const count = countByLevel.get(lvl) ?? 0;
-      return (
-        <Pressable key={lvl} onPress={() => router.push(`/tracks?level=${lvl}` as never)} style={[s.levelCard, glass]}>
-          <Text style={s.levelEmoji}>{lvl}</Text>
-          <Text style={s.levelTitle}>{t(`tracks.level_titles.${lvl}` as never)}</Text>
-          <Text style={s.levelCount}>
-            {count ? t(nTracksKey(count), { count }) : t('tracks.soon')}
-          </Text>
-        </Pressable>
-      );
-    })}
-  </View>;
-}
-
-/* ------------------------------------------------------------------ */
-/* Уроки трека — рендерим напрямую внутри «Мои треки».                 */
-/* ------------------------------------------------------------------ */
-function TrackLessons({ track }: { track: Track }) {
-  const { t } = useTranslation();
-  const router = useRouter();
-  const { data: full, isLoading } = useTrack(track.id, true);
-  const lessons = full?.lessons ?? [];
-
-  if (isLoading) {
-    return <ActivityIndicator color="#FFD84A" style={{ marginVertical: 24 }} />;
-  }
-  if (lessons.length === 0) {
-    return (
-      <View style={[trk.empty, glass]}>
-        <Text style={{ fontSize: 40 }}>🦉</Text>
-        <Text style={trk.emptyText}>{t('tracks.lessons_soon')}</Text>
-      </View>
-    );
-  }
-
-  return (
-    <View style={{ gap: 10 }}>
-      {lessons.map((lesson, idx) => (
-        <Pressable
-          key={lesson.id}
-          onPress={() => router.push(`/learn/${lesson.id}` as never)}
-          style={[trk.card, glass]}
-        >
-          <View style={trk.thumb}>
-            <Text style={trk.thumbNum}>{idx + 1}</Text>
-          </View>
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <Text style={trk.title} numberOfLines={2}>
-              {lesson.title}
-            </Text>
-            {lesson.description ? (
-              <Text style={trk.desc} numberOfLines={2}>
-                {lesson.description}
-              </Text>
-            ) : null}
-          </View>
-          <LinearGradient colors={CTA} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={trk.go}>
-            <Text style={trk.goText}>›</Text>
-          </LinearGradient>
-        </Pressable>
-      ))}
-    </View>
-  );
-}
-
-const trk = StyleSheet.create({
-  card: { flexDirection: "row", alignItems: "center", gap: 12, padding: 11, borderRadius: 20 },
-  thumb: {
-    width: 52, height: 52, borderRadius: 14, alignItems: "center", justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.18)", borderWidth: 1, borderColor: "rgba(255,255,255,0.25)",
-  },
-  thumbNum: { color: "#FFD84A", fontSize: 18, fontWeight: "900" },
-  title: { color: "#fff", fontSize: 15, fontWeight: "800", lineHeight: 19 },
-  desc: { color: "rgba(255,255,255,0.82)", fontSize: 12, fontWeight: "600", marginTop: 3 },
-  go: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
-  goText: { color: "#fff", fontSize: 22, fontWeight: "900", marginTop: -2 },
-  empty: { alignItems: "center", gap: 10, paddingVertical: 24, borderRadius: 20 },
-  emptyText: { color: "rgba(255,255,255,0.85)", fontSize: 14, fontWeight: "700" },
-});
-
-/* ------------------------------------------------------------------ */
-/* «Мои слова» — флешкарты пользователя внутри вкладки Уроки           */
-/* ------------------------------------------------------------------ */
-function MyWordsTab() {
-  const { t } = useTranslation();
-  const router = useRouter();
-  const stats = useFlashcardStats();
-  const flashcards = useFlashcards({ limit: 30 });
-  const seedStarter = useSeedStarter();
-
-  const todayDue = stats.data?.today_due ?? 0;
-  const mastered = stats.data?.mastered_count ?? 0;
-  const total = stats.data?.total_count ?? 0;
-  const items = flashcards.data?.items ?? [];
-
-  if (stats.isLoading) {
-    return (
-      <View style={{ paddingVertical: 50, alignItems: "center" }}>
-        <ActivityIndicator color="#FFD84A" />
-      </View>
-    );
-  }
-
-  if (total === 0) {
-    return (
-      <View style={[mw.card, { padding: 22, alignItems: "center", gap: 14, marginTop: 18 }]}>
-        <Text style={{ fontSize: 48 }}>🎴</Text>
-        <Text style={mw.emptyTitle}>{t('practice.your_words')}</Text>
-        <Text style={mw.emptyText}>
-          {t('practice.your_words_desc')}
-        </Text>
-        <Pressable
-          onPress={() => seedStarter.mutate("en")}
-          disabled={seedStarter.isPending}
-          style={[mw.ctaWrap, { alignSelf: "stretch" }]}
-        >
-          <LinearGradient colors={CTA} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={mw.cta}>
-            {seedStarter.isPending ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={mw.ctaText}>{t('practice.load_starter')}</Text>
-            )}
-          </LinearGradient>
-        </Pressable>
-        <Pressable onPress={() => router.push("/flashcards" as never)} style={[mw.card, mw.outlineBtn]}>
-          <Text style={mw.outlineText}>{t('practice.open_flashcards')}</Text>
-        </Pressable>
-      </View>
-    );
-  }
-
-  return (
-    <View style={{ marginTop: 18, gap: 14 }}>
-      <View style={[mw.card, { flexDirection: "row", padding: 8 }]}>
-        <MwStat label={t('practice.stat_today')} value={todayDue} color="#FFD84A" />
-        <MwStat label={t('fc.mastered')} value={mastered} color="#2EECC8" />
-        <MwStat label={t('fc.total')} value={total} color="#fff" />
-      </View>
-
-      {todayDue > 0 ? (
-        <Pressable onPress={() => router.push("/flashcards/session" as never)} style={mw.ctaWrap}>
-          <LinearGradient colors={CTA} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[mw.cta, mw.ctaRow]}>
-            <View style={{ flex: 1 }}>
-              <Text style={mw.ctaText}>{t('fc.review_words')}</Text>
-              <Text style={mw.ctaSub}>{t('practice.due_today2', { count: todayDue })}</Text>
-            </View>
-            <Text style={{ fontSize: 22 }}>▶️</Text>
-          </LinearGradient>
-        </Pressable>
-      ) : (
-        <Pressable onPress={() => router.push("/flashcards" as never)} style={[mw.card, mw.outlineBtn]}>
-          <Text style={mw.outlineText}>{t('practice.open_flashcards')}</Text>
-        </Pressable>
-      )}
-
-      <View style={{ gap: 10 }}>
-        {items.map((card: Flashcard) => (
-          <View key={card.id} style={[mw.card, { padding: 14 }]}>
-            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-              <View style={{ flex: 1, gap: 2 }}>
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                  <Text style={mw.word}>{card.word}</Text>
-                  {card.transcription ? <Text style={mw.ipa}>{card.transcription}</Text> : null}
-                </View>
-                <Text style={mw.tr}>{card.translation}</Text>
-              </View>
-              {card.pinned_today ? (
-                <View style={mw.badge}>
-                  <Text style={mw.badgeText}>{t('fc.today_badge')}</Text>
-                </View>
-              ) : null}
-            </View>
-          </View>
-        ))}
-      </View>
-
-      <Pressable onPress={() => router.push("/flashcards" as never)} style={{ alignSelf: "center", paddingVertical: 10 }}>
-        <Text style={mw.allLink}>{t('practice.all_words')}</Text>
-      </Pressable>
-    </View>
-  );
-}
-
-function MwStat({ label, value, color }: { label: string; value: number; color: string }) {
-  return (
-    <View style={{ flex: 1, padding: 10, gap: 3 }}>
-      <Text style={mw.statLabel}>{label.toUpperCase()}</Text>
-      <Text style={[mw.statValue, { color }]}>{value}</Text>
-    </View>
-  );
-}
-
-const mw = StyleSheet.create({
-  card: {
-    backgroundColor: "rgba(255,255,255,0.14)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.22)",
-    borderRadius: 18,
-  },
-  statLabel: { color: "rgba(255,255,255,0.7)", fontSize: 11, fontWeight: "800" },
-  statValue: { fontSize: 24, fontWeight: "900" },
-  ctaWrap: { borderRadius: 16, overflow: "hidden" },
-  cta: { paddingVertical: 16, paddingHorizontal: 18, alignItems: "center" },
-  ctaRow: { flexDirection: "row", gap: 12 },
-  ctaText: { color: "#fff", fontWeight: "900", fontSize: 16 },
-  ctaSub: { color: "rgba(255,255,255,0.85)", fontSize: 13, fontWeight: "600", marginTop: 2 },
-  outlineBtn: { alignSelf: "stretch", alignItems: "center", paddingVertical: 14, borderRadius: 14 },
-  outlineText: { color: "#fff", fontWeight: "800", fontSize: 14 },
-  word: { color: "#fff", fontSize: 16, fontWeight: "800" },
-  ipa: { color: "rgba(255,255,255,0.7)", fontSize: 13, fontWeight: "600" },
-  tr: { color: "rgba(255,255,255,0.85)", fontSize: 14, fontWeight: "600" },
-  badge: { backgroundColor: "#FF9600", borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4 },
-  badgeText: { color: "#fff", fontSize: 11, fontWeight: "800" },
-  emptyTitle: { color: "#fff", fontSize: 18, fontWeight: "900", textAlign: "center" },
-  sectionTitle: { color: "#fff", fontSize: 16, fontWeight: "900", marginTop: 6 },
-  emptyText: { color: "rgba(255,255,255,0.8)", fontSize: 14, textAlign: "center", lineHeight: 20 },
-  allLink: { color: "#FFD84A", fontWeight: "800", fontSize: 14 },
-});
-
-/* ------------------------------------------------------------------ */
-/* Vocabulary Bank                                                     */
-
-
-
-/* ------------------------------------------------------------------ */
-/* Styles                                                              */
-/* ------------------------------------------------------------------ */
-const s = StyleSheet.create({
+const st = StyleSheet.create({
   root: { flex: 1 },
-  scroll: { paddingHorizontal: 20, paddingTop: 8 },
-
-  /* top */
-  top: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 6 },
-  stats: { flexDirection: "row", gap: 7, flex: 1 },
-  stat: { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 13 },
-  statText: { color: "#fff", fontWeight: "800", fontSize: 12.5 },
-  avatar: {
-    width: 38, height: 38, borderRadius: 19, backgroundColor: "#FFD16A",
-    borderWidth: 1.5, borderColor: "rgba(255,255,255,0.5)",
-    alignItems: "center", justifyContent: "center",
-  },
-  avatarLetter: { color: "#3D0A1A", fontSize: 16, fontWeight: "900" },
-
-  /* tabs */
-  tabs: { flexDirection: "row", gap: 10, marginTop: 14 },
-  tab: { paddingHorizontal: 16, paddingVertical: 7, borderRadius: 14 },
-  tabActive: { borderWidth: 0, shadowColor: "#A8243F", shadowOpacity: 0.4, shadowRadius: 12, shadowOffset: { width: 0, height: 8 }, elevation: 4 },
-  tabText: { fontSize: 13, fontWeight: "800", color: "rgba(255,255,255,0.8)" },
-  tabTextActive: { color: "#fff" },
-
-  /* subhead */
-  subhead: { flexDirection: "row", alignItems: "center", marginTop: 14, marginBottom: 10 },
-  subheadTitle: { color: "#fff", fontSize: 17, fontWeight: "800" },
-  subheadUnderline: { width: 36, height: 3, borderRadius: 2, marginTop: 5 },
-  subheadLink: { color: "#fff", fontSize: 13, fontWeight: "700", opacity: 0.92 },
-
-  /* tracks */
-  tracks: { gap: 10 },
-  track: { flexDirection: "row", alignItems: "center", gap: 12, padding: 11, borderRadius: 20 },
-  trackLocked: { opacity: 0.7 },
-  thumb: {
-    width: 56, height: 56, borderRadius: 16, alignItems: "center", justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.18)", borderWidth: 1, borderColor: "rgba(255,255,255,0.25)",
-  },
-  trackMain: { flex: 1, minWidth: 0 },
-  badge: { alignSelf: "flex-start", borderRadius: 10, paddingHorizontal: 9, paddingVertical: 3, backgroundColor: "#FFCB45" },
-  badgeText: { fontSize: 11, fontWeight: "800", color: "#5a3b00" },
-  trackTitle: { color: "#fff", fontSize: 15, fontWeight: "800", marginTop: 5, lineHeight: 18 },
-  trackLvl: { color: "rgba(255,255,255,0.85)", fontSize: 12, fontWeight: "700", marginTop: 4 },
-  trackFoot: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 7 },
-  pbar: { flex: 1, height: 7, borderRadius: 6, backgroundColor: "rgba(255,255,255,0.2)", overflow: "hidden" },
-  pbarFill: { height: "100%", borderRadius: 6 },
-  pct: { color: "#fff", fontSize: 13, fontWeight: "800", minWidth: 38, textAlign: "right" },
-  lockText: { color: "rgba(255,255,255,0.8)", fontSize: 12, fontWeight: "700", marginTop: 7 },
-
-  goWrap: { borderRadius: 20 },
-  go: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
-  goText: { color: "#fff", fontSize: 22, fontWeight: "900", marginTop: -2 },
-  goLock: { backgroundColor: "rgba(255,255,255,0.16)" },
-
-  /* banner */
-  banner: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 14, paddingVertical: 13, paddingHorizontal: 16, borderRadius: 20 },
-  bannerMain: { flex: 1 },
-  bannerTitle: { color: "#fff", fontSize: 17, fontWeight: "900" },
-  bannerText: { color: "rgba(255,255,255,0.82)", fontSize: 12, fontWeight: "600", marginTop: 4, lineHeight: 17 },
-  remind: { alignSelf: "flex-start", marginTop: 9, flexDirection: "row", alignItems: "center", paddingHorizontal: 14, paddingVertical: 8, borderRadius: 14 },
-  remindText: { color: "#fff", fontWeight: "800", fontSize: 13 },
-
-  /* empty */
-  empty: { alignItems: "center", justifyContent: "center", paddingVertical: 56, gap: 10 },
-  emptyEmoji: { fontSize: 48 },
-  emptyText: { color: "rgba(255,255,255,0.85)", fontSize: 15, fontWeight: "700" },
-
-  /* levels grid */
-  levelGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
-  levelCard: { flexBasis: "47%", flexGrow: 1, minHeight: 132, borderRadius: 20, padding: 16, justifyContent: "space-between" },
-  levelEmoji: { color: "#FFE69A", fontSize: 32, fontWeight: "900", letterSpacing: 1 },
-  levelTitle: { color: "#fff", fontSize: 15, fontWeight: "900", marginTop: 10 },
-  levelCount: { color: "rgba(255,255,255,0.64)", fontSize: 12, fontWeight: "700", marginTop: 6 },
+  scroll: { paddingHorizontal: 16, paddingTop: 12 },
 });

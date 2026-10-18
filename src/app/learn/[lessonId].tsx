@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, Pressable, ActivityIndicator, StyleSheet, StatusBar, KeyboardAvoidingView, Platform } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { View, Text, Pressable, ActivityIndicator, StyleSheet, StatusBar, KeyboardAvoidingView, Keyboard, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -8,9 +8,10 @@ import Toast from 'react-native-toast-message';
 import { useLesson } from '@/hooks/use-lessons';
 import { useCompleteStep } from '@/hooks/use-progress';
 import { useStepSubmit } from '@/hooks/use-step-submit';
+import { useHearts } from '@/hooks/use-hearts';
+import { SKY, SkyLessonHeader, SkyScreen } from '@/components/lesson/sky-lesson-header';
 import { useLessonGamificationFx } from '@/hooks/use-gamification-fx';
 import { fx } from '@/lib/fx';
-import { NeonScreen, neon } from '@/components/neon-screen';
 import { useMarkLessonCompleted } from '@/lib/lesson-progress';
 import {
   TextContent,
@@ -24,6 +25,7 @@ import {
 import { TextStep } from '@/components/lesson/text-step';
 import { QuizStep } from '@/components/lesson/quiz-step';
 import { StepRenderer } from '@/components/lesson/StepRenderer';
+import { WordSelectionStep, selectionCandidatesFromSteps } from '@/components/vocabulary/WordSelectionStep';
 import { ActivityStep } from '@/components/lesson/activity-step';
 import {
   AchievementModal,
@@ -31,9 +33,8 @@ import {
   XPGainAnimation,
 } from '@/components/gamification';
 
-// Candy CTA / progress gradients — совпадают с home/login экранами.
-const CTA_GRADIENT = ['#FFDF5E', '#FFB338'] as const;
-const PROGRESS_GRADIENT = ['#FFDF5E', '#FF9E6E'] as const;
+// CTA gradient — голубой, как кнопки Game Play (Figma 246:15988).
+const CTA_GRADIENT = [SKY.blue, SKY.blueDark] as const;
 
 // Helper: legacy quiz формат содержит массив `questions`. Phase-2 quiz —
 // одиночный `options[]`. Парсинг без выкидывания исключения.
@@ -56,8 +57,14 @@ export default function LessonPlayerScreen() {
   const submitStepMutation = useStepSubmit();
   const fireGamificationFx = useLessonGamificationFx();
   const markLessonCompleted = useMarkLessonCompleted();
+  const { data: heartsData } = useHearts();
 
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const [showWordSelection, setShowWordSelection] = useState(false);
+  const wordCandidates = useMemo(
+    () => lessonData ? selectionCandidatesFromSteps(lessonData.steps) : [],
+    [lessonData],
+  );
   const [startTime] = useState(Date.now());
 
   // Local FX state — рендерим оверлеи прямо в этом экране.
@@ -65,30 +72,60 @@ export default function LessonPlayerScreen() {
   const [achievementQueue, setAchievementQueue] = useState<UserAchievement[]>([]);
   const [levelUpTo, setLevelUpTo] = useState<number | null>(null);
 
+  // Android (edge-to-edge): KeyboardAvoidingView 'height' keeps a stale shrunken
+  // height, so lift the content by the keyboard height manually.
+  // A text field from the previous step is unmounted but its keyboard can stay open.
+  useEffect(() => {
+    Keyboard.dismiss();
+  }, [currentStepIndex]);
+
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    const show = Keyboard.addListener('keyboardDidShow', (e) => setKeyboardHeight(e.endCoordinates.height));
+    const hide = Keyboard.addListener('keyboardDidHide', () => setKeyboardHeight(0));
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
+
   if (isLoading) {
     return (
-      <NeonScreen style={styles.center}>
-        <StatusBar barStyle="light-content" />
-        <ActivityIndicator size="large" color={neon.primary} />
+      <SkyScreen style={styles.center}>
+        <StatusBar barStyle="dark-content" />
+        <ActivityIndicator size="large" color={SKY.blue} />
         <Text style={styles.loadingText}>{t('lesson.loading')}</Text>
-      </NeonScreen>
+      </SkyScreen>
     );
   }
 
   if (error || !lessonData) {
     return (
-      <NeonScreen style={styles.center}>
-        <StatusBar barStyle="light-content" />
+      <SkyScreen style={styles.center}>
+        <StatusBar barStyle="dark-content" />
         <Text style={styles.errorEmoji}>😕</Text>
         <Text style={styles.errorTitle}>{t('lesson.not_found')}</Text>
         <Text style={styles.errorBody}>
           {(error as any)?.message || t('lesson.not_found_desc')}
         </Text>
-      </NeonScreen>
+      </SkyScreen>
     );
   }
 
   const { lesson, steps } = lessonData;
+
+  if (showWordSelection) {
+    return (
+      <WordSelectionStep
+        candidates={wordCandidates}
+        source="lesson"
+        onDone={() => router.back()}
+        onSkip={() => router.back()}
+      />
+    );
+  }
+
   const currentStep = steps[currentStepIndex];
   const isLastStep = currentStepIndex === steps.length - 1;
 
@@ -124,7 +161,8 @@ export default function LessonPlayerScreen() {
     if (isLastStep) {
       // Фиксируем прохождение урока (для последовательной разблокировки в треке).
       void markLessonCompleted(lessonId);
-      router.back();
+      if (wordCandidates.length > 0) setShowWordSelection(true);
+      else router.back();
     } else {
       setCurrentStepIndex((prev) => prev + 1);
     }
@@ -244,7 +282,7 @@ export default function LessonPlayerScreen() {
     } catch {
       return (
         <View style={styles.fallback}>
-          <Text style={[styles.fallbackBody, { color: neon.hearts }]}>
+          <Text style={[styles.fallbackBody, { color: SKY.red }]}>
             {t('lesson.error_content')}
           </Text>
         </View>
@@ -259,34 +297,22 @@ export default function LessonPlayerScreen() {
     !(currentStep.type === 'quiz' && tryHasQuestions(currentStep.content));
 
   const progressPct = ((currentStepIndex + 1) / steps.length) * 100;
-
   return (
-    <NeonScreen>
-      <StatusBar barStyle="light-content" />
+    <SkyScreen>
+      <StatusBar barStyle="dark-content" />
       <KeyboardAvoidingView
-        style={styles.flex}
+        style={[styles.flex, Platform.OS === 'android' && keyboardHeight > 0 ? { paddingBottom: keyboardHeight } : null]}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         {/* Header */}
-        <View style={[styles.header, { paddingTop: insets.top + 14 }]}>
-          <Text style={styles.lessonTitle} numberOfLines={1}>{lesson.title}</Text>
-          <Text style={styles.stepTitle} numberOfLines={1}>{currentStep.title}</Text>
-
-          {/* Progress Bar */}
-          <View style={styles.progressRow}>
-            <View style={styles.progressTrack}>
-              <LinearGradient
-                colors={PROGRESS_GRADIENT}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={[styles.progressFill, { width: `${progressPct}%` }]}
-              />
-            </View>
-            <Text style={styles.progressLabel}>
-              {currentStepIndex + 1}/{steps.length}
-            </Text>
-          </View>
-        </View>
+        <SkyLessonHeader
+          top={insets.top}
+          subtitle={lesson.title}
+          title={currentStep.title}
+          progressPct={progressPct}
+          hearts={heartsData?.hearts}
+          onBack={() => router.back()}
+        />
 
         {/* Step Content — key по step.id заставляет React пересоздавать
             компонент шага при переходе, сбрасывая его внутренний state
@@ -333,69 +359,47 @@ export default function LessonPlayerScreen() {
         level={levelUpTo}
         onDismiss={() => setLevelUpTo(null)}
       />
-    </NeonScreen>
+    </SkyScreen>
   );
 }
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 },
-  loadingText: { color: neon.muted, marginTop: 16, fontSize: 15 },
+  loadingText: { color: SKY.muted, marginTop: 16, fontSize: 15, fontFamily: 'Nunito_700Bold' },
   errorEmoji: { fontSize: 44, marginBottom: 12 },
-  errorTitle: { color: neon.text, fontWeight: '900', fontSize: 18, marginBottom: 6 },
-  errorBody: { color: neon.muted, textAlign: 'center', fontSize: 14, lineHeight: 20 },
-
-  header: {
-    paddingTop: 52,
-    paddingBottom: 16,
-    paddingHorizontal: 20,
-    backgroundColor: 'rgba(255,255,255,0.10)',
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.18)',
-  },
-  lessonTitle: { color: neon.muted, fontSize: 13, fontWeight: '600', marginBottom: 2 },
-  stepTitle: { color: neon.text, fontSize: 20, fontWeight: '900', marginBottom: 12 },
-  progressRow: { flexDirection: 'row', alignItems: 'center' },
-  progressTrack: {
-    flex: 1,
-    height: 9,
-    borderRadius: 6,
-    backgroundColor: 'rgba(255,255,255,0.20)',
-    overflow: 'hidden',
-    marginRight: 12,
-  },
-  progressFill: { height: '100%', borderRadius: 6 },
-  progressLabel: { color: neon.muted, fontSize: 13, fontWeight: '700', minWidth: 38, textAlign: 'right' },
+  errorTitle: { color: SKY.ink, fontFamily: 'Nunito_900Black', fontSize: 18, marginBottom: 6 },
+  errorBody: { color: SKY.muted, textAlign: 'center', fontSize: 14, lineHeight: 20, fontFamily: 'Nunito_600SemiBold' },
 
   content: { flex: 1 },
 
   fallback: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   fallbackEmoji: { fontSize: 44, marginBottom: 12 },
-  fallbackTitle: { color: neon.text, fontWeight: '900', fontSize: 18, marginBottom: 8 },
-  fallbackBody: { color: neon.muted, textAlign: 'center', fontSize: 14, lineHeight: 20, marginBottom: 22 },
-  fallbackCta: { paddingHorizontal: 28, paddingVertical: 14, borderRadius: 18 },
-  fallbackCtaText: { color: neon.ink, fontWeight: '900', fontSize: 14, letterSpacing: 0.5 },
+  fallbackTitle: { color: SKY.ink, fontFamily: 'Nunito_900Black', fontSize: 18, marginBottom: 8 },
+  fallbackBody: { color: SKY.muted, textAlign: 'center', fontSize: 14, lineHeight: 20, marginBottom: 22, fontFamily: 'Nunito_600SemiBold' },
+  fallbackCta: { paddingHorizontal: 28, paddingVertical: 14, borderRadius: 18, borderBottomWidth: 4, borderBottomColor: SKY.blueDark },
+  fallbackCtaText: { color: '#FFFFFF', fontFamily: 'Nunito_800ExtraBold', fontSize: 14, letterSpacing: 0.5 },
 
   nav: {
     flexDirection: 'row',
     gap: 12,
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingTop: 8,
     paddingBottom: 28,
-    backgroundColor: 'rgba(255,255,255,0.10)',
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.18)',
   },
   navBtn: { flex: 1 },
   navBtnGhost: {
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.24)',
-    borderRadius: 18,
-    paddingVertical: 14,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderBottomWidth: 4,
+    borderColor: '#DDE3E8',
+    borderBottomColor: '#D3DAE0',
+    borderRadius: 16,
+    height: 56,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  navBtnGhostText: { color: neon.text, fontWeight: '700', fontSize: 15 },
-  navBtnCta: { borderRadius: 18, paddingVertical: 14, alignItems: 'center', justifyContent: 'center' },
-  navBtnCtaText: { color: neon.ink, fontWeight: '900', fontSize: 15, letterSpacing: 0.5 },
+  navBtnGhostText: { color: SKY.ink, fontFamily: 'Nunito_800ExtraBold', fontSize: 15 },
+  navBtnCta: { borderRadius: 16, height: 56, alignItems: 'center', justifyContent: 'center', borderBottomWidth: 4, borderBottomColor: SKY.blueDark },
+  navBtnCtaText: { color: '#FFFFFF', fontFamily: 'Nunito_800ExtraBold', fontSize: 15, letterSpacing: 0.5 },
 });

@@ -1,0 +1,17 @@
+✔ Google exchanges a fresh server code with LingoIQ; never sends client email/ID token (108.354028ms)
+✔ Google cancellation never submits credentials (21.372904ms)
+✔ missing configuration or native module does not start OAuth (28.207706ms)
+✔ Apple is rejected on Android; iOS binds native nonce/state and supports repeat login without email (28.022651ms)
+✔ Apple state mismatch never reaches login API (12.424173ms)
+✔ provider buttons show Google on Android and Google + Apple on iOS (34.339914ms)
+✔ new Google account enters learning setup with a saved session, without returning to welcome (16.555654ms)
+✔ social signup saves the completed selections; an existing account loads its server profile (21.602999ms)
+✔ cancelled social sign-in does not replace a session or navigate (13.789348ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 9
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 657.075461

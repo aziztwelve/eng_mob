@@ -6,7 +6,7 @@ import { OnboardingShell } from '@/components/onboarding/OnboardingShell';
 import { useOnboardingStep } from '@/hooks/use-onboarding-step';
 import type { AgeBracket } from '@/types/api';
 
-const TOTAL_STEPS = 12;
+const TOTAL_STEPS = 6;
 
 const AGE_EMOJI: Record<AgeBracket, string> = {
   '7-12': '👶',
@@ -44,7 +44,7 @@ export default function AgeScreen() {
   return (
     <OnboardingShell
       trackKey="age"
-      step={2}
+      step={3}
       total={TOTAL_STEPS}
       title={t('onboarding.age.title')}
       subtitle={t('onboarding.age.subtitle')}

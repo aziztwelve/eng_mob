@@ -1,7 +1,10 @@
 import React from 'react';
 import { View, Text, ScrollView, useWindowDimensions } from 'react-native';
 import RenderHtml from 'react-native-render-html';
+import { useTranslation } from 'react-i18next';
 import { TextContent } from '@/types/api';
+import { SKY } from './sky-lesson-header';
+import { SkyCard, skyFont } from './sky-ui';
 
 interface TextStepProps {
   content: TextContent;
@@ -10,6 +13,7 @@ interface TextStepProps {
 
 export function TextStep({ content, onComplete }: TextStepProps) {
   const { width } = useWindowDimensions();
+  const { t } = useTranslation();
 
   // Текстовый/словарный шаг НЕ завершается автоматически — пользователь
   // читает и сам жмёт «Continue» в нижней навигации. (Раньше тут стоял
@@ -17,68 +21,35 @@ export function TextStep({ content, onComplete }: TextStepProps) {
   void onComplete;
 
   return (
-    <ScrollView className="flex-1 p-4">
-      <RenderHtml
-        contentWidth={width - 32}
-        source={{ html: content.body }}
-        tagsStyles={{
-          body: { 
-            color: '#ffffff', 
-            fontSize: 16,
-            lineHeight: 24,
-          },
-          p: { 
-            marginBottom: 12,
-            color: '#ffffff',
-          },
-          h1: { 
-            fontSize: 28, 
-            fontWeight: 'bold',
-            color: '#FFD84A',
-            marginBottom: 16,
-          },
-          h2: { 
-            fontSize: 24, 
-            fontWeight: 'bold',
-            color: '#FFD84A',
-            marginBottom: 12,
-          },
-          h3: { 
-            fontSize: 20, 
-            fontWeight: 'bold',
-            color: '#ffffff',
-            marginBottom: 8,
-          },
-          strong: {
-            fontWeight: 'bold',
-            color: '#FFD84A',
-          },
-          em: {
-            fontStyle: 'italic',
-            color: '#8B98B0',
-          },
-          ul: {
-            marginBottom: 12,
-          },
-          li: {
-            marginBottom: 8,
-            color: '#ffffff',
-          },
-        }}
-      />
-      
-      {/* Reading time indicator */}
+    <ScrollView
+      style={{ flex: 1 }}
+      contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 16 }}
+      showsVerticalScrollIndicator={false}
+    >
+      <SkyCard>
+        <RenderHtml
+          contentWidth={width - 68}
+          source={{ html: content.body }}
+          baseStyle={{ fontFamily: skyFont.medium }}
+          tagsStyles={{
+            body: { color: SKY.ink, fontSize: 16, lineHeight: 24 },
+            p: { marginBottom: 12, color: SKY.ink },
+            h1: { fontSize: 26, fontFamily: skyFont.title, color: SKY.ink, marginBottom: 14 },
+            h2: { fontSize: 22, fontFamily: skyFont.title, color: SKY.ink, marginBottom: 12 },
+            h3: { fontSize: 19, fontFamily: skyFont.strong, color: SKY.ink, marginBottom: 8 },
+            strong: { fontFamily: skyFont.strong, color: SKY.blueDark },
+            em: { fontStyle: 'italic', color: SKY.muted },
+            ul: { marginBottom: 12 },
+            li: { marginBottom: 8, color: SKY.ink },
+          }}
+        />
+      </SkyCard>
+
       {content.reading_time_minutes > 0 && (
-        <View
-          className="mt-6 p-4 rounded-2xl"
-          style={{ backgroundColor: 'rgba(255,255,255,0.12)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.22)' }}
-        >
-          <View className="flex-row items-center justify-center">
-            <Text className="mr-2" style={{ color: 'rgba(255,255,255,0.75)' }}>📖</Text>
-            <Text style={{ color: 'rgba(255,255,255,0.75)' }}>
-              {content.reading_time_minutes} min read
-            </Text>
-          </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, padding: 14, borderRadius: 18, backgroundColor: '#FFFFFF', borderWidth: 1.5, borderColor: SKY.card }}>
+          <Text style={{ fontFamily: skyFont.bold, color: SKY.muted }}>
+            {t('lesson.min_read', { n: content.reading_time_minutes })}
+          </Text>
         </View>
       )}
     </ScrollView>

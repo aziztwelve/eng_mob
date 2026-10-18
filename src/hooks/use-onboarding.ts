@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Toast from 'react-native-toast-message';
 
 import { OnboardingApi } from '@/lib/api-client';
-import { AuthService, ensureGuestSession } from '@/lib/auth-service';
+import { AuthService } from '@/lib/auth-service';
 import { onboardingMutationQueue } from '@/lib/onboarding-mutation-queue';
 import {
   getOnboardingState,
@@ -21,7 +21,6 @@ export const ONBOARDED_KEY = ['onboarded'] as const;
 /**
  * @deprecated Объединено в `ONBOARDING_KEY`. Оставлено как алиас, чтобы
  * не сломать invalidate-вызовы из других файлов (например,
- * `use-claim-account.ts`). После прохода по всем файлам — удалить.
  */
 export const ONBOARDING_REMOTE_KEY = ONBOARDING_KEY;
 
@@ -38,7 +37,7 @@ export const ONBOARDING_REMOTE_KEY = ONBOARDING_KEY;
  * Загружает state онбординга. Стратегия:
  *   1. Если есть JWT — пробуем `GET /onboarding`, мерджим в локальный
  *      кэш и возвращаем merged.
- *   2. Если нет JWT (lazy guest ещё не создан) или backend недоступен —
+ *   2. Если нет JWT или backend недоступен —
  *      возвращаем последнее известное локальное состояние.
  */
 async function loadOnboardingState(): Promise<OnboardingState> {
@@ -135,8 +134,6 @@ export function useOnboardingFlag(): { onboarded: boolean | null; ready: boolean
 // См. docs/tasks/mob/onboarding-v3-oki-style.md §3.3.
 //
 // Раньше тут было два дублирующих hook'а:
-//   - `useGuestSession` (создание гостя при mount) — заменён на lazy
-//     `ensureGuestSession()` (см. `lib/auth-service.ts`).
 //   - `useRemoteOnboardingState` (отдельный read с backend'а) — слит с
 //     `useOnboardingState`, который теперь сам читает backend и
 //     fallback'ит на локальный AsyncStorage. Single source of truth.
@@ -176,7 +173,33 @@ export async function drainOnboardingQueue(): Promise<{
       // не критично — следующий getState догонит
     }
   });
+  if (result.remaining === 0 && (await getOnboardingState()).completed_at) {
+    await OnboardingApi.complete().catch(() => undefined);
+  }
   return { ok: result.ok, remaining: result.remaining };
+}
+
+/** Push the locally completed onboarding to a registered account. */
+export async function syncLocalOnboardingToBackend(): Promise<void> {
+  const local = await getOnboardingState();
+  const patch: PatchOnboardingRequest = {
+    native_language: local.native_language ?? undefined,
+    target_language: local.target_language ?? undefined,
+    proficiency_level: local.level ?? undefined,
+    daily_goal_xp: local.daily_goal_xp ?? undefined,
+    motivation: local.goal ? [local.goal] : undefined,
+    motivation_set: local.goal ? true : undefined,
+    age_bracket: local.age_bracket ?? undefined,
+    reminder_slot: local.reminder_slot ?? undefined,
+  };
+  try {
+    const remote = await OnboardingApi.patchState(patch);
+    await mergeBackendState(remote);
+    await OnboardingApi.complete();
+  } catch {
+    await onboardingMutationQueue.enqueue(patch);
+  }
+  await markOnboardingComplete();
 }
 
 /**
@@ -207,10 +230,11 @@ export function usePatchOnboardingV3() {
       const merged = { ...localPatch, ...(input.localExtra ?? {}) };
       await patchOnboardingState(merged);
 
-      // 1.5. Lazy guest creation: при первом patch'е создаём гостя
-      //      (если ещё нет токена). Если backend недоступен — продолжаем
-      //      в local-only режиме, patch уйдёт в очередь.
-      await ensureGuestSession();
+      // До регистрации onboarding живёт локально. Backend получает его
+      // единым snapshot после успешного создания registered account.
+      if (!(await AuthService.getAccessToken())) {
+        return { ok: true as const, localOnly: true };
+      }
 
       // 2. Сначала дренируем накопленные patch'и, чтобы FIFO-порядок
       //    сохранился. Если очередь не пуста и она снова падает —
@@ -269,14 +293,6 @@ function mapBackendPatchToLocal(p: PatchOnboardingRequest): Partial<OnboardingSt
   if (p.motivation !== undefined) out.goal = p.motivation[0] ?? null;
   if (p.daily_goal_xp !== undefined) out.daily_goal_xp = p.daily_goal_xp;
   if (p.age_bracket !== undefined) out.age_bracket = p.age_bracket;
-  if (p.daily_commit_minutes !== undefined) out.daily_commit_minutes = p.daily_commit_minutes;
-  if (p.pain_point !== undefined) out.pain_point = p.pain_point;
-  if (p.speaking_situation !== undefined) out.speaking_situation = p.speaking_situation;
-  if (p.past_blocker !== undefined) out.past_blocker = p.past_blocker;
-  if (p.future_regret !== undefined) out.future_regret = p.future_regret;
-  if (p.emotional_reaction !== undefined) out.emotional_reaction = p.emotional_reaction;
   if (p.reminder_slot !== undefined) out.reminder_slot = p.reminder_slot;
-  if (p.paywall_seen_at !== undefined) out.paywall_seen_at = p.paywall_seen_at;
-  if (p.paywall_choice !== undefined) out.paywall_choice = p.paywall_choice;
   return out;
 }

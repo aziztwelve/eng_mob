@@ -1,54 +1,30 @@
+import { useKeyboardScroll } from '@/hooks/use-keyboard-scroll';
+import { KeyboardLift } from '@/components/keyboard-lift';
 import React, { useEffect, useState } from 'react';
-import {
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { router } from 'expo-router';
-import { ArrowLeft } from 'lucide-react-native';
+import { ArrowLeft, Eye, EyeOff } from 'lucide-react-native';
 import Toast from 'react-native-toast-message';
-import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
-
-import { Mascot } from '@/components/onboarding/Mascot';
-import { OAuthButton } from '@/components/onboarding/OAuthButton';
-import { NeonScreen, neon, neonStyles } from '@/components/neon-screen';
-import { useClaimAccount } from '@/hooks/use-claim-account';
-import { useCompleteOnboarding } from '@/hooks/use-onboarding';
+import { useMutation } from '@tanstack/react-query';
+import { CloudBear, CloudButton, CloudScreen } from '@/components/onboarding/CloudScreen';
+import { syncLocalOnboardingToBackend } from '@/hooks/use-onboarding';
 import { analytics } from '@/lib/analytics';
-import {
-  isAppleAvailable,
-  isGoogleAvailable,
-  signInWithApple,
-  signInWithGoogle,
-} from '@/lib/oauth';
+import { AuthApi } from '@/lib/api-client';
+import { AuthService } from '@/lib/auth-service';
+import { SocialAuthButtons } from '@/components/auth/SocialAuthButtons';
+import { useSocialLogin } from '@/hooks/use-social-login';
 
-/**
- * Sign-up (финальный шаг онбординга).
- *
- * Платформенно-зависимый набор методов:
- *   - iOS:     Apple + Google (OAuth-only, как на welcome раньше).
- *   - Android: Email/password форма + Google.
- *
- * Email/password идёт через `AuthApi.claim` (claim guest → registered),
- * чтобы не терять прогресс онбординга. Поэтому используем
- * `useClaimAccount({kind: 'password'})`, а не общий `useRegister`.
- *
- * Skip («Позже»): markOnboardingComplete без claim'а — юзер остаётся гостем,
- * но онбординг закрыт.
- */
 export default function SignupScreen() {
   const { t } = useTranslation();
-  const claim = useClaimAccount();
-  const complete = useCompleteOnboarding();
-  const [appleAvailable, setAppleAvailable] = useState(false);
+  const keyboardScroll = useKeyboardScroll();
+  const register = useMutation({ mutationFn: AuthApi.register });
+  const finish = useMutation({ mutationFn: syncLocalOnboardingToBackend, onSuccess: () => router.replace('/(tabs)') });
+  const [hasSession, setHasSession] = useState<boolean | null>(null);
+  const social = useSocialLogin('onboarding');
 
   // Email form state
+  const [passwordVisible, setPasswordVisible] = useState(false);
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -56,67 +32,14 @@ export default function SignupScreen() {
 
   useEffect(() => {
     analytics.track('signup_screen_viewed');
-    void isAppleAvailable().then(setAppleAvailable);
+    let active = true;
+    void AuthService.isAuthenticated().then(value => { if (active) setHasSession(value); }).catch(() => { if (active) setHasSession(false); });
+    return () => { active = false; };
   }, []);
 
-  const googleAvailable = isGoogleAvailable();
-  const showEmailForm = Platform.OS !== 'ios';
-  const busy = claim.isPending || complete.isPending;
+  const busy = register.isPending || finish.isPending || social.isPending;
 
-  const finishAndGoHome = async () => {
-    try {
-      await complete.mutateAsync();
-      analytics.track('onboarding_completed');
-    } finally {
-      router.replace('/(tabs)');
-    }
-  };
-
-  const onGoogle = async () => {
-    if (busy) return;
-    analytics.track('oauth_attempted', { provider: 'google' });
-    const result = await signInWithGoogle();
-    await handleOAuthResult('google', result);
-  };
-
-  const onApple = async () => {
-    if (busy) return;
-    analytics.track('oauth_attempted', { provider: 'apple' });
-    const result = await signInWithApple();
-    await handleOAuthResult('apple', result);
-  };
-
-  const handleOAuthResult = async (
-    provider: 'google' | 'apple',
-    result: Awaited<ReturnType<typeof signInWithGoogle>>,
-  ) => {
-    if (!result.ok) {
-      if (result.reason === 'cancelled') return;
-      analytics.track('oauth_failed', { provider, reason: result.reason });
-      Toast.show({
-        type: 'error',
-        text1: `${provider} sign-in: ${result.reason}`,
-        text2: result.message,
-      });
-      return;
-    }
-    try {
-      await claim.mutateAsync({ kind: 'oauth', payload: result.payload });
-      analytics.track('oauth_succeeded', { provider });
-      await finishAndGoHome();
-    } catch (err) {
-      analytics.track('oauth_failed', {
-        provider,
-        reason: 'claim_error',
-        message: err instanceof Error ? err.message : undefined,
-      });
-      Toast.show({
-        type: 'error',
-        text1: t('onboarding.signup.toast_failed'),
-        text2: err instanceof Error ? err.message : '',
-      });
-    }
-  };
+  const finishAndGoHome = () => finish.mutateAsync();
 
   const onEmailSubmit = async () => {
     if (busy) return;
@@ -140,14 +63,8 @@ export default function SignupScreen() {
 
     analytics.track('signup_email_attempted');
     try {
-      await claim.mutateAsync({
-        kind: 'password',
-        payload: {
-          email: trimmedEmail,
-          username: trimmedUser,
-          password,
-        },
-      });
+      const auth = await register.mutateAsync({ email: trimmedEmail, username: trimmedUser, password });
+      await AuthService.saveAuthResponse(auth);
       analytics.track('signup_email_succeeded');
       await finishAndGoHome();
     } catch (err) {
@@ -165,181 +82,40 @@ export default function SignupScreen() {
   const onLogin = () => router.push('/auth/login');
 
   return (
-    <NeonScreen>
-    <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1, backgroundColor: 'transparent' }}>
-      {/* Header back */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 8, paddingBottom: 8 }}>
-        <Pressable
-          onPress={() => router.back()}
-          hitSlop={12}
-          className="active:opacity-60"
-        >
-          <ArrowLeft size={22} color="#9ca3af" />
-        </Pressable>
-        <View style={{ flex: 1 }} />
-      </View>
-
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={{ flex: 1 }}
-      >
-        <ScrollView
-          style={{ flex: 1 }}
-          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 16 }}
-          keyboardShouldPersistTaps="handled"
-        >
-          <Animated.View entering={FadeIn.duration(220)} style={{ alignItems: 'center', marginTop: 8 }}>
-            <Mascot pose="thumbs_up" size={120} />
-          </Animated.View>
-
-          <Animated.Text
-            entering={FadeInDown.duration(280).delay(100)}
-            style={[neonStyles.title, { textAlign: 'center', marginTop: 12, fontSize: 28 }]}
-          >
-            {t('onboarding.signup.title')}
-          </Animated.Text>
-          <Animated.Text
-            entering={FadeInDown.duration(280).delay(160)}
-            style={{ color: neon.muted, fontWeight: '600', fontSize: 15, textAlign: 'center', marginTop: 8, lineHeight: 22 }}
-          >
-            {t('onboarding.signup.subtitle')}
-          </Animated.Text>
-
-          {/* Email form (Android) */}
-          {showEmailForm ? (
-            <View style={{ gap: 10, marginTop: 20 }}>
-              <TextInput
-                style={{
-                  backgroundColor: 'rgba(255,255,255,0.15)',
-                  borderWidth: 1.5,
-                  borderColor: 'rgba(255,255,255,0.3)',
-                  borderRadius: 20,
-                  paddingHorizontal: 18,
-                  paddingVertical: 14,
-                  fontSize: 15,
-                  color: '#fff',
-                }}
-                placeholder={t('onboarding.signup.email.email_placeholder')}
-                placeholderTextColor="rgba(255,255,255,0.4)"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoComplete="email"
-                editable={!busy}
-              />
-              <TextInput
-                style={{
-                  backgroundColor: 'rgba(255,255,255,0.15)',
-                  borderWidth: 1.5,
-                  borderColor: 'rgba(255,255,255,0.3)',
-                  borderRadius: 20,
-                  paddingHorizontal: 18,
-                  paddingVertical: 14,
-                  fontSize: 15,
-                  color: '#fff',
-                }}
-                placeholder={t('onboarding.signup.email.username_placeholder')}
-                placeholderTextColor="rgba(255,255,255,0.4)"
-                value={username}
-                onChangeText={setUsername}
-                autoCapitalize="none"
-                autoComplete="username"
-                editable={!busy}
-              />
-              <TextInput
-                style={{
-                  backgroundColor: 'rgba(255,255,255,0.15)',
-                  borderWidth: 1.5,
-                  borderColor: 'rgba(255,255,255,0.3)',
-                  borderRadius: 20,
-                  paddingHorizontal: 18,
-                  paddingVertical: 14,
-                  fontSize: 15,
-                  color: '#fff',
-                }}
-                placeholder={t('onboarding.signup.email.password_placeholder')}
-                placeholderTextColor="rgba(255,255,255,0.4)"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-                autoCapitalize="none"
-                autoComplete="password-new"
-                editable={!busy}
-              />
-              {emailErr ? (
-                <Text style={{ color: '#FF7FAA', fontSize: 13, marginTop: 2 }}>{emailErr}</Text>
-              ) : null}
-              <Pressable
-                onPress={() => void onEmailSubmit()}
-                disabled={busy}
-                style={[neonStyles.cta, { backgroundColor: neon.ctaBg }, busy && { opacity: 0.6, shadowOpacity: 0, backgroundColor: 'rgba(255,255,255,0.08)' }]}
-                accessibilityRole="button"
-              >
-                <Text style={{ color: neon.text, fontWeight: '900', fontSize: 16, letterSpacing: 0.5 }}>
-                  {claim.isPending && !complete.isPending
-                    ? t('onboarding.signup.email.submitting')
-                    : t('onboarding.signup.email.submit')}
-                </Text>
-              </Pressable>
-
-              {googleAvailable ? (
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginVertical: 8 }}>
-                  <View style={{ flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.2)' }} />
-                  <Text style={{ color: neon.muted, fontSize: 12, fontWeight: '700' }}>
-                    {t('onboarding.signup.email.divider')}
-                  </Text>
-                  <View style={{ flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.2)' }} />
-                </View>
-              ) : null}
+    <CloudScreen>
+      <KeyboardLift>
+        <View className="flex-row items-center gap-3 px-5 pb-1 pt-3">
+          <Pressable onPress={() => router.canGoBack() ? router.back() : router.replace('/onboarding/reminder-time')} accessibilityRole="button" accessibilityLabel={t('onboarding.common.back')} className="h-11 w-11 items-center justify-center rounded-full bg-white"><ArrowLeft size={23} color="#1782AD" /></Pressable>
+          <View className="h-3 flex-1 rounded-full bg-[#12B4FB]" />
+          <Text className="font-nunito-extrabold text-xs text-[#217FA5]">6/6</Text>
+        </View>
+        <ScrollView ref={keyboardScroll.ref} onLayout={keyboardScroll.reveal} onContentSizeChange={keyboardScroll.reveal} className="flex-1" contentContainerClassName="px-5 pb-5 pt-2" keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+          <Text accessibilityRole="header" className="mt-3 font-nunito-black text-[28px] leading-8 text-[#142A35]">{t(hasSession ? 'onboarding.signup.connected_title' : 'onboarding.signup.title')}</Text>
+          <Text className="mt-2 font-nunito-semibold text-[15px] leading-[21px] text-[#496779]">{t(hasSession ? 'onboarding.signup.connected_subtitle' : 'onboarding.signup.subtitle')}</Text>
+          <View className="items-center pt-2"><CloudBear signup /></View>
+          {hasSession === null ? <ActivityIndicator color="#12B4FB" /> : hasSession ? (
+            <View className="gap-3 rounded-[28px] bg-white/90 p-4">
+              <Text className="text-center font-nunito-semibold text-base leading-6 text-[#496779]">{t('onboarding.signup.connected_body')}</Text>
+              <CloudButton label={t('onboarding.signup.connected_continue')} onPress={() => finish.mutate()} loading={finish.isPending} testID="onboarding-finish" />
+              {finish.isError && <Text accessibilityRole="alert" className="text-center font-nunito-semibold text-sm text-[#B34D4D]">{t('onboarding.signup.toast_failed')}</Text>}
             </View>
-          ) : null}
-
-          {/* OAuth buttons */}
-          <View style={{ gap: 12, marginTop: 8 }}>
-            {appleAvailable ? (
-              <OAuthButton
-                provider="apple"
-                onPress={() => void onApple()}
-                loading={busy}
-              />
-            ) : null}
-            {googleAvailable ? (
-              <OAuthButton
-                provider="google"
-                onPress={() => void onGoogle()}
-                loading={busy}
-              />
-            ) : null}
-
-            {!appleAvailable && !googleAvailable && !showEmailForm ? (
-              <View style={{ backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: neon.border, borderRadius: 16, padding: 12 }}>
-                <Text style={{ color: neon.muted, fontSize: 13, lineHeight: 20 }}>
-                  {t('onboarding.signup.no_oauth_hint')}
-                </Text>
-              </View>
-            ) : null}
+          ) : <>
+          <View className="gap-3 rounded-[28px] bg-white/75 p-4">
+            <TextInput onFocus={keyboardScroll.reveal} className="min-h-14 rounded-2xl border-2 border-[#C9EDFF] bg-white px-4 py-3 font-nunito-semibold text-base text-[#142A35]" placeholder={t('onboarding.signup.email.username_placeholder')} accessibilityLabel={t('onboarding.signup.email.username_placeholder')} placeholderTextColor="#648495" value={username} onChangeText={setUsername} autoCapitalize="none" autoComplete="username" editable={!busy} testID="signup-username" />
+            <TextInput onFocus={keyboardScroll.reveal} className="min-h-14 rounded-2xl border-2 border-[#C9EDFF] bg-white px-4 py-3 font-nunito-semibold text-base text-[#142A35]" placeholder={t('onboarding.signup.email.email_placeholder')} accessibilityLabel={t('onboarding.signup.email.email_placeholder')} placeholderTextColor="#648495" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" autoComplete="email" editable={!busy} testID="signup-email" />
+            <View className="min-h-14 flex-row items-center rounded-2xl border-2 border-[#C9EDFF] bg-white">
+              <TextInput onFocus={keyboardScroll.reveal} className="min-h-14 flex-1 px-4 py-3 font-nunito-semibold text-base text-[#142A35]" placeholder={t('onboarding.signup.email.password_placeholder')} accessibilityLabel={t('onboarding.signup.email.password_placeholder')} placeholderTextColor="#648495" value={password} onChangeText={setPassword} secureTextEntry={!passwordVisible} autoCapitalize="none" autoComplete="password-new" editable={!busy} testID="signup-password" />
+              <Pressable onPress={() => setPasswordVisible(!passwordVisible)} accessibilityRole="button" accessibilityLabel={passwordVisible ? t('onboarding.signup.hide_password') : t('onboarding.signup.show_password')} className="h-12 w-12 items-center justify-center">{passwordVisible ? <EyeOff size={22} color="#648495" /> : <Eye size={22} color="#648495" />}</Pressable>
+            </View>
+            {emailErr && <Text accessibilityRole="alert" className="font-nunito-semibold text-sm text-[#B34D4D]">{emailErr}</Text>}
+            <CloudButton label={busy ? t('onboarding.signup.email.submitting') : t('onboarding.signup.email.submit')} onPress={() => void onEmailSubmit()} loading={busy} testID="signup-submit" />
           </View>
-
-          <Pressable
-            onPress={onLogin}
-            style={{ paddingVertical: 12, alignItems: 'center', marginTop: 8 }}
-            className="active:opacity-60"
-          >
-            <Text style={{ color: neon.primary, fontWeight: '700', fontSize: 14 }}>
-              {t('onboarding.signup.login_link')}
-            </Text>
-          </Pressable>
+          <SocialAuthButtons disabled={busy} pending={social.isPending ? social.variables : undefined} onPress={social.start} />
+          <Pressable onPress={onLogin} accessibilityRole="button" className="min-h-12 items-center justify-center py-3"><Text className="text-center font-nunito-extrabold text-sm text-[#078FC8]">{t('onboarding.signup.login_link')}</Text></Pressable>
+          </>}
+          <Text className="text-center font-nunito-medium text-xs leading-4 text-[#58788A]">{t('onboarding.signup.terms')}</Text>
         </ScrollView>
-      </KeyboardAvoidingView>
-
-      {/* Footer */}
-      <View style={{ paddingHorizontal: 20, paddingBottom: 16, paddingTop: 8 }}>
-        <Text style={{ color: 'rgba(255,255,255,0.45)', fontSize: 12, textAlign: 'center' }}>
-          {t('onboarding.signup.terms')}
-        </Text>
-      </View>
-    </SafeAreaView>
-    </NeonScreen>
+      </KeyboardLift>
+    </CloudScreen>
   );
 }

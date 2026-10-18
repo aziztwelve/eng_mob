@@ -21,7 +21,6 @@ import {
   ListNotificationsResponse,
   ListPendingRequestsResponse,
   ListTracksResponse,
-  MyTracksResponse,
   MarkReadResponse,
   MistakeFilter,
   NotificationsReadFilter,
@@ -47,10 +46,10 @@ import {
   SubmitAnswerResponse,
   TTSCacheEntry,
   TrackFilters,
+  Track,
   TrackWithLessons,
   TrackProgressResponse,
   TrackDictionaryResponse,
-  AddTrackDictionaryResponse,
   UpdatePreferencesRequest,
   UpdatePreferencesResponse,
   UserAchievementsResponse,
@@ -68,7 +67,7 @@ import {
 } from '@/types/api';
 import { Platform } from 'react-native';
 
-import { AuthService, ensureGuestSession } from './auth-service';
+import { AuthService } from './auth-service';
 import Constants from 'expo-constants';
 import { getCurrentLang } from './i18n';
 
@@ -99,18 +98,14 @@ function resolveApiBaseUrl(): string {
 const API_BASE_URL = resolveApiBaseUrl();
 
 /**
- * Эндпоинты, на которых 401-redirect не делаем — иначе получим петлю
- * (`/auth/claim` без токена → redirect → `/auth/claim` без токена...).
- * `/auth/guest` сам публичный — 401 от него не приходит, но включаем
- * для надёжности.
+ * Auth endpoints are allowed to run before an access token exists.
  */
 function isAuthEndpoint(endpoint: string): boolean {
   return (
     endpoint.startsWith('/auth/login') ||
     endpoint.startsWith('/auth/register') ||
-    endpoint.startsWith('/auth/refresh') ||
-    endpoint.startsWith('/auth/claim') ||
-    endpoint.startsWith('/auth/guest')
+    endpoint.startsWith('/auth/social/') ||
+    endpoint.startsWith('/auth/refresh')
   );
 }
 
@@ -125,7 +120,7 @@ function isAuthEndpoint(endpoint: string): boolean {
  */
 let refreshing: Promise<boolean> | null = null;
 
-async function tryRefreshTokens(): Promise<boolean> {
+export async function tryRefreshTokens(): Promise<boolean> {
   if (refreshing) return refreshing;
   refreshing = (async () => {
     try {
@@ -215,11 +210,9 @@ export class ApiClient {
       ...(options.headers as Record<string, string>),
     };
 
-    // Add Authorization header. For protected routes, bootstrap a guest session
-    // lazily so first app-open requests do not leave without a bearer token.
-    const token =
-      (await AuthService.getAccessToken()) ||
-      (!isAuthEndpoint(endpoint) ? await ensureGuestSession() : null);
+    // Protected requests require a registered access token. The client never
+    // creates an anonymous/guest session as a side effect of a GET.
+    const token = await AuthService.getAccessToken();
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
@@ -256,8 +249,7 @@ export class ApiClient {
         // Global 401 handler: refresh не помог (токен отозван / refresh
         // истёк). Чистим хранилище и кидаем юзера на root — index.tsx
         // сам решит, куда (welcome/login/tabs).
-        // Не делаем редирект для auth-эндпоинтов (claim/login/refresh)
-        // и для /auth/guest, чтобы caller сам обработал ошибку без петли.
+        // Auth endpoints handle their own errors without a redirect loop.
         if (response.status === 401 && !isAuthEndpoint(endpoint)) {
           await handleUnauthorized();
         }
@@ -352,6 +344,10 @@ export class ApiClient {
   }
 }
 
+export const AccountApi = {
+  deleteAccount: () => ApiClient.delete<{ deleted: boolean }>('/users/me'),
+};
+
 // ============================================
 // Phase 0: typed Tracks/Lessons helpers
 // ============================================
@@ -397,25 +393,12 @@ export const TracksApi = {
     );
   },
 
-  addDictionaryWords: (idOrCode: string, vocabularyIds: string[]) =>
-    ApiClient.post<AddTrackDictionaryResponse>(
-      `/tracks/${encodeURIComponent(idOrCode)}/dictionary/add`,
-      { vocabulary_ids: vocabularyIds },
-    ),
 };
 
-/**
- * Персональный план треков (Phase 8).
- *   GET    /me/tracks         — план текущего юзера (ленивая генерация на бэке)
- *   POST   /me/tracks/:id     — добавить трек вручную
- *   DELETE /me/tracks/:id     — убрать трек
- */
-export const MyTracksApi = {
-  list: () => ApiClient.get<MyTracksResponse>(`/me/tracks`),
-  add: (trackId: string) =>
-    ApiClient.post<{ success: boolean }>(`/me/tracks/${trackId}`, {}),
-  remove: (trackId: string) =>
-    ApiClient.delete<{ success: boolean }>(`/me/tracks/${trackId}`),
+export const ActiveTrackApi = {
+  get: () => ApiClient.get<{ track: Track }>('/me/active-track'),
+  set: (trackId: string) =>
+    ApiClient.post<{ track_id: string; active: boolean }>('/me/active-track', { track_id: trackId }),
 };
 
 /**
@@ -848,47 +831,20 @@ export const FriendsApi = {
 };
 
 // =========================================================================
-// Onboarding v3 (Oki-style) — guest mode + state PATCH + claim.
+// Onboarding — local before registration, synced after account creation.
 // Маршруты gateway:
-//   POST   /auth/guest                    — bootstrap guest user
-//   POST   /auth/claim                    — claim guest (email/password)
-//   POST   /auth/claim/oauth              — claim guest (OAuth Google/Apple)
+//   POST   /auth/register                 — create registered account
 //   GET    /onboarding                    — read current state
 //   PATCH  /onboarding                    — partial update (после каждого шага)
 //   POST   /onboarding/complete           — финал онбординга
 // =========================================================================
 
-import type {
-  ClaimGuestOAuthRequest,
-  ClaimGuestRequest,
-  ClaimGuestResponse,
-  GuestSessionResponse,
-  OnboardingStateResponse,
-  PatchOnboardingRequest,
-} from '@/types/api';
+import type { OnboardingStateResponse, PatchOnboardingRequest, RegisterRequest, AuthResponse } from '@/types/api';
 
 export const AuthApi = {
-  /** createGuestSession — bootstrap анонимного юзера, idempotent на device_id. */
-  createGuestSession: (deviceId: string) =>
-    ApiClient.post<GuestSessionResponse>('/auth/guest', { device_id: deviceId }),
+  register: (req: RegisterRequest) =>
+    ApiClient.post<AuthResponse>('/auth/register', req),
 
-  /**
-   * claim — claim гостя через email/password. Требует guest JWT.
-   *
-   * `idempotencyKey` — UUID, передаётся в заголовок `Idempotency-Key`.
-   * Защищает от создания дубликата при retry / double-tap. Backend
-   * может пока игнорировать заголовок (forward-compatible).
-   */
-  claim: (req: ClaimGuestRequest, idempotencyKey?: string) =>
-    ApiClient.post<ClaimGuestResponse>('/auth/claim', req, {
-      headers: idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : undefined,
-    }),
-
-  /** claimOAuth — claim гостя через Google / Apple / guest_fake stub. */
-  claimOAuth: (req: ClaimGuestOAuthRequest, idempotencyKey?: string) =>
-    ApiClient.post<ClaimGuestResponse>('/auth/claim/oauth', req, {
-      headers: idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : undefined,
-    }),
 };
 
 export const OnboardingApi = {
@@ -913,8 +869,6 @@ import type {
   BulkCreateFlashcardsResponse,
   PinForTodayRequest,
   ListTodayQueueResponse,
-  SuggestFlashcardsRequest,
-  SuggestFlashcardsResponse,
   FlashcardReviewRequest,
   FlashcardReviewResponse,
 } from '@/types/api';
@@ -979,15 +933,4 @@ export const FlashcardsApi = {
     return ApiClient.delete(`/flashcards/today/${encodeURIComponent(flashcardId)}${qs}`);
   },
 
-  // AI suggestions
-  suggestions: (params?: SuggestFlashcardsRequest) => {
-    const qs = new URLSearchParams();
-    if (params) {
-      Object.entries(params).forEach(([k, v]) => {
-        if (v !== undefined && v !== '') qs.set(k, String(v));
-      });
-    }
-    const q = qs.toString();
-    return ApiClient.get<SuggestFlashcardsResponse>(`/ai/flashcard-suggestions${q ? `?${q}` : ''}`);
-  },
 };

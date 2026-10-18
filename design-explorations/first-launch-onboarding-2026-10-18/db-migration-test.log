@@ -1,0 +1,13 @@
+BEGIN
+SELECT 2308
+CREATE FUNCTION
+DO
+UPDATE 1
+UPDATE 1
+DO
+                                   ?column?                                    
+-------------------------------------------------------------------------------
+ PASS: retired data cleared; old writes discarded; retained profiles unchanged
+(1 row)
+
+ROLLBACK

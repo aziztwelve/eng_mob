@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import type { PatchOnboardingRequest } from '@/types/api';
+import { cleanOnboardingPatch } from './onboarding-policy';
 
 /**
  * Persistent FIFO-очередь для offline-PATCH'ей онбординга.
@@ -45,7 +46,13 @@ async function readQueue(): Promise<QueuedPatch[]> {
     const raw = await AsyncStorage.getItem(QUEUE_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw) as unknown;
-    return Array.isArray(parsed) ? (parsed as QueuedPatch[]) : [];
+    if (!Array.isArray(parsed)) return [];
+    const clean = (parsed as QueuedPatch[])
+      .filter((item) => item && typeof item.patch === 'object' && item.patch !== null)
+      .map((item) => ({ ...item, patch: cleanOnboardingPatch(item.patch) }))
+      .filter((item) => Object.keys(item.patch).length > 0);
+    if (JSON.stringify(clean) !== raw) await writeQueue(clean);
+    return clean;
   } catch {
     return [];
   }
@@ -80,6 +87,8 @@ export const onboardingMutationQueue = {
    * мерджит в него (чтобы очередь не разрасталась).
    */
   async enqueue(patch: PatchOnboardingRequest): Promise<void> {
+    patch = cleanOnboardingPatch(patch);
+    if (!Object.keys(patch).length) return;
     const items = await readQueue();
 
     if (items.length > 0) {
