@@ -60,7 +60,7 @@ export default function MistakesScreen() {
       <Stack.Screen options={{ title: t('practice.mistakes_title') }} />
       <ScrollView contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 80 }}>
         <Pressable
-          onPress={() => router.back()}
+          onPress={() => router.navigate('/(tabs)/practice')}
           className="flex-row items-center gap-1 self-start active:opacity-60"
         >
           <ArrowLeft size={16} color="#9ca3af" />
@@ -73,8 +73,7 @@ export default function MistakesScreen() {
             <Text className="text-foreground font-black text-3xl">{t('practice.mistakes_title')}</Text>
           </View>
           <Text className="text-muted-foreground font-medium">
-            Шаги, на которых вы запинались. Снимаются автоматически, когда вы
-            отвечаете правильно на тот же шаг.
+            {t('practice.mistakes_description')}
           </Text>
         </View>
 
@@ -103,21 +102,40 @@ export default function MistakesScreen() {
         </View>
 
         {/* List */}
-        {q.isLoading ? (
+        {q.isPending ? (
           <View className="bg-card rounded-3xl border-4 border-border p-12 items-center justify-center">
             <ActivityIndicator color="#FFD84A" />
+          </View>
+        ) : q.isError ? (
+          <View accessibilityRole="alert" className="bg-card rounded-3xl border-4 border-border p-8 items-center gap-4">
+            <Text className="text-foreground font-black text-xl text-center">
+              {t('practice.mistakes_load_error')}
+            </Text>
+            <Text className="text-muted-foreground font-medium text-center">
+              {t('practice.mistakes_load_error_hint')}
+            </Text>
+            <Pressable
+              onPress={() => void q.refetch()}
+              disabled={q.isFetching}
+              accessibilityRole="button"
+              className={`bg-primary rounded-2xl px-5 py-3 ${q.isFetching ? 'opacity-40' : 'active:opacity-80'}`}
+            >
+              <Text className="text-primary-foreground font-bold">
+                {t('practice.retry')}
+              </Text>
+            </Pressable>
           </View>
         ) : list.length === 0 ? (
           <View className="bg-card rounded-3xl border-4 border-border p-8 items-center gap-2">
             <Text className="text-foreground font-black text-xl">
-              Здесь пусто
+              {t('practice.mistakes_empty')}
             </Text>
             <Text className="text-muted-foreground font-medium text-center">
               {tab === 'unresolved'
                 ? t('practice.all_fixed')
                 : tab === 'resolved'
                   ? t('practice.no_resolved')
-                  : 'У вас ещё нет зарегистрированных ошибок.'}
+                  : t('practice.mistakes_none')}
             </Text>
           </View>
         ) : (
@@ -129,10 +147,10 @@ export default function MistakesScreen() {
         )}
 
         {/* Pagination */}
-        {totalPages > 1 && (
+        {!q.isError && totalPages > 1 && (
           <View className="flex-row items-center justify-between gap-3">
             <Text className="text-muted-foreground text-xs font-bold tabular-nums">
-              Стр. {page + 1} / {totalPages} · всего {total}
+              {t('practice.mistakes_pagination', { page: page + 1, pages: totalPages, total })}
             </Text>
             <View className="flex-row gap-2">
               <Pressable
@@ -144,7 +162,7 @@ export default function MistakesScreen() {
               >
                 <ChevronLeft size={16} color="#ffffff" />
                 <Text className="text-foreground font-bold text-xs ml-1">
-                  Назад
+                  {t('practice.mistakes_previous')}
                 </Text>
               </Pressable>
               <Pressable
@@ -159,7 +177,7 @@ export default function MistakesScreen() {
                 }`}
               >
                 <Text className="text-foreground font-bold text-xs mr-1">
-                  Вперёд
+                  {t('practice.mistakes_next')}
                 </Text>
                 <ChevronRight size={16} color="#ffffff" />
               </Pressable>
@@ -207,7 +225,7 @@ function MistakeRow({ mistake }: { mistake: Mistake }) {
       </View>
 
       <Text className="text-muted-foreground text-xs font-mono" numberOfLines={1}>
-        step: {mistake.step_id}
+        {t('practice.mistakes_step', { id: mistake.step_id })}
       </Text>
 
       {hasAnswer && (
@@ -217,7 +235,7 @@ function MistakeRow({ mistake }: { mistake: Mistake }) {
             className="active:opacity-60"
           >
             <Text className="text-muted-foreground text-xs font-bold">
-              {expanded ? '▼ Скрыть ответ' : '▶ Ваш ответ'}
+              {expanded ? t('practice.mistakes_hide_answer') : t('practice.mistakes_show_answer')}
             </Text>
           </Pressable>
           {expanded && (

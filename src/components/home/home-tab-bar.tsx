@@ -1,6 +1,7 @@
 import React from 'react';
 import { Pressable, Text, View, useWindowDimensions } from 'react-native';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { FigmaSvg } from '@/components/figma/FigmaSvg';
@@ -25,6 +26,7 @@ const GAP = 12;
 const PAD = 6;
 
 export function HomeTabBar({ state, navigation }: BottomTabBarProps) {
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const { width } = useWindowDimensions();
@@ -72,7 +74,11 @@ export function HomeTabBar({ state, navigation }: BottomTabBarProps) {
               onPress={() => {
                 if (isComingSoon) return;
                 const event = navigation.emit({ type: 'tabPress', target: state.routes.find(route => route.name === name)?.key, canPreventDefault: true });
-                if (!focused && !event.defaultPrevented) navigation.navigate(name as never);
+                if (event.defaultPrevented) return;
+                // A direct link from Profile can make Mistakes the first screen
+                // in this stack, so popping to its top does not open Practice.
+                if (name === 'practice') router.navigate('/(tabs)/practice');
+                else if (!focused) navigation.navigate(name as never);
               }}
               style={{ width: TAB*S, height: TAB*S, alignItems: 'center', justifyContent: 'center', opacity: isComingSoon ? 0.58 : 1 }}
             >
