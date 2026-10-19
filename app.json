@@ -4,11 +4,11 @@
     "slug": "engmob",
     "version": "1.0",
     "orientation": "default",
-    "icon": "./assets/images/icon.png",
+    "icon": "./store-assets/final-icon/lingoiq-icon-1024-appstore.png",
     "scheme": "engmob",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/images/icon.png",
+      "icon": "./store-assets/final-icon/lingoiq-icon-1024-appstore.png",
       "bundleIdentifier": "com.aziztwelve.engmob",
       "usesAppleSignIn": true,
       "infoPlist": {
@@ -18,7 +18,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#061A1E",
+        "backgroundColor": "#002C27",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
