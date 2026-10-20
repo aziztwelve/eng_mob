@@ -36,3 +36,8 @@ design-explorations/
 docs/qa/
 .device*.png
 .tmp_qr/
+
+# Ad-hoc archives and exports in project root (not build inputs)
+/*.zip
+/engmob.apk
+/engmob-production.aab
