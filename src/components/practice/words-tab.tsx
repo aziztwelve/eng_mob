@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SpeakerHigh } from 'phosphor-react-native';
@@ -8,7 +8,9 @@ import { playWordTTS } from '@/lib/tts';
 import { SKY } from '@/components/lesson/sky-lesson-header';
 import { skyFont } from '@/components/lesson/sky-ui';
 import { SkyPanel } from './practice-ui';
-import type { Flashcard } from '@/types/api';
+import { drainFlashcardReviews } from '@/lib/flashcard-review-queue';
+import { newVocabularyAttemptId } from '@/lib/vocabulary-attempt-queue';
+import type { Flashcard, FlashcardReviewRequest } from '@/types/api';
 
 // "Quick review" variant: one flashcard at a time with Forgot / Got it.
 export function WordsTab() {
@@ -21,9 +23,28 @@ export function WordsTab() {
   const seedStarter = useSeedStarter();
 
   const dueCards = useMemo(() => today.data?.items ?? [], [today.data]);
-  const dueIds = useMemo(() => new Set(dueCards.map((card) => card.id)), [dueCards]);
-  // Today's queue first; when nothing is due, practise through the whole list.
-  const deck: Flashcard[] = dueCards.length > 0 ? dueCards : all.data?.items ?? [];
+  const sourceCards = useMemo(() => dueCards.length > 0 ? dueCards : all.data?.items ?? [], [dueCards, all.data?.items]);
+  // Keep the session stable while saving invalidates and refetches the queries.
+  const [deck, setDeck] = useState<Flashcard[] | null>(null);
+  const saving = useRef(false);
+  const intent = useRef<{ flashcardId: string; data: FlashcardReviewRequest } | null>(null);
+  const [pending, setPending] = useState(false);
+  const [saveError, setSaveError] = useState(false);
+  const [recovering, setRecovering] = useState(true);
+  const [recoveryError, setRecoveryError] = useState(false);
+  const recover = useCallback(async () => {
+    setRecovering(true);
+    setRecoveryError(false);
+    try { await drainFlashcardReviews(); }
+    catch { setRecoveryError(true); }
+    finally { setRecovering(false); }
+  }, []);
+  useEffect(() => { void recover(); }, [recover]);
+  useEffect(() => {
+    if (!recovering && !recoveryError && !today.isLoading && !all.isLoading && !today.isError && !all.isError && deck === null) {
+      setDeck([...sourceCards]);
+    }
+  }, [recovering, recoveryError, today.isLoading, all.isLoading, today.isError, all.isError, deck, sourceCards]);
 
   const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
@@ -36,7 +57,16 @@ export function WordsTab() {
 
   const total = stats.data?.total_count ?? 0;
 
-  if (stats.isLoading || (total > 0 && deck.length === 0 && (today.isLoading || all.isLoading))) {
+  if (recoveryError || (deck === null && (stats.isError || today.isError || all.isError))) {
+    return <SkyPanel style={st.emptyCard}>
+      <Text accessibilityRole="alert" style={st.emptyText}>{t(recoveryError ? 'common.save_failed' : 'practice.bank_error')}</Text>
+      <Pressable onPress={() => { void recover(); void stats.refetch(); void today.refetch(); void all.refetch(); }} style={st.btn}>
+        <Text style={st.btnText}>{t('practice.bank_player.retry_sync')}</Text>
+      </Pressable>
+    </SkyPanel>;
+  }
+
+  if (recovering || stats.isLoading || deck === null) {
     return <ActivityIndicator color={SKY.blue} style={{ marginVertical: 40 }} />;
   }
 
@@ -56,11 +86,31 @@ export function WordsTab() {
   const card = deck[index];
   const next = deck[index + 1];
 
-  const answer = (remembered: boolean) => {
-    if (!card) return;
-    if (dueIds.has(card.id)) {
-      review.mutate({ flashcardId: card.id, data: { remembered, response_time_ms: Date.now() - shownAt.current } });
+  const answer = async (remembered: boolean) => {
+    if (!card || saving.current || (!flipped && !intent.current)) return;
+    saving.current = true;
+    setPending(true);
+    setSaveError(false);
+    if (!intent.current) {
+      intent.current = { flashcardId: card.id, data: {
+        remembered,
+        response_time_ms: Math.min(2147483647, Math.max(0, Date.now() - shownAt.current)),
+        attempt_id: newVocabularyAttemptId(),
+      } };
     }
+    try {
+      // Every personal card is saved, including practice outside today's selection.
+      await review.mutateAsync(intent.current);
+    } catch {
+      saving.current = false;
+      setPending(false);
+      setSaveError(true);
+      return;
+    }
+    remembered = intent.current.data.remembered;
+    intent.current = null;
+    saving.current = false;
+    setPending(false);
     if (remembered) setDone((n) => n + 1);
     setFlipped(false);
     setIndex((i) => i + 1);
@@ -71,7 +121,7 @@ export function WordsTab() {
       <SkyPanel style={st.emptyCard}>
         <Text style={st.emptyTitle}>{t('practice.review_done')}</Text>
         <Text style={st.emptyText}>{t('practice.review_done_desc', { count: done })}</Text>
-        <Pressable onPress={() => { setIndex(0); setDone(0); setFlipped(false); }} style={st.btn}>
+        <Pressable onPress={() => { setDeck(null); setIndex(0); setDone(0); setFlipped(false); }} style={st.btn}>
           <Text style={st.btnText}>{t('practice.review_again')}</Text>
         </Pressable>
         <Pressable onPress={() => router.push('/flashcards' as never)} style={[st.btn, st.btnWhite]}>
@@ -93,10 +143,10 @@ export function WordsTab() {
         <View style={[st.barFill, { width: `${Math.max(3, (index / deck.length) * 100)}%` }]} />
       </View>
 
-      <Pressable onPress={() => setFlipped((v) => !v)} accessibilityRole="button" accessibilityLabel={t('practice.tap_to_see')}>
+      <Pressable disabled={pending || saveError} onPress={() => setFlipped((v) => !v)} accessibilityRole="button" accessibilityLabel={t('practice.tap_to_see')}>
         <SkyPanel style={st.card}>
           <Text style={st.word} adjustsFontSizeToFit numberOfLines={2} minimumFontScale={0.6}>{card.word}</Text>
-          <Pressable onPress={() => void playWordTTS(card.word, card.language || 'en')} style={st.speak} accessibilityRole="button">
+          <Pressable onPress={() => void playWordTTS(card.word, card.language || 'en')} style={st.speak} accessibilityRole="button" accessibilityLabel={t('practice.bank_player.listen_word')}>
             <SpeakerHigh size={24} weight="bold" color="#FFFFFF" />
           </Pressable>
           {flipped ? (
@@ -112,13 +162,23 @@ export function WordsTab() {
       </Pressable>
 
       <View style={st.answers}>
-        <Pressable onPress={() => answer(false)} style={[st.answerBtn, st.forgot]} accessibilityRole="button">
+        <Pressable disabled={!flipped || pending || saveError} accessibilityState={{ disabled: !flipped || pending || saveError }} onPress={() => void answer(false)} style={[st.answerBtn, st.forgot, (!flipped || pending || saveError) && st.disabled]} accessibilityRole="button">
           <Text style={[st.answerText, { color: '#B4232A' }]}>{t('practice.forgot_btn')}</Text>
         </Pressable>
-        <Pressable onPress={() => answer(true)} style={[st.answerBtn, st.got]} accessibilityRole="button">
+        <Pressable disabled={!flipped || pending || saveError} accessibilityState={{ disabled: !flipped || pending || saveError }} onPress={() => void answer(true)} style={[st.answerBtn, st.got, (!flipped || pending || saveError) && st.disabled]} accessibilityRole="button">
           <Text style={[st.answerText, { color: '#FFFFFF' }]}>{t('practice.remembered_btn')}</Text>
         </Pressable>
       </View>
+
+      {pending ? <View accessibilityRole="progressbar" accessibilityLabel={t('onboarding.common.saving')} style={st.saving}>
+        <ActivityIndicator color={SKY.blueDark} /><Text style={st.extra}>{t('onboarding.common.saving')}</Text>
+      </View> : null}
+      {saveError ? <SkyPanel style={st.emptyCard}>
+        <Text accessibilityRole="alert" accessibilityLiveRegion="assertive" style={st.error}>{t('common.save_failed')}</Text>
+        <Pressable onPress={() => void answer(intent.current?.data.remembered ?? true)} style={st.btn} accessibilityRole="button">
+          <Text style={st.btnText}>{t('practice.bank_player.retry_sync')}</Text>
+        </Pressable>
+      </SkyPanel> : null}
 
       {next ? (
         <SkyPanel style={st.nextRow}>
@@ -145,6 +205,9 @@ const st = StyleSheet.create({
   tap: { fontFamily: skyFont.bold, fontSize: 12, color: SKY.muted, marginTop: 4 },
   translation: { fontFamily: skyFont.title, fontSize: 24, color: SKY.blueDark, textAlign: 'center' },
   extra: { fontFamily: skyFont.medium, fontSize: 14, lineHeight: 20, color: SKY.muted, textAlign: 'center' },
+  disabled: { opacity: 0.45 },
+  saving: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 16 },
+  error: { fontFamily: skyFont.bold, color: '#B4232A', textAlign: 'center' },
   answers: { flexDirection: 'row', gap: 12, marginTop: 16 },
   answerBtn: { flex: 1, height: 52, borderRadius: 16, alignItems: 'center', justifyContent: 'center', borderBottomWidth: 4 },
   forgot: { backgroundColor: '#FFFFFF', borderWidth: 1.5, borderColor: '#FFC9CC', borderBottomColor: '#FFC9CC' },
