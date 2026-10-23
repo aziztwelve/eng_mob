@@ -11,12 +11,13 @@ import { AddFlashcardSheet } from '@/components/flashcards/AddFlashcardSheet';
 import { GoalRing } from '@/components/flashcards/GoalRing';
 import type { Flashcard } from '@/types/api';
 
-const CTA = ['#A8243F', '#CC5A1F'] as const;
-const GOLD = ['#FFDF5E', '#FFB338'] as const;
+const CTA = ['#59C8FF', '#2FA8E6'] as const;
+const GOLD = ['#59C8FF', '#2FA8E6'] as const;
 const glass = {
-  backgroundColor: 'rgba(255,255,255,0.14)',
-  borderWidth: 1,
-  borderColor: 'rgba(255,255,255,0.22)',
+  backgroundColor: '#FFFFFF',
+  borderWidth: 1.5,
+  borderBottomWidth: 4,
+  borderColor: '#C9EDFF',
 } as const;
 
 function wordUnitKey(count: number): string {
@@ -28,8 +29,7 @@ function wordUnitKey(count: number): string {
 }
 
 /**
- * /flashcards — хаб «Флешкарты» (повторение слов). Дизайн Sunset Lava,
- * как на главной и в уроках (фон-градиент из layout + glass-карточки).
+ * /flashcards — хаб «Флешкарты» (повторение слов). Светлый sky-дизайн, как на странице практики и в новых уроках.
  */
 export default function FlashcardsHubScreen() {
   const { t } = useTranslation();
@@ -53,7 +53,7 @@ export default function FlashcardsHubScreen() {
           title: t('home.flashcards'),
           headerRight: () => (
             <Pressable onPress={() => setShowAddSheet(true)} style={{ padding: 8 }}>
-              <Plus size={24} color="#FFD84A" />
+              <Plus size={24} color="#2FA8E6" />
             </Pressable>
           ),
         }}
@@ -70,7 +70,7 @@ export default function FlashcardsHubScreen() {
 
         {stats.isLoading ? (
           <View style={[st.card, { padding: 40, alignItems: 'center' }]}>
-            <ActivityIndicator color="#FFD84A" />
+            <ActivityIndicator color="#2FA8E6" />
           </View>
         ) : total === 0 ? (
           <EmptyState
@@ -84,9 +84,9 @@ export default function FlashcardsHubScreen() {
             <View style={[st.card, { flexDirection: 'row', alignItems: 'center', padding: 16, gap: 18 }]}>
               <GoalRing completed={todayCompleted} total={todayGoal} />
               <View style={{ flex: 1, gap: 12 }}>
-                <MiniStat label={t('fc.learning')} value={learning} color="#FF9E6E" />
-                <MiniStat label={t('fc.mastered')} value={mastered} color="#2EECC8" />
-                <MiniStat label={t('fc.total')} value={total} color="#fff" />
+                <MiniStat label={t('fc.learning')} value={learning} color="#2FA8E6" />
+                <MiniStat label={t('fc.mastered')} value={mastered} color="#239A42" />
+                <MiniStat label={t('fc.total')} value={total} color="#171A1C" />
               </View>
             </View>
 
@@ -107,19 +107,19 @@ export default function FlashcardsHubScreen() {
 
             {/* Search */}
             <View style={[st.card, st.searchRow]}>
-              <Search size={20} color="rgba(255,255,255,0.7)" />
+              <Search size={20} color="#5D686F" />
               <TextInput
                 value={search}
                 onChangeText={setSearch}
                 placeholder={t('fc.search_ph')}
-                placeholderTextColor="rgba(255,255,255,0.5)"
+                placeholderTextColor="#5D686F"
                 style={st.searchInput}
               />
             </View>
 
             {/* List */}
             {flashcards.isLoading ? (
-              <ActivityIndicator color="#FFD84A" />
+              <ActivityIndicator color="#2FA8E6" />
             ) : (
               <View style={{ gap: 10 }}>
                 {flashcards.data?.items.map((card) => (
@@ -203,33 +203,33 @@ function EmptyState({
 }
 
 const st = StyleSheet.create({
-  title: { color: '#fff', fontSize: 26, fontWeight: '900' },
+  title: { color: '#171A1C', fontSize: 26, fontFamily: 'Nunito_900Black' },
   underline: { width: 44, height: 3, borderRadius: 2, marginTop: 6 },
-  subtitle: { color: 'rgba(255,255,255,0.82)', fontSize: 14, fontWeight: '600', marginTop: 10 },
+  subtitle: { color: '#5D686F', fontSize: 14, fontFamily: 'Nunito_600SemiBold', marginTop: 10 },
 
   card: { ...glass, borderRadius: 20 },
 
-  miniLabel: { color: 'rgba(255,255,255,0.7)', fontSize: 12, fontWeight: '800' },
-  miniValue: { fontSize: 22, fontWeight: '900' },
+  miniLabel: { color: '#5D686F', fontSize: 12, fontFamily: 'Nunito_800ExtraBold' },
+  miniValue: { fontSize: 22, fontFamily: 'Nunito_900Black' },
 
-  ctaWrap: { borderRadius: 18, overflow: 'hidden', shadowColor: '#A8243F', shadowOpacity: 0.45, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 4 },
+  ctaWrap: { borderRadius: 18, overflow: 'hidden', shadowColor: '#2FA8E6', shadowOpacity: 0.12, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 4 },
   cta: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 18, paddingHorizontal: 20 },
-  ctaTitle: { color: '#fff', fontWeight: '900', fontSize: 18 },
-  ctaSub: { color: 'rgba(255,255,255,0.85)', fontWeight: '600', fontSize: 13, marginTop: 2 },
+  ctaTitle: { color: '#FFFFFF', fontFamily: 'Nunito_900Black', fontSize: 18 },
+  ctaSub: { color: '#FFFFFF', fontFamily: 'Nunito_600SemiBold', fontSize: 13, marginTop: 2 },
 
   searchRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 12 },
-  searchInput: { flex: 1, color: '#fff', fontSize: 15, fontWeight: '600' },
+  searchInput: { flex: 1, color: '#171A1C', fontSize: 15, fontFamily: 'Nunito_600SemiBold' },
 
-  itemWord: { color: '#fff', fontSize: 17, fontWeight: '800' },
-  itemIpa: { color: 'rgba(255,255,255,0.7)', fontSize: 13, fontWeight: '600' },
-  itemTr: { color: 'rgba(255,255,255,0.85)', fontSize: 14, fontWeight: '600' },
+  itemWord: { color: '#171A1C', fontSize: 17, fontFamily: 'Nunito_800ExtraBold' },
+  itemIpa: { color: '#5D686F', fontSize: 13, fontFamily: 'Nunito_600SemiBold' },
+  itemTr: { color: '#5D686F', fontSize: 14, fontFamily: 'Nunito_600SemiBold' },
   todayBadge: { backgroundColor: '#FF9600', borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4 },
-  todayBadgeText: { color: '#fff', fontSize: 11, fontWeight: '800' },
+  todayBadgeText: { color: '#171A1C', fontSize: 11, fontFamily: 'Nunito_800ExtraBold' },
 
-  emptyTitle: { color: '#fff', fontSize: 19, fontWeight: '900', textAlign: 'center' },
-  emptyText: { color: 'rgba(255,255,255,0.8)', fontSize: 14, textAlign: 'center', lineHeight: 20 },
-  emptyHint: { color: 'rgba(255,255,255,0.7)', textAlign: 'center', paddingVertical: 24 },
+  emptyTitle: { color: '#171A1C', fontSize: 19, fontFamily: 'Nunito_900Black', textAlign: 'center' },
+  emptyText: { color: '#5D686F', fontSize: 14, textAlign: 'center', lineHeight: 20 },
+  emptyHint: { color: '#5D686F', textAlign: 'center', paddingVertical: 24 },
 
   outlineBtn: { alignSelf: 'stretch', alignItems: 'center', paddingVertical: 14, borderRadius: 14 },
-  outlineBtnText: { color: '#fff', fontWeight: '800', fontSize: 14 },
+  outlineBtnText: { color: '#171A1C', fontFamily: 'Nunito_800ExtraBold', fontSize: 14 },
 });

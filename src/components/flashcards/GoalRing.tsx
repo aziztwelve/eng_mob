@@ -23,7 +23,7 @@ export function GoalRing({
   total,
   size = 104,
   stroke = 11,
-  color = '#FFD84A',
+  color = '#59C8FF',
 }: GoalRingProps) {
   const { t } = useTranslation();
   const radius = (size - stroke) / 2;
@@ -40,7 +40,7 @@ export function GoalRing({
             cx={center}
             cy={center}
             r={radius}
-            stroke="rgba(255,255,255,0.18)"
+            stroke="#EAF8FF"
             strokeWidth={stroke}
             fill="none"
           />
@@ -57,13 +57,13 @@ export function GoalRing({
         </Svg>
       </View>
 
-      <Text style={{ color: '#fff', fontSize: 25, fontWeight: '900' }}>
+      <Text style={{ color: '#171A1C', fontSize: 25, fontWeight: '900' }}>
         {completed}
-        <Text style={{ fontSize: 15, color: 'rgba(255,255,255,0.7)' }}>/{total}</Text>
+        <Text style={{ fontSize: 15, color: '#5D686F' }}>/{total}</Text>
       </Text>
       <Text
         style={{
-          color: 'rgba(255,255,255,0.7)',
+          color: '#5D686F',
           fontSize: 10,
           fontWeight: '800',
           letterSpacing: 1,

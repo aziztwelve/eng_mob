@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { View, Text, Pressable, Dimensions } from 'react-native';
+import { View, Text, Pressable, Dimensions, useWindowDimensions } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   useSharedValue,
@@ -56,6 +56,8 @@ export function FlashcardView({
 }: FlashcardViewProps) {
 
   const { t } = useTranslation();
+  const { height } = useWindowDimensions();
+  const cardHeight = Math.max(210, Math.min(360, height * 0.44));
   const [isFlipped, setIsFlipped] = useState(false);
   const [ttsBusy, setTtsBusy] = useState(false);
   const rotation = useSharedValue(0);
@@ -91,8 +93,9 @@ export function FlashcardView({
   }, [isFlipped, word, playTTS]);
 
   useEffect(() => {
+    const sound = soundRef.current;
     return () => {
-      soundRef.current.stop();
+      sound.stop();
     };
   }, []);
 
@@ -196,9 +199,9 @@ export function FlashcardView({
           onPress={playTTS}
           disabled={ttsBusy}
           hitSlop={8}
-          className="p-2 active:opacity-60 flex-row items-center"
+          className="p-3 rounded-2xl bg-[#EAF8FF] active:opacity-60 flex-row items-center"
         >
-          <Volume2 size={26} color={ttsBusy ? '#D8B7BF' : '#A8243F'} />
+          <Volume2 size={26} color={ttsBusy ? '#C9EDFF' : '#2FA8E6'} />
         </Pressable>
 
         {onSkip ? (
@@ -211,20 +214,20 @@ export function FlashcardView({
       </View>
 
       {/* Card */}
-      <View className="h-96">
+      <View style={{ height: cardHeight }}>
         {/* Колода: декоративные карты позади активной (эффект стопки) */}
         {stackCount >= 2 ? (
           <View
             pointerEvents="none"
             style={{ transform: [{ scale: 0.9 }, { translateY: 26 }] }}
-            className="absolute inset-0 bg-[#FFF6F4] border-4 border-[#F2C9A0] rounded-3xl opacity-40"
+            className="absolute inset-0 bg-[#FFFFFF] border-2 border-b-4 border-[#C9EDFF] rounded-3xl opacity-40"
           />
         ) : null}
         {stackCount >= 1 ? (
           <View
             pointerEvents="none"
             style={{ transform: [{ scale: 0.95 }, { translateY: 13 }] }}
-            className="absolute inset-0 bg-[#FFF6F4] border-4 border-[#F2C9A0] rounded-3xl opacity-70"
+            className="absolute inset-0 bg-[#FFFFFF] border-2 border-b-4 border-[#C9EDFF] rounded-3xl opacity-70"
           />
         ) : null}
 
@@ -235,45 +238,45 @@ export function FlashcardView({
               {/* Front */}
               <Animated.View
                 style={[frontAnimatedStyle]}
-                className="absolute inset-0 bg-[#FFF6F4] border-4 border-[#F2C9A0] rounded-3xl p-8 items-center justify-center"
+                className="absolute inset-0 bg-[#FFFFFF] border-2 border-b-4 border-[#C9EDFF] rounded-3xl p-8 items-center justify-center"
               >
-                <Text className="text-[#2B1422] font-black text-4xl text-center">{word}</Text>
+                <Text className="text-[#171A1C] font-black text-4xl text-center">{word}</Text>
                 {transcription ? (
-                  <Text className="text-[#A8243F] text-lg mt-2 font-semibold">{transcription}</Text>
+                  <Text className="text-[#2FA8E6] text-lg mt-2 font-semibold">{transcription}</Text>
                 ) : null}
-                <Text className="text-[#9a7c86] text-sm mt-4">{t('cards.tap_to_flip')}</Text>
+                <Text className="text-[#5D686F] text-sm mt-4">{t('cards.tap_to_flip')}</Text>
               </Animated.View>
 
               {/* Back */}
               <Animated.View
                 style={[backAnimatedStyle]}
-                className="absolute inset-0 bg-[#FFF6F4] border-4 border-[#FFB338] rounded-3xl p-8 justify-center"
+                className="absolute inset-0 bg-[#FFFFFF] border-2 border-b-4 border-[#59C8FF] rounded-3xl p-8 justify-center"
               >
                 <View className="flex-row items-center justify-center gap-2 mb-2">
-                  <Text className="text-[#2B1422] font-black text-3xl text-center">
+                  <Text className="text-[#171A1C] font-black text-3xl text-center flex-shrink">
                     {translation}
                   </Text>
                   <Pressable onPress={playTTS} disabled={ttsBusy} hitSlop={8} className="p-1 active:opacity-60">
-                    <Volume2 size={22} color={ttsBusy ? '#D8B7BF' : '#A8243F'} />
+                    <Volume2 size={22} color={ttsBusy ? '#C9EDFF' : '#2FA8E6'} />
                   </Pressable>
                 </View>
                 {transcription ? (
-                  <Text className="text-[#A8243F] text-base text-center mb-2 font-semibold">
+                  <Text className="text-[#2FA8E6] text-base text-center mb-2 font-semibold">
                     {transcription}
                   </Text>
                 ) : null}
                 {definition && (
-                  <Text className="text-[#6b4b56] text-base text-center mb-2">
+                  <Text className="text-[#5D686F] text-base text-center mb-2">
                     {definition}
                   </Text>
                 )}
                 {example && (
-                  <Text className="text-[#9a7c86] text-sm text-center italic">
+                  <Text className="text-[#5D686F] text-sm text-center italic">
                     &ldquo;{example}&rdquo;
                   </Text>
                 )}
                 {isFlipped ? (
-                  <Text className="text-[#c19aa6] text-xs text-center mt-4">
+                  <Text className="text-[#5D686F] text-xs text-center mt-4">
                     {t('cards.swipe_hint')}
                   </Text>
                 ) : null}
@@ -311,15 +314,15 @@ export function FlashcardView({
         <View className="flex-row gap-4">
           <Pressable
             onPress={handleForgot}
-            className="flex-1 bg-red-500 rounded-2xl p-4 flex-row items-center justify-center gap-2 active:opacity-80"
+            className="flex-1 bg-white border-2 border-b-4 border-[#FFC9CC] rounded-2xl p-4 flex-row items-center justify-center gap-2 active:opacity-80"
           >
-            <X size={24} color="white" />
-            <Text className="text-white font-bold text-lg">{t('cards.forgot')}</Text>
+            <X size={24} color="#B4232A" />
+            <Text className="text-[#B4232A] font-bold text-lg">{t('cards.forgot')}</Text>
           </Pressable>
 
           <Pressable
             onPress={handleRemember}
-            className="flex-1 bg-primary rounded-2xl p-4 flex-row items-center justify-center gap-2 active:opacity-80"
+            className="flex-1 bg-[#34C759] border-b-4 border-[#239A42] rounded-2xl p-4 flex-row items-center justify-center gap-2 active:opacity-80"
           >
             <Check size={24} color="white" />
             <Text className="text-white font-bold text-lg">{t('cards.remember')}</Text>

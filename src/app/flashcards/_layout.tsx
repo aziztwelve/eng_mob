@@ -1,16 +1,22 @@
 import { Stack } from 'expo-router';
-import { View } from 'react-native';
+import { StatusBar, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { SunsetBg, sunsetStackOptions } from '@/components/sunset';
+import { SkyScreen, SKY } from '@/components/lesson/sky-lesson-header';
 
-/** Reserve the system navigation area once for the whole flashcard flow. */
 export default function FlashcardsLayout() {
   const insets = useSafeAreaInsets();
   return (
-    <SunsetBg>
+    <SkyScreen>
+      <StatusBar barStyle="dark-content" />
       <View className="flex-1" style={{ paddingBottom: insets.bottom }}>
-        <Stack screenOptions={sunsetStackOptions} />
+        <Stack screenOptions={{
+          headerStyle: { backgroundColor: SKY.top },
+          headerTintColor: SKY.ink,
+          headerTitleStyle: { fontFamily: 'Nunito_900Black' },
+          headerShadowVisible: false,
+          contentStyle: { backgroundColor: 'transparent' },
+        }} />
       </View>
-    </SunsetBg>
+    </SkyScreen>
   );
 }

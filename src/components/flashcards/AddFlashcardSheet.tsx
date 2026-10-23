@@ -2,6 +2,7 @@ import { useKeyboardHeight } from '@/hooks/use-keyboard-height';
 import React, { useState } from 'react';
 import { Modal, Pressable, Text, View, TextInput, ScrollView, ActivityIndicator } from 'react-native';
 import Animated, { FadeIn, SlideInDown } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { X } from 'lucide-react-native';
 
 import { useCreateFlashcard } from '@/hooks/use-flashcards';
@@ -22,6 +23,7 @@ export interface AddFlashcardSheetProps {
 
 export function AddFlashcardSheet({ visible, onDismiss }: AddFlashcardSheetProps) {
   const keyboardHeight = useKeyboardHeight();
+  const insets = useSafeAreaInsets();
 
   const { t } = useTranslation();
   const [word, setWord] = useState('');
@@ -64,13 +66,13 @@ export function AddFlashcardSheet({ visible, onDismiss }: AddFlashcardSheetProps
         <Pressable className="absolute inset-0" onPress={onDismiss} />
         <Animated.View
           entering={SlideInDown.duration(280)}
-          className="bg-background rounded-t-3xl border-t-2 border-border max-h-[85%]"
+          className="bg-white rounded-t-3xl border-t-2 border-[#C9EDFF] max-h-[85%]"
           style={{ marginBottom: keyboardHeight }}
         >
-          <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 20, gap: 16 }}>
+          <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 20, paddingBottom: 20 + insets.bottom, gap: 16 }}>
             {/* Header */}
             <View className="flex-row items-center justify-between">
-              <Text className="text-foreground font-black text-2xl">{t('cards.add_title')}</Text>
+              <Text className="text-[#171A1C] font-black text-2xl">{t('cards.add_title')}</Text>
               <Pressable onPress={onDismiss} className="p-2">
                 <X size={24} color="#999" />
               </Pressable>
@@ -78,13 +80,13 @@ export function AddFlashcardSheet({ visible, onDismiss }: AddFlashcardSheetProps
 
             {/* Word input */}
             <View className="gap-2">
-              <Text className="text-foreground font-bold">{t('cards.add_word')} *</Text>
+              <Text className="text-[#171A1C] font-bold">{t('cards.add_word')} *</Text>
               <TextInput
                 value={word}
                 onChangeText={setWord}
                 placeholder={t('cards.word_ph')}
                 placeholderTextColor="#999"
-                className="bg-card border-2 border-border rounded-2xl p-4 text-foreground font-medium"
+                className="bg-[#F5FBFF] border-2 border-[#C9EDFF] rounded-2xl p-4 text-[#171A1C] font-medium"
                 autoCapitalize="none"
                 autoCorrect={false}
               />
@@ -92,20 +94,20 @@ export function AddFlashcardSheet({ visible, onDismiss }: AddFlashcardSheetProps
 
             {/* Translation input */}
             <View className="gap-2">
-              <Text className="text-foreground font-bold">{t('cards.add_translation')} *</Text>
+              <Text className="text-[#171A1C] font-bold">{t('cards.add_translation')} *</Text>
               <TextInput
                 value={translation}
                 onChangeText={setTranslation}
                 placeholder={t('cards.translation_ph')}
                 placeholderTextColor="#999"
-                className="bg-card border-2 border-border rounded-2xl p-4 text-foreground font-medium"
+                className="bg-[#F5FBFF] border-2 border-[#C9EDFF] rounded-2xl p-4 text-[#171A1C] font-medium"
               />
             </View>
 
             {/* Optional fields toggle */}
             {!showOptional && (
               <Pressable onPress={() => setShowOptional(true)}>
-                <Text className="text-primary font-bold text-center">
+                <Text className="text-[#2FA8E6] font-bold text-center">
                   {t('cards.add_optional')}
                 </Text>
               </Pressable>
@@ -115,13 +117,13 @@ export function AddFlashcardSheet({ visible, onDismiss }: AddFlashcardSheetProps
               <>
                 {/* Definition input */}
                 <View className="gap-2">
-                  <Text className="text-foreground font-bold">{t('cards.add_def2')}</Text>
+                  <Text className="text-[#171A1C] font-bold">{t('cards.add_def2')}</Text>
                   <TextInput
                     value={definition}
                     onChangeText={setDefinition}
                     placeholder={t('cards.def_ph')}
                     placeholderTextColor="#999"
-                    className="bg-card border-2 border-border rounded-2xl p-4 text-foreground font-medium"
+                    className="bg-[#F5FBFF] border-2 border-[#C9EDFF] rounded-2xl p-4 text-[#171A1C] font-medium"
                     multiline
                     numberOfLines={2}
                   />
@@ -129,13 +131,13 @@ export function AddFlashcardSheet({ visible, onDismiss }: AddFlashcardSheetProps
 
                 {/* Example input */}
                 <View className="gap-2">
-                  <Text className="text-foreground font-bold">{t('cards.add_example')}</Text>
+                  <Text className="text-[#171A1C] font-bold">{t('cards.add_example')}</Text>
                   <TextInput
                     value={example}
                     onChangeText={setExample}
                     placeholder={t('cards.example_ph')}
                     placeholderTextColor="#999"
-                    className="bg-card border-2 border-border rounded-2xl p-4 text-foreground font-medium"
+                    className="bg-[#F5FBFF] border-2 border-[#C9EDFF] rounded-2xl p-4 text-[#171A1C] font-medium"
                     multiline
                     numberOfLines={2}
                   />
@@ -148,7 +150,7 @@ export function AddFlashcardSheet({ visible, onDismiss }: AddFlashcardSheetProps
               onPress={handleSubmit}
               disabled={!canSubmit}
               className={`rounded-2xl p-4 items-center ${
-                canSubmit ? 'bg-primary active:opacity-80' : 'bg-muted'
+                canSubmit ? 'bg-[#2FA8E6] active:opacity-80' : 'bg-[#C9EDFF]'
               }`}
             >
               {createMutation.isPending ? (

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, Pressable, ActivityIndicator } from 'react-native';
+import { View, Text, Pressable, ActivityIndicator, ScrollView } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { X } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
@@ -135,12 +135,12 @@ export default function FlashcardSessionScreen() {
     [rememberedCount, total],
   );
 
-  if (recoveryError) return <View className="flex-1 items-center justify-center gap-4 p-6"><Text className="text-white">{t('common.save_failed')}</Text><Pressable onPress={() => void recover()}><Text className="text-white">{t('practice.bank_player.retry_sync')}</Text></Pressable></View>;
+  if (recoveryError) return <View className="flex-1 items-center justify-center gap-4 p-6"><Text className="text-[#171A1C]">{t('common.save_failed')}</Text><Pressable onPress={() => void recover()}><Text className="text-[#171A1C]">{t('practice.bank_player.retry_sync')}</Text></Pressable></View>;
 
   if (recovering || todayQueue.isLoading) {
     return (
       <View className="flex-1 items-center justify-center">
-        <ActivityIndicator size="large" color="#FFD84A" />
+        <ActivityIndicator size="large" color="#2FA8E6" />
       </View>
     );
   }
@@ -151,11 +151,11 @@ export default function FlashcardSessionScreen() {
     return (
       <View className="flex-1 items-center justify-center p-6">
         <Stack.Screen options={{ title: t('fc.session_title') }} />
-        <Text className="text-white font-bold text-xl text-center">
+        <Text className="text-[#171A1C] font-bold text-xl text-center">
           {t('fc.no_cards')}
         </Text>
-        <Pressable onPress={() => router.back()} className="bg-[#A8243F] rounded-2xl px-6 py-3 mt-4">
-          <Text className="text-white font-bold">{t('common.back')}</Text>
+        <Pressable onPress={() => router.back()} className="bg-[#D6EFFC] rounded-2xl px-6 py-3 mt-4">
+          <Text className="text-[#171A1C] font-bold">{t('common.back')}</Text>
         </Pressable>
       </View>
     );
@@ -168,14 +168,15 @@ export default function FlashcardSessionScreen() {
           title: `${rememberedCount} / ${total}`,
           headerLeft: () => (
             <Pressable onPress={() => router.back()} className="p-2">
-              <X size={24} color="#fff" />
+              <X size={24} color="#171A1C" />
             </Pressable>
           ),
         }}
       />
 
-      <View className="flex-1 p-6 justify-center">
-        <View pointerEvents={pending || saveError ? 'none' : 'auto'}><FlashcardView
+      <ScrollView removeClippedSubviews={false} className="flex-1" contentContainerStyle={{ flexGrow: 1, padding: 20, justifyContent: 'center' }} showsVerticalScrollIndicator={false}>
+        {/* Keep the native parent stable when the save lock changes before navigation. */}
+        <View collapsable={false} pointerEvents={pending || saveError ? 'none' : 'auto'}><FlashcardView
           key={`${currentCard.id}-${index}`}
           word={currentCard.word}
           translation={currentCard.translation}
@@ -189,13 +190,13 @@ export default function FlashcardSessionScreen() {
           onForgot={() => void handleAnswer(false)}
           onSkip={handleSkip}
         /></View>
-        {pending ? <ActivityIndicator color="#FFD84A" /> : null}
-        {saveError ? <View className="gap-3 py-4"><Text accessibilityRole="alert" className="text-center text-white">{t('common.save_failed')}</Text><Pressable onPress={() => void handleAnswer(intent.current?.data.remembered ?? true)} className="rounded-2xl bg-[#A8243F] p-4"><Text className="text-center text-white">{t('practice.bank_player.retry_sync')}</Text></Pressable></View> : null}
-      </View>
+        {pending ? <ActivityIndicator color="#2FA8E6" /> : null}
+        {saveError ? <View className="gap-3 py-4"><Text accessibilityRole="alert" className="text-center text-[#171A1C]">{t('common.save_failed')}</Text><Pressable onPress={() => void handleAnswer(intent.current?.data.remembered ?? true)} className="rounded-2xl bg-[#D6EFFC] p-4"><Text className="text-center text-[#171A1C]">{t('practice.bank_player.retry_sync')}</Text></Pressable></View> : null}
+      </ScrollView>
 
-      <View className="px-6 pb-6">
-        <View className="h-2 bg-white/20 rounded-full overflow-hidden">
-          <View className="h-full bg-[#FFD84A]" style={{ width: `${progressPct}%` }} />
+      <View className="px-6 pb-4 pt-2">
+        <View className="h-2 bg-[#EAF8FF] rounded-full overflow-hidden">
+          <View className="h-full bg-[#59C8FF]" style={{ width: `${progressPct}%` }} />
         </View>
       </View>
     </View>
