@@ -1,3 +1,4 @@
+import { twMerge } from 'tailwind-merge';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
@@ -7,7 +8,6 @@ import {
   Switch,
   ActivityIndicator,
   Alert,
-  StyleSheet,
 } from 'react-native';
 import { Stack } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -27,7 +27,7 @@ import {
   type DeviceToken,
   type UpdatePreferencesRequest,
 } from '@/types/api';
-import { glass, CtaButton } from '@/components/sunset';
+import { ProfileButton as CtaButton, ProfileQueryError } from '@/components/profile/profile-ui';
 
 /**
  * /profile/notifications — настройки push'ей (mobile mirror web).
@@ -126,16 +126,14 @@ export default function NotificationsSettingsScreen() {
   };
 
   return (
-    <View style={{ flex: 1 }}>
+    <View className="flex-1">
       <Stack.Screen options={{ title: t('profile.notif_title') }} />
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 40 + insets.bottom }}
+        contentContainerClassName="w-full max-w-[600px] self-center p-4 gap-4"
+        contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}
       >
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-          <Bell size={28} color="#FFD84A" />
-          <Text style={s.title}>{t('profile.notif_title')}</Text>
-        </View>
+
 
         <PushSubCard
           state={push.state}
@@ -145,14 +143,14 @@ export default function NotificationsSettingsScreen() {
           onSubscribe={onSubscribe}
         />
 
-        {prefs.isLoading || !form ? (
-          <View style={[glass, s.card, { alignItems: 'center', paddingVertical: 32 }]}>
-            <ActivityIndicator color="#FFD84A" />
+        {prefs.isError ? <ProfileQueryError onRetry={() => { void prefs.refetch(); }} /> : prefs.isLoading || !form ? (
+          <View className="bg-mieo-surface border-[1.5px] border-[#C9EDFF] rounded-[24px] p-[16px] gap-[4px] items-center py-[32px]">
+            <ActivityIndicator color="#1AB3FF" />
           </View>
         ) : (
           <>
-            <View style={[glass, s.card]}>
-              <Text style={s.cardTitle}>{t('notif.channels')}</Text>
+            <View className="bg-mieo-surface border-[1.5px] border-[#C9EDFF] rounded-[24px] p-[16px] gap-[4px]">
+              <Text className="text-mieo-heading font-nunito-black text-[16px] mb-[4px]">{t('notif.channels')}</Text>
               <ChannelToggle
                 label={t('notif.ch_practice')}
                 description={t('notif.ch_practice_d')}
@@ -186,10 +184,10 @@ export default function NotificationsSettingsScreen() {
               />
             </View>
 
-            <View style={[glass, s.card]}>
-              <Text style={s.cardTitle}>{t('notif.quiet')}</Text>
-              <Text style={s.cardSub}>{t('notif.quiet_d')}</Text>
-              <View style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>
+            <View className="bg-mieo-surface border-[1.5px] border-[#C9EDFF] rounded-[24px] p-[16px] gap-[4px]">
+              <Text className="text-mieo-heading font-nunito-black text-[16px] mb-[4px]">{t('notif.quiet')}</Text>
+              <Text className="text-mieo-body text-[13px] leading-[18px] font-nunito-medium">{t('notif.quiet_d')}</Text>
+              <View className="flex-row gap-[12px] mt-[12px]">
                 <HourStepper
                   label={t('notif.from')}
                   value={form.quiet_hours_start}
@@ -206,11 +204,11 @@ export default function NotificationsSettingsScreen() {
             {isDirty && !updatePrefs.isPending ? (
               <CtaButton label={t('common.save')} onPress={onSave} block />
             ) : (
-              <View style={[glass, s.saveDisabled]}>
+              <View className="bg-mieo-surface border-[1.5px] border-[#C9EDFF] rounded-[16px] py-[15px] items-center opacity-[0.6]">
                 {updatePrefs.isPending ? (
-                  <ActivityIndicator color="#fff" />
+                  <ActivityIndicator color="#1AB3FF" />
                 ) : (
-                  <Text style={s.saveDisabledText}>{t('common.save')}</Text>
+                  <Text className="text-mieo-heading font-nunito-black text-[15px]">{t('common.save')}</Text>
                 )}
               </View>
             )}
@@ -218,17 +216,17 @@ export default function NotificationsSettingsScreen() {
         )}
 
         {/* Devices */}
-        <View style={[glass, s.card]}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <Smartphone size={18} color="#FFD84A" />
-            <Text style={s.cardTitle}>{t('notif.devices')}</Text>
+        <View className="bg-mieo-surface border-[1.5px] border-[#C9EDFF] rounded-[24px] p-[16px] gap-[4px]">
+          <View className="flex-row items-center gap-[8px]">
+            <Smartphone size={18} color="#1AB3FF" />
+            <Text className="text-mieo-heading font-nunito-black text-[16px] mb-[4px]">{t('notif.devices')}</Text>
           </View>
-          {devices.isLoading ? (
-            <ActivityIndicator color="#FFD84A" style={{ marginTop: 10 }} />
+          {devices.isError ? <ProfileQueryError onRetry={() => { void devices.refetch(); }} /> : devices.isLoading ? (
+            <ActivityIndicator color="#1AB3FF" className="mt-[10px]" />
           ) : (devices.data?.devices?.length ?? 0) === 0 ? (
-            <Text style={s.cardSub}>{t('notif.no_devices')}</Text>
+            <Text className="text-mieo-body text-[13px] leading-[18px] font-nunito-medium">{t('notif.no_devices')}</Text>
           ) : (
-            <View style={{ marginTop: 6 }}>
+            <View className="mt-[6px]">
               {devices.data!.devices.map((d, i) => (
                 <DeviceRow
                   key={d.id}
@@ -262,59 +260,60 @@ function PushSubCard({
   const { t } = useTranslation();
   if (!ready) {
     return (
-      <View style={[glass, s.card, { alignItems: 'center', paddingVertical: 24 }]}>
-        <ActivityIndicator color="#FFD84A" />
+      <View className="bg-mieo-surface border-[1.5px] border-[#C9EDFF] rounded-[24px] p-[16px] gap-[4px] items-center py-[24px]">
+        <ActivityIndicator color="#1AB3FF" />
       </View>
     );
   }
 
   if (state === 'subscribed') {
     return (
-      <View style={[glass, s.statusCard, { borderColor: 'rgba(52,211,153,0.5)' }]}>
-        <View style={s.statusHead}>
+      <View className="bg-mieo-surface border-[1.5px] rounded-[24px] p-[16px] gap-[6px] border-[rgba(52,211,153,0.5)]">
+        <View className="flex-row items-center gap-[8px]">
           <Bell size={20} color="#34D399" />
-          <Text style={s.statusTitle}>{t('notif.push_on')}</Text>
+          <Text className="text-mieo-heading font-nunito-black text-[15px] flex-1">{t('notif.push_on')}</Text>
         </View>
-        <Text style={s.cardSub}>{t('notif.push_on_d')}</Text>
+        <Text className="text-mieo-body text-[13px] leading-[18px] font-nunito-medium">{t('notif.push_on_d')}</Text>
       </View>
     );
   }
 
   if (state === 'unsupported') {
     return (
-      <View style={[glass, s.statusCard]}>
-        <View style={s.statusHead}>
-          <BellOff size={20} color="rgba(255,255,255,0.7)" />
-          <Text style={s.statusTitle}>{t('notif.unsupported')}</Text>
+      <View className="bg-mieo-surface border-[1.5px] rounded-[24px] p-[16px] gap-[6px] border-mieo-stroke">
+        <View className="flex-row items-center gap-[8px]">
+          <BellOff size={20} color="#5D686F" />
+          <Text className="text-mieo-heading font-nunito-black text-[15px] flex-1">{t('notif.unsupported')}</Text>
         </View>
-        <Text style={s.cardSub}>{t('notif.unsupported_d')}</Text>
+        <Text className="text-mieo-body text-[13px] leading-[18px] font-nunito-medium">{t('notif.unsupported_d')}</Text>
       </View>
     );
   }
 
   if (state === 'denied') {
     return (
-      <View style={[glass, s.statusCard, { borderColor: 'rgba(249,115,22,0.5)' }]}>
-        <View style={s.statusHead}>
+      <View className="bg-mieo-surface border-[1.5px] rounded-[24px] p-[16px] gap-[6px] border-[rgba(249,115,22,0.5)]">
+        <View className="flex-row items-center gap-[8px]">
           <ShieldAlert size={20} color="#FB923C" />
-          <Text style={s.statusTitle}>{t('notif.denied')}</Text>
+          <Text className="text-mieo-heading font-nunito-black text-[15px] flex-1">{t('notif.denied')}</Text>
         </View>
-        <Text style={s.cardSub}>{t('notif.denied_d')}</Text>
+        <Text className="text-mieo-body text-[13px] leading-[18px] font-nunito-medium">{t('notif.denied_d')}</Text>
       </View>
     );
   }
 
   // undetermined / granted_no_token / unknown — показываем кнопку.
   return (
-    <View style={[glass, s.statusCard, { borderColor: 'rgba(255,216,74,0.45)', gap: 12 }]}>
-      <View style={s.statusHead}>
-        <Bell size={20} color="#FFD84A" />
-        <Text style={s.statusTitle}>{t('notif.enable')}</Text>
+    <View className="bg-mieo-surface border-[1.5px] rounded-[24px] p-[16px] border-[#C9EDFF] gap-[12px]">
+      <View className="flex-row items-center gap-[8px]">
+        <Bell size={20} color="#1AB3FF" />
+        <Text className="text-mieo-heading font-nunito-black text-[15px] flex-1">{t('notif.enable')}</Text>
       </View>
-      <Text style={s.cardSub}>{t('notif.enable_d')}</Text>
-      {lastError ? <Text style={s.errorText}>{lastError}</Text> : null}
+      <Text className="text-mieo-body text-[13px] leading-[18px] font-nunito-medium">{t('notif.enable_d')}</Text>
+      {lastError ? <Text className="text-[#FB923C] text-[12px] font-nunito-extrabold">{lastError}</Text> : null}
       <CtaButton
         label={isSubscribing ? t('notif.enabling') : t('notif.enable_push')}
+        disabled={isSubscribing}
         onPress={() => void onSubscribe()}
         block
       />
@@ -336,17 +335,18 @@ function ChannelToggle({
   last?: boolean;
 }) {
   return (
-    <View style={[s.toggleRow, last && { borderBottomWidth: 0 }]}>
-      <View style={{ flex: 1, gap: 2 }}>
-        <Text style={s.toggleLabel}>{label}</Text>
-        <Text style={s.toggleDesc}>{description}</Text>
+    <View className={twMerge("flex-row items-center justify-between gap-[12px] py-[11px] border-b-[1px] border-b-[#E3E6E8]", (last ? "border-b-[0px]" : undefined))}>
+      <View className="flex-1 gap-[2px]">
+        <Text className="text-mieo-heading font-nunito-extrabold text-[14px]">{label}</Text>
+        <Text className="text-mieo-body text-[12px] leading-[16px]">{description}</Text>
       </View>
       <Switch
+        accessibilityLabel={label}
         value={value}
         onValueChange={onValueChange}
-        trackColor={{ false: 'rgba(255,255,255,0.25)', true: '#FFB338' }}
+        trackColor={{ false: '#E3E6E8', true: '#59C8FF' }}
         thumbColor="#ffffff"
-        ios_backgroundColor="rgba(255,255,255,0.25)"
+        ios_backgroundColor="#E3E6E8"
       />
     </View>
   );
@@ -364,15 +364,15 @@ function HourStepper({
   const dec = () => onChange((value - 1 + 24) % 24);
   const inc = () => onChange((value + 1) % 24);
   return (
-    <View style={s.stepper}>
-      <Text style={s.stepperLabel}>{label}</Text>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Pressable onPress={dec} style={s.stepperBtn}>
-          <Text style={s.stepperBtnText}>−</Text>
+    <View className="flex-1 rounded-[18px] p-[12px] gap-[8px] bg-[#F0F9FF] border-[1px] border-mieo-stroke">
+      <Text className="text-mieo-body text-[11px] uppercase font-nunito-extrabold tracking-[1px]">{label}</Text>
+      <View className="flex-row items-center justify-between">
+        <Pressable accessibilityRole="button" accessibilityLabel={`${label} −1`} onPress={dec} className="bg-[#F0F9FF] rounded-[12px] w-8 min-h-11 items-center justify-center">
+          <Text className="text-mieo-heading font-nunito-black text-[18px]">−</Text>
         </Pressable>
-        <Text style={s.stepperValue}>{String(value).padStart(2, '0')}:00</Text>
-        <Pressable onPress={inc} style={s.stepperBtn}>
-          <Text style={s.stepperBtnText}>+</Text>
+        <Text className="text-mieo-heading font-nunito-black text-[16px]">{String(value).padStart(2, '0')}:00</Text>
+        <Pressable accessibilityRole="button" accessibilityLabel={`${label} +1`} onPress={inc} className="bg-[#F0F9FF] rounded-[12px] w-8 min-h-11 items-center justify-center">
+          <Text className="text-mieo-heading font-nunito-black text-[18px]">+</Text>
         </Pressable>
       </View>
     </View>
@@ -394,59 +394,23 @@ function DeviceRow({
   const lastSeen = device.last_seen_at ? tsToDate(device.last_seen_at) : null;
   const { t } = useTranslation();
   return (
-    <View style={[s.toggleRow, last && { borderBottomWidth: 0 }]}>
-      <View style={{ flex: 1 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <View style={s.platformPill}>
-            <Text style={s.platformText}>{platform ?? 'unknown'}</Text>
+    <View className={twMerge("flex-row items-center justify-between gap-[12px] py-[11px] border-b-[1px] border-b-[#E3E6E8]", (last ? "border-b-[0px]" : undefined))}>
+      <View className="flex-1">
+        <View className="flex-row items-center gap-[8px]">
+          <View className="bg-[#F0F9FF] rounded-[999px] px-[8px] py-[2px]">
+            <Text className="text-mieo-heading text-[10px] font-nunito-extrabold uppercase">{platform ?? 'unknown'}</Text>
           </View>
-          <Text style={s.deviceName} numberOfLines={1}>
+          <Text className="text-mieo-heading text-[13px] font-nunito-bold flex-1" numberOfLines={1}>
             {device.user_agent ?? `${device.token.slice(0, 24)}…`}
           </Text>
         </View>
         {lastSeen && (
-          <Text style={s.deviceSeen}>{t('notif.last_seen', { time: lastSeen.toLocaleString() })}</Text>
+          <Text className="text-mieo-body text-[10px] font-nunito-bold mt-[3px]">{t('notif.last_seen', { time: lastSeen.toLocaleString() })}</Text>
         )}
       </View>
-      <Pressable onPress={onRemove} disabled={busy} style={[glass, s.removeBtn, busy && { opacity: 0.5 }]}>
-        <Text style={s.removeText}>{t('common.remove')}</Text>
+      <Pressable onPress={onRemove} disabled={busy} className={twMerge("bg-mieo-surface border-[1.5px] border-[#C9EDFF]", "rounded-[12px] px-[12px] py-[8px] border-[rgba(255,111,160,0.4)]", (busy ? "opacity-[0.5]" : undefined))}>
+        <Text className="text-[#FF6FA0] font-nunito-extrabold text-[12px]">{t('common.remove')}</Text>
       </Pressable>
     </View>
   );
 }
-
-const s = StyleSheet.create({
-  title: { color: '#fff', fontWeight: '900', fontSize: 28 },
-
-  card: { borderRadius: 24, padding: 16, gap: 4 },
-  cardTitle: { color: '#fff', fontWeight: '900', fontSize: 16, marginBottom: 4 },
-  cardSub: { color: 'rgba(255,255,255,0.72)', fontSize: 13, lineHeight: 18, fontWeight: '500' },
-
-  statusCard: { borderRadius: 24, padding: 16, gap: 6, borderColor: 'rgba(255,255,255,0.22)' },
-  statusHead: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  statusTitle: { color: '#fff', fontWeight: '900', fontSize: 15, flex: 1 },
-  errorText: { color: '#FB923C', fontSize: 12, fontWeight: '800' },
-
-  toggleRow: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12,
-    paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.12)',
-  },
-  toggleLabel: { color: '#fff', fontWeight: '800', fontSize: 14 },
-  toggleDesc: { color: 'rgba(255,255,255,0.65)', fontSize: 12, lineHeight: 16 },
-
-  saveDisabled: { borderRadius: 16, paddingVertical: 15, alignItems: 'center', opacity: 0.6 },
-  saveDisabledText: { color: '#fff', fontWeight: '900', fontSize: 15 },
-
-  stepper: { flex: 1, borderRadius: 18, padding: 12, gap: 8, backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)' },
-  stepperLabel: { color: 'rgba(255,255,255,0.7)', fontSize: 11, textTransform: 'uppercase', fontWeight: '800', letterSpacing: 1 },
-  stepperBtn: { backgroundColor: 'rgba(255,255,255,0.16)', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 6 },
-  stepperBtnText: { color: '#fff', fontWeight: '900', fontSize: 18 },
-  stepperValue: { color: '#fff', fontWeight: '900', fontSize: 22 },
-
-  platformPill: { backgroundColor: 'rgba(255,255,255,0.16)', borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 },
-  platformText: { color: '#fff', fontSize: 10, fontWeight: '800', textTransform: 'uppercase' },
-  deviceName: { color: '#fff', fontSize: 13, fontWeight: '700', flex: 1 },
-  deviceSeen: { color: 'rgba(255,255,255,0.6)', fontSize: 10, fontWeight: '700', marginTop: 3 },
-  removeBtn: { borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8, borderColor: 'rgba(255,111,160,0.4)' },
-  removeText: { color: '#FF6FA0', fontWeight: '800', fontSize: 12 },
-});

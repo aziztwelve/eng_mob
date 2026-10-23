@@ -3,7 +3,6 @@ import { View, Text } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { Target } from 'lucide-react-native';
 import { useDailyGoal } from '@/hooks/use-daily-goal';
-import { neon } from '@/components/neon-screen';
 
 export interface DailyGoalRingProps {
   size?: number;
@@ -27,7 +26,7 @@ export function DailyGoalRing({
   const dashOffset = circumference - (pct / 100) * circumference;
   const cx = size / 2;
   const cy = size / 2;
-  const ringColor = completed ? neon.primary : neon.xp;
+  const ringColor = completed ? '#21966A' : '#1AB3FF';
 
   return (
     <View
@@ -43,7 +42,7 @@ export function DailyGoalRing({
           cx={cx}
           cy={cy}
           r={radius}
-          stroke="rgba(255,255,255,0.08)"
+          stroke="#EAF7FF"
           strokeWidth={strokeWidth}
           fill="none"
         />
@@ -67,10 +66,10 @@ export function DailyGoalRing({
         )}
         {showLabel && (
           <>
-            <Text style={{ color: neon.xp, fontWeight: '900', fontSize: 14 }}>
+            <Text className="font-nunito-extrabold text-sm text-mieo-heading">
               {earned}/{goal}
             </Text>
-            <Text style={{ color: neon.muted, fontWeight: '800', fontSize: 10, textTransform: 'uppercase' }}>
+            <Text className="font-nunito-bold text-[10px] text-mieo-body uppercase">
               XP
             </Text>
           </>

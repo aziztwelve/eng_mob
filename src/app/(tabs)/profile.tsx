@@ -46,7 +46,7 @@ export default function ProfileScreen() {
   const mistakeCount = mistakes.data?.total ?? mistakes.data?.mistakes?.length ?? 0;
 
   const achievements = useMemo(() => {
-    const unlocked = (mine.data?.achievements ?? []).map((ua) => ({ id: ua.achievement.id, title: ua.achievement.title, locked: false }));
+    const unlocked = (mine.data?.achievements ?? []).filter(ua => ua.achievement?.id).map((ua) => ({ id: ua.achievement.id, title: ua.achievement.title, locked: false }));
     const unlockedIds = new Set(unlocked.map((u) => u.id));
     const locked = (all.data?.achievements ?? [])
       .filter((a) => !unlockedIds.has(a.id))
@@ -97,7 +97,10 @@ export default function ProfileScreen() {
           {statTiles.map((s) => {
             const Icon = s.icon;
             return (
-              <View key={s.key} className="h-[68px] w-[163px] flex-row items-center gap-3 rounded-2xl border-[1.5px] border-[#C9EDFF] bg-mieo-surface px-3">
+              <Pressable key={s.key} accessibilityRole={s.key === 'xp' || s.key === 'streak' ? 'button' : undefined}
+                disabled={s.key !== 'xp' && s.key !== 'streak'}
+                onPress={() => router.push(s.key === 'xp' ? '/profile/stats' : '/profile/streak')}
+                className="h-[68px] w-[163px] flex-row items-center gap-3 rounded-2xl border-[1.5px] border-[#C9EDFF] bg-mieo-surface px-3">
                 <View className="h-9 w-9 items-center justify-center rounded-xl bg-[#F5FCFF]">
                   <Icon size={20} color={s.color} />
                 </View>
@@ -105,7 +108,7 @@ export default function ProfileScreen() {
                   <Text className="font-nunito-extrabold text-lg text-mieo-heading">{s.value}</Text>
                   <Text className="font-nunito-medium text-xs text-mieo-primary-full">{s.label}</Text>
                 </View>
-              </View>
+              </Pressable>
             );
           })}
         </View>

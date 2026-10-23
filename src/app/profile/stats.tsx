@@ -1,15 +1,15 @@
+import { levelProgress } from '@/lib/level-progress';
+import { ProfileQueryError } from '@/components/profile/profile-ui';
 import React, { useMemo } from 'react';
-import { View, Text, ScrollView, Pressable, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, Pressable, ActivityIndicator } from 'react-native';
 import { Stack } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useUserStats } from '@/hooks/use-user-stats';
 import { useDailyGoal, useUpdateDailyGoal } from '@/hooks/use-daily-goal';
 import { useXPHistoryInfinite } from '@/hooks/use-xp-history';
 import { DailyGoalRing } from '@/components/gamification';
 import { tsToDate } from '@/lib/api-client';
-import { glass, GOLD, FILL } from '@/components/sunset';
 import type { XPTransaction } from '@/types/api';
 
 const GOAL_PRESETS = [10, 20, 30, 50];
@@ -40,8 +40,10 @@ function reasonLabel(r: XPTransaction['reason']): string {
 export default function StatsScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const { data: stats } = useUserStats();
-  const { data: goal } = useDailyGoal();
+  const statsQuery = useUserStats();
+  const stats = statsQuery.data;
+  const goalQuery = useDailyGoal();
+  const goal = goalQuery.data;
   const updateGoal = useUpdateDailyGoal();
   const xp = useXPHistoryInfinite();
 
@@ -58,7 +60,7 @@ export default function StatsScreen() {
       const iso = d.toISOString().slice(0, 10);
       m.set(iso, (m.get(iso) ?? 0) + tx.amount);
     });
-    const out: Array<{ date: string; xp: number }> = [];
+    const out: { date: string; xp: number }[] = [];
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     for (let i = 13; i >= 0; i--) {
@@ -72,46 +74,41 @@ export default function StatsScreen() {
 
   const maxBar = Math.max(10, ...byDay.map((d) => d.xp));
 
-  // Level progress (как в XPBar, но в candy-стиле).
   const lvl = stats?.level ?? 1;
-  const currentThreshold = (100 * lvl * (lvl - 1)) / 2;
-  const span = Math.max(1, (stats?.next_level_xp ?? 0) - currentThreshold);
-  const into = Math.max(0, (stats?.total_xp ?? 0) - currentThreshold);
-  const lvlPct = Math.min(100, Math.round((into / span) * 100));
+  const { into, span, percent: lvlPct } = levelProgress(stats ?? { level: 1, total_xp: 0, next_level_xp: 100 });
 
   return (
-    <View style={{ flex: 1 }}>
+    <View className="flex-1">
       <Stack.Screen options={{ title: t('profile.stats_title') }} />
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 40 + insets.bottom }}
+        contentContainerClassName="w-full max-w-[600px] self-center p-4 gap-4"
+        contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}
       >
-        {/* Дневная цель */}
-        <View style={[glass, s.card, { flexDirection: 'row', alignItems: 'center', gap: 16 }]}>
+        {statsQuery.isError || goalQuery.isError ? <ProfileQueryError onRetry={() => { void statsQuery.refetch(); void goalQuery.refetch(); }} /> : statsQuery.isLoading || goalQuery.isLoading ? <ActivityIndicator color="#1AB3FF" /> : <>
+        <View className="bg-mieo-surface border-[1.5px] border-[#C9EDFF] rounded-[24px] p-[16px] flex-row items-center gap-[16px]">
           <DailyGoalRing size={104} />
-          <View style={{ flex: 1, gap: 12 }}>
-            <Text style={s.cardTitle}>{t('profile.daily_goal')}</Text>
-            <View style={s.presetRow}>
+          <View className="flex-1 gap-[12px]">
+            <Text className="text-mieo-heading font-nunito-black text-[15px]">{t('profile.daily_goal')}</Text>
+            <View className="flex-row flex-wrap gap-[8px]">
               {GOAL_PRESETS.map((target) => {
                 const active = goal?.target_xp === target;
                 return (
                   <Pressable
                     key={target}
+                    accessibilityRole="button" accessibilityState={{ selected: active, disabled: updateGoal.isPending }}
                     onPress={() => updateGoal.mutate(target)}
                     disabled={updateGoal.isPending}
                   >
                     {active ? (
-                      <LinearGradient
-                        colors={GOLD}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                        style={s.preset}
+                      <View
+                        className="min-h-11 justify-center rounded-xl bg-mieo-sky border border-mieo-primary px-3 py-2"
                       >
-                        <Text style={s.presetTextActive}>{target} XP</Text>
-                      </LinearGradient>
+                        <Text className="text-mieo-heading font-nunito-black text-[12px]">{target} XP</Text>
+                      </View>
                     ) : (
-                      <View style={[glass, s.preset]}>
-                        <Text style={s.presetText}>{target} XP</Text>
+                      <View className="bg-mieo-surface border-[1.5px] border-[#C9EDFF] rounded-[12px] px-[12px] py-[7px]">
+                        <Text className="text-mieo-heading font-nunito-extrabold text-[12px]">{target} XP</Text>
                       </View>
                     )}
                   </Pressable>
@@ -120,69 +117,64 @@ export default function StatsScreen() {
             </View>
 
             {/* Level XP bar */}
-            <View style={{ gap: 5 }}>
-              <View style={s.lvlRow}>
-                <Text style={s.lvlText}>Lv {lvl}</Text>
-                <Text style={s.lvlSub}>{into} / {span} XP</Text>
+            <View className="gap-[5px]">
+              <View className="flex-row justify-between">
+                <Text className="text-mieo-heading font-nunito-extrabold text-[12px]">Lv {lvl}</Text>
+                <Text className="text-mieo-body font-nunito-bold text-[12px]">{into} / {span} XP</Text>
               </View>
-              <View style={s.lvlTrack}>
-                <LinearGradient
-                  colors={GOLD}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={[s.lvlFill, { width: `${lvlPct}%` }]}
+              <View className="h-[10px] rounded-[6px] bg-[#F0F9FF] overflow-hidden">
+                <View
+                  className="h-full rounded-md bg-mieo-primary" style={{ width: `${lvlPct}%` }}
                 />
               </View>
             </View>
           </View>
         </View>
 
+        </>}
         {/* XP за 14 дней */}
-        <View style={[glass, s.card, { gap: 14 }]}>
-          <Text style={s.cardTitleLg}>{t('profile.xp14')}</Text>
-          <View style={s.chartRow}>
+        <View className="bg-mieo-surface border-[1.5px] border-[#C9EDFF] rounded-[24px] p-[16px] gap-[14px]">
+          <Text className="text-mieo-heading font-nunito-black text-[18px]">{t('profile.xp14')}</Text>
+          <View className="flex-row items-end justify-between gap-[4px] h-[110px]">
             {byDay.map((d) => {
               const pct = Math.max((d.xp / maxBar) * 100, 2);
               const day = new Date(d.date).getDate();
               return (
-                <View key={d.date} style={s.barCol}>
-                  <View style={s.barTrack}>
+                <View key={d.date} className="flex-1 items-center h-[100%] justify-end">
+                  <View className="w-[100%] h-[90px] justify-end">
                     {d.xp === 0 ? (
-                      <View style={[s.barEmpty, { height: `${pct}%` }]} />
+                      <View className="w-full rounded-md min-h-[3px] bg-mieo-sky" style={{ height: `${pct}%` }} />
                     ) : (
-                      <LinearGradient
-                        colors={FILL}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 0, y: 1 }}
-                        style={[s.bar, { height: `${pct}%` }]}
+                      <View
+                        className="w-full rounded-md min-h-[3px] bg-mieo-primary" style={{ height: `${pct}%` }}
                       />
                     )}
                   </View>
-                  <Text style={s.barDay}>{day}</Text>
+                  <Text className="text-mieo-body text-[10px] font-nunito-extrabold mt-[4px]">{day}</Text>
                 </View>
               );
             })}
           </View>
-          <View style={s.totalsRow}>
-            <Text style={s.totalText}>Total: {stats?.total_xp ?? 0} XP</Text>
-            <Text style={s.totalText}>Weekly: {stats?.weekly_xp ?? 0} XP</Text>
+          <View className="flex-row justify-between">
+            <Text className="text-mieo-body text-[12px] font-nunito-bold">Total: {stats?.total_xp ?? 0} XP</Text>
+            <Text className="text-mieo-body text-[12px] font-nunito-bold">Weekly: {stats?.weekly_xp ?? 0} XP</Text>
           </View>
         </View>
 
         {/* XP история */}
-        <View style={[glass, s.card, { gap: 8 }]}>
-          <Text style={[s.cardTitleLg, { marginBottom: 4 }]}>{t('profile.xp_history')}</Text>
-          {transactions.length === 0 && !xp.isLoading ? (
-            <Text style={s.empty}>{t('profile.no_tx')}</Text>
+        <View className="bg-mieo-surface border-[1.5px] border-[#C9EDFF] rounded-[24px] p-[16px] gap-[8px]">
+          <Text className="text-mieo-heading font-nunito-black text-[18px] mb-[4px]">{t('profile.xp_history')}</Text>
+          {xp.isError ? <ProfileQueryError onRetry={() => { void xp.refetch(); }} /> : xp.isLoading ? <ActivityIndicator color="#1AB3FF" /> : transactions.length === 0 ? (
+            <Text className="text-mieo-body font-nunito-semibold">{t('profile.no_tx')}</Text>
           ) : (
             transactions.map((tx) => {
               const d = tsToDate(tx.created_at);
               return (
-                <View key={tx.id} style={s.txRow}>
-                  <Text style={s.txLabel}>⚡ {reasonLabel(tx.reason)}</Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                    <Text style={s.txDate}>{d ? d.toLocaleDateString() : '—'}</Text>
-                    <Text style={s.txAmount}>+{tx.amount}</Text>
+                <View key={tx.id} className="flex-row items-center justify-between py-[9px] border-b-[1px] border-b-[#E3E6E8]">
+                  <Text className="text-mieo-heading font-nunito-extrabold text-[14px]">⚡ {reasonLabel(tx.reason)}</Text>
+                  <View className="flex-row items-center gap-[12px]">
+                    <Text className="text-mieo-body text-[12px]">{d ? d.toLocaleDateString() : '—'}</Text>
+                    <Text className="text-mieo-heading font-nunito-black text-[14px]">+{tx.amount}</Text>
                   </View>
                 </View>
               );
@@ -193,12 +185,12 @@ export default function StatsScreen() {
             <Pressable
               onPress={() => xp.fetchNextPage()}
               disabled={xp.isFetchingNextPage}
-              style={[glass, s.loadMore]}
+              className="bg-mieo-surface border-[1.5px] border-[#C9EDFF] rounded-[14px] py-[13px] items-center mt-[8px]"
             >
               {xp.isFetchingNextPage ? (
-                <ActivityIndicator color="#fff" />
+                <ActivityIndicator color="#1AB3FF" />
               ) : (
-                <Text style={s.loadMoreText}>{t('profile.load_more')}</Text>
+                <Text className="text-mieo-heading font-nunito-extrabold text-[14px]">{t('profile.load_more')}</Text>
               )}
             </Pressable>
           )}
@@ -207,42 +199,3 @@ export default function StatsScreen() {
     </View>
   );
 }
-
-const s = StyleSheet.create({
-  card: { borderRadius: 24, padding: 16 },
-  cardTitle: { color: '#fff', fontWeight: '900', fontSize: 15 },
-  cardTitleLg: { color: '#fff', fontWeight: '900', fontSize: 18 },
-
-  presetRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  preset: { borderRadius: 12, paddingHorizontal: 12, paddingVertical: 7 },
-  presetText: { color: '#fff', fontWeight: '800', fontSize: 12 },
-  presetTextActive: { color: '#5a3b00', fontWeight: '900', fontSize: 12 },
-
-  lvlRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  lvlText: { color: '#fff', fontWeight: '800', fontSize: 12 },
-  lvlSub: { color: 'rgba(255,255,255,0.75)', fontWeight: '700', fontSize: 12 },
-  lvlTrack: { height: 10, borderRadius: 6, backgroundColor: 'rgba(255,255,255,0.18)', overflow: 'hidden' },
-  lvlFill: { height: '100%', borderRadius: 6 },
-
-  chartRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: 4, height: 110 },
-  barCol: { flex: 1, alignItems: 'center', height: '100%', justifyContent: 'flex-end' },
-  barTrack: { width: '100%', height: 90, justifyContent: 'flex-end' },
-  bar: { width: '100%', borderRadius: 5, minHeight: 3 },
-  barEmpty: { width: '100%', borderRadius: 5, minHeight: 3, backgroundColor: 'rgba(255,255,255,0.16)' },
-  barDay: { color: 'rgba(255,255,255,0.7)', fontSize: 10, fontWeight: '800', marginTop: 4 },
-
-  totalsRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  totalText: { color: 'rgba(255,255,255,0.8)', fontSize: 12, fontWeight: '700' },
-
-  empty: { color: 'rgba(255,255,255,0.75)', fontWeight: '600' },
-  txRow: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.12)',
-  },
-  txLabel: { color: '#fff', fontWeight: '800', fontSize: 14 },
-  txDate: { color: 'rgba(255,255,255,0.7)', fontSize: 12 },
-  txAmount: { color: '#FFD84A', fontWeight: '900', fontSize: 14 },
-
-  loadMore: { borderRadius: 14, paddingVertical: 13, alignItems: 'center', marginTop: 8 },
-  loadMoreText: { color: '#fff', fontWeight: '800', fontSize: 14 },
-});

@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { View, Text, ActivityIndicator } from 'react-native';
 import { Snowflake } from 'lucide-react-native';
 import { useStreakHistory } from '@/hooks/use-streak';
+import { ProfileQueryError } from '@/components/profile/profile-ui';
 import type { StreakDay } from '@/types/api';
 
 export interface StreakCalendarProps {
@@ -9,7 +10,7 @@ export interface StreakCalendarProps {
 }
 
 export function StreakCalendar({ days = 30 }: StreakCalendarProps) {
-  const { data, isLoading } = useStreakHistory(days);
+  const { data, isLoading, isError, refetch } = useStreakHistory(days);
 
   const map = useMemo(() => {
     const m = new Map<string, StreakDay>();
@@ -29,6 +30,8 @@ export function StreakCalendar({ days = 30 }: StreakCalendarProps) {
     return out;
   }, [days]);
 
+  if (isError) return <ProfileQueryError onRetry={() => { void refetch(); }} />;
+
   if (isLoading) {
     return (
       <View className="items-center py-6">
@@ -46,8 +49,8 @@ export function StreakCalendar({ days = 30 }: StreakCalendarProps) {
         const dayNum = new Date(iso).getDate();
         const isToday = iso === today;
 
-        let bg = 'bg-white/10';
-        let fg = 'text-white/70';
+        let bg = 'bg-[#F0F8FC]';
+        let fg = 'text-mieo-body';
         if (day?.completed) {
           if (day.used_freeze) {
             bg = 'bg-cyan-500';
@@ -61,12 +64,12 @@ export function StreakCalendar({ days = 30 }: StreakCalendarProps) {
         return (
           <View
             key={iso}
-            className={`w-[12%] aspect-square rounded-lg border-2 items-center justify-center ${bg} ${isToday ? 'border-amber-300' : 'border-white/15'}`}
+            className={`w-[12%] h-9 rounded-lg border-2 items-center justify-center ${bg} ${isToday ? 'border-amber-300' : 'border-mieo-stroke'}`}
           >
             {day?.used_freeze ? (
               <Snowflake size={12} color="#ffffff" />
             ) : (
-              <Text className={`text-xs font-black tabular-nums ${fg}`}>{dayNum}</Text>
+              <Text className={`text-xs font-nunito-black tabular-nums ${fg}`}>{dayNum}</Text>
             )}
           </View>
         );

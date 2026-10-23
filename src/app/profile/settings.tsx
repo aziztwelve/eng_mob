@@ -51,7 +51,7 @@ export default function SettingsScreen() {
   return (
     <View className="flex-1 bg-mieo-bg">
       <Stack.Screen options={{ headerShown: false }} />
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingTop: insets.top + 12, paddingBottom: 40, alignItems: 'center' }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingTop: insets.top + 12, paddingBottom: 32 + insets.bottom, alignItems: 'center' }}>
         <View className="flex-row items-center gap-4 px-4" style={{ width: contentWidth }}>
           <Pressable accessibilityRole="button" accessibilityLabel={t('common.back')} onPress={() => router.back()} className="rounded-xl border-[1.5px] border-mieo-stroke bg-mieo-surface p-3">
             <ChevronLeft size={24} color="#171A1C" />
@@ -89,7 +89,10 @@ export default function SettingsScreen() {
       {/* Language picker */}
       <Modal visible={langOpen} animationType="slide" onRequestClose={() => setLangOpen(false)}>
         <View className="flex-1 bg-mieo-bg">
-          <View className="flex-row items-center justify-center px-4 pt-16 pb-4">
+          <View className="flex-row items-center gap-4 px-4 pb-4" style={{ paddingTop: insets.top + 12 }}>
+            <Pressable accessibilityRole="button" accessibilityLabel={t('common.close')} onPress={() => setLangOpen(false)} className="rounded-xl border-[1.5px] border-mieo-stroke bg-mieo-surface p-3">
+              <ChevronLeft size={24} color="#171A1C" />
+            </Pressable>
             <Text className="font-nunito-black text-2xl text-mieo-heading">{t('profile.language')}</Text>
           </View>
           {(['ru', 'en', 'kk'] as UiLang[]).map((code) => {

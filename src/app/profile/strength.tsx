@@ -3,14 +3,11 @@ import {
   View,
   Text,
   ScrollView,
-  Pressable,
   ActivityIndicator,
-  StyleSheet,
 } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { Layers, TrendingDown, TrendingUp } from 'lucide-react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { TrendingDown, TrendingUp } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useSkillStrengths, useWeakSkills } from '@/hooks/use-srs';
@@ -20,7 +17,7 @@ import {
   type SkillDecay,
   type SkillTypeShort,
 } from '@/types/api';
-import { glass, CtaButton, SunsetTabs } from '@/components/sunset';
+import { ProfileButton as CtaButton, ProfileTabs, ProfileQueryError } from '@/components/profile/profile-ui';
 
 type Filter = 'all' | 'module' | 'lesson';
 
@@ -53,45 +50,43 @@ export default function StrengthScreen() {
   }, [all.data]);
 
   return (
-    <View style={{ flex: 1 }}>
+    <View className="flex-1">
       <Stack.Screen options={{ title: t('profile.strength_title') }} />
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 40 + insets.bottom }}
+        contentContainerClassName="w-full max-w-[600px] self-center p-4 gap-4"
+        contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}
       >
-        <View style={{ gap: 8 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-            <Layers size={28} color="#FFD84A" />
-            <Text style={s.title}>{t('profile.strength')}</Text>
-          </View>
-          <Text style={s.subtitle}>
+        <View className="gap-[8px]">
+
+          <Text className="text-mieo-body text-[13px] leading-[19px] font-nunito-medium">
             {t('stw.subtitle')}
           </Text>
         </View>
 
-        <SunsetTabs
+        <ProfileTabs
           tabs={TABS.map((tab) => ({ ...tab, label: t(tab.label) }))}
           active={filter}
           onChange={(k) => setFilter(k as Filter)}
         />
 
         {/* Top weak */}
-        <View style={[glass, s.card]}>
-          <View style={s.cardHead}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <View className="bg-mieo-surface border-[1.5px] border-[#C9EDFF] rounded-[24px] p-[16px] gap-[4px]">
+          <View className="flex-row items-center justify-between flex-wrap gap-[10px] mb-[4px]">
+            <View className="flex-row items-center gap-[8px]">
               <TrendingDown size={18} color="#FFB338" />
-              <Text style={s.cardTitle}>{t('stw.weak')}</Text>
+              <Text className="text-mieo-heading font-nunito-black text-[16px]">{t('stw.weak')}</Text>
             </View>
-            <View style={{ width: 130 }}>
+            <View className="w-[130px]">
               <CtaButton label={t('stw.boost')} onPress={() => router.push('/practice/session')} />
             </View>
           </View>
-          {weak.isLoading ? (
-            <ActivityIndicator color="#FFD84A" style={{ marginVertical: 12 }} />
+          {weak.isError ? <ProfileQueryError onRetry={() => { void weak.refetch(); }} /> : weak.isLoading ? (
+            <ActivityIndicator color="#1AB3FF" className="my-3" />
           ) : (weak.data?.skills?.length ?? 0) === 0 ? (
-            <Text style={s.empty}>{t('stw.no_weak')}</Text>
+            <Text className="text-mieo-body font-nunito-semibold text-[13px] mt-[6px]">{t('stw.no_weak')}</Text>
           ) : (
-            <View style={{ gap: 12, marginTop: 4 }}>
+            <View className="gap-[12px] mt-[4px]">
               {weak.data?.skills?.map((sk) => (
                 <SkillBar key={`${sk.user_id}:${sk.skill_id}`} skill={sk} />
               ))}
@@ -100,23 +95,23 @@ export default function StrengthScreen() {
         </View>
 
         {/* All */}
-        <View style={[glass, s.card]}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <View className="bg-mieo-surface border-[1.5px] border-[#C9EDFF] rounded-[24px] p-[16px] gap-[4px]">
+          <View className="flex-row items-center gap-[8px]">
             <TrendingUp size={18} color="#34D399" />
-            <Text style={s.cardTitle}>{t('stw.all')}</Text>
+            <Text className="text-mieo-heading font-nunito-black text-[16px]">{t('stw.all')}</Text>
             {sorted.length > 0 && (
-              <Text style={s.count}>· {sorted.length}</Text>
+              <Text className="text-mieo-body font-nunito-extrabold text-[14px]">· {sorted.length}</Text>
             )}
           </View>
 
-          {all.isLoading ? (
-            <ActivityIndicator color="#FFD84A" style={{ marginVertical: 12 }} />
+          {all.isError ? <ProfileQueryError onRetry={() => { void all.refetch(); }} /> : all.isLoading ? (
+            <ActivityIndicator color="#1AB3FF" className="my-3" />
           ) : sorted.length === 0 ? (
-            <Text style={s.empty}>
+            <Text className="text-mieo-body font-nunito-semibold text-[13px] mt-[6px]">
               {t('stw.empty')}
             </Text>
           ) : (
-            <View style={{ gap: 12, marginTop: 8 }}>
+            <View className="gap-[12px] mt-[8px]">
               {sorted.map((sk) => (
                 <SkillBar key={`${sk.user_id}:${sk.skill_id}`} skill={sk} />
               ))}
@@ -136,42 +131,24 @@ function SkillBar({ skill }: { skill: SkillDecay }) {
   const barColor = pct >= 80 ? '#34D399' : pct >= 50 ? '#FFB338' : '#FF6FA0';
 
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-      <View style={{ flex: 1, gap: 6, minWidth: 0 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+    <View className="flex-row items-center gap-[12px]">
+      <View className="flex-1 gap-[6px] min-w-[0px]">
+        <View className="flex-row items-center gap-[8px]">
           {kind && (
-            <View style={s.kindPill}>
-              <Text style={s.kindText}>{kind === 'module' ? t('stw.module') : t('stw.lesson')}</Text>
+            <View className="bg-[#F0F9FF] rounded-[999px] px-[8px] py-[2px]">
+              <Text className="text-mieo-heading text-[10px] font-nunito-extrabold uppercase">{kind === 'module' ? t('stw.module') : t('stw.lesson')}</Text>
             </View>
           )}
-          <Text style={s.skillId} numberOfLines={1}>{skill.skill_id}</Text>
+          <Text className="text-mieo-body text-[12px] flex-1 font-mono" numberOfLines={1}>{skill.skill_id}</Text>
         </View>
-        <View style={s.barTrack}>
-          <View style={{ height: '100%', borderRadius: 6, width: `${pct}%`, backgroundColor: barColor }} />
+        <View className="h-[10px] rounded-[6px] bg-[#F0F9FF] overflow-hidden">
+          <View className="h-full rounded-md" style={{ width: `${pct}%`, backgroundColor: barColor }} />
         </View>
       </View>
-      <View style={{ alignItems: 'flex-end' }}>
-        <Text style={s.pct}>{pct}%</Text>
-        <Text style={s.pctDate}>{last ? last.toLocaleDateString() : '—'}</Text>
+      <View className="items-end">
+        <Text className="text-mieo-heading font-nunito-black text-[17px]">{pct}%</Text>
+        <Text className="text-mieo-body text-[10px] font-nunito-extrabold uppercase tracking-[0.5px]">{last ? last.toLocaleDateString() : '—'}</Text>
       </View>
     </View>
   );
 }
-
-const s = StyleSheet.create({
-  title: { color: '#fff', fontWeight: '900', fontSize: 28 },
-  subtitle: { color: 'rgba(255,255,255,0.72)', fontSize: 13, lineHeight: 19, fontWeight: '500' },
-
-  card: { borderRadius: 24, padding: 16, gap: 4 },
-  cardHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, marginBottom: 4 },
-  cardTitle: { color: '#fff', fontWeight: '900', fontSize: 16 },
-  count: { color: 'rgba(255,255,255,0.7)', fontWeight: '800', fontSize: 14 },
-  empty: { color: 'rgba(255,255,255,0.72)', fontWeight: '600', fontSize: 13, marginTop: 6 },
-
-  kindPill: { backgroundColor: 'rgba(255,255,255,0.16)', borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 },
-  kindText: { color: '#fff', fontSize: 10, fontWeight: '800', textTransform: 'uppercase' },
-  skillId: { color: 'rgba(255,255,255,0.7)', fontSize: 12, flex: 1, fontFamily: 'monospace' },
-  barTrack: { height: 10, borderRadius: 6, backgroundColor: 'rgba(255,255,255,0.16)', overflow: 'hidden' },
-  pct: { color: '#fff', fontWeight: '900', fontSize: 17 },
-  pctDate: { color: 'rgba(255,255,255,0.6)', fontSize: 10, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5 },
-});

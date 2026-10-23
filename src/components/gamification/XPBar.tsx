@@ -1,3 +1,4 @@
+import { levelProgress } from '@/lib/level-progress';
 import React from 'react';
 import { View, Text } from 'react-native';
 import { useUserStats } from '@/hooks/use-user-stats';
@@ -13,10 +14,7 @@ export function XPBar({ stats, showLabels = true }: XPBarProps) {
   const s = stats ?? data;
   if (!s) return <View className="h-2 bg-muted rounded-full" />;
 
-  const currentThreshold = (100 * s.level * (s.level - 1)) / 2;
-  const span = Math.max(1, s.next_level_xp - currentThreshold);
-  const into = Math.max(0, s.total_xp - currentThreshold);
-  const pct = Math.min(100, Math.round((into / span) * 100));
+  const { into, span, percent: pct } = levelProgress(s);
 
   return (
     <View className="flex-col gap-1">

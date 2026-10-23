@@ -1,12 +1,11 @@
+import { ProfileTabs, ProfileQueryError } from '@/components/profile/profile-ui';
 import React, { useMemo, useState } from 'react';
-import { View, Text, ScrollView, Pressable, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
 import { Stack } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAchievements, useMyAchievements } from '@/hooks/use-achievements';
 import { AchievementCard } from '@/components/gamification';
-import { glass, GOLD } from '@/components/sunset';
 import type { UserAchievement } from '@/types/api';
 
 const CATEGORIES = ['all', 'learning', 'streak', 'xp', 'special'] as const;
@@ -41,39 +40,23 @@ export default function AchievementsScreen() {
   const isLoading = all.isLoading || mine.isLoading;
 
   return (
-    <View style={{ flex: 1 }}>
+    <View className="flex-1">
       <Stack.Screen options={{ title: t('profile.ach_title') }} />
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 40 + insets.bottom }}
+        contentContainerClassName="w-full max-w-[600px] self-center p-4 gap-4"
+        contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}
       >
-        <View style={s.pillRow}>
-          {CATEGORIES.map((c) => {
-            const active = category === c;
-            return (
-              <Pressable key={c} onPress={() => setCategory(c)}>
-                {active ? (
-                  <LinearGradient colors={GOLD} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.pill}>
-                    <Text style={s.pillTextActive}>{t(CATEGORY_LABEL[c])}</Text>
-                  </LinearGradient>
-                ) : (
-                  <View style={[glass, s.pill]}>
-                    <Text style={s.pillText}>{t(CATEGORY_LABEL[c])}</Text>
-                  </View>
-                )}
-              </Pressable>
-            );
-          })}
-        </View>
+        <ProfileTabs tabs={CATEGORIES.map(c => ({ key: c, label: c === 'xp' ? 'XP' : t(CATEGORY_LABEL[c]) }))} active={category} onChange={c => setCategory(c as Category)} />
 
-        {isLoading ? (
-          <ActivityIndicator color="#FFD84A" style={{ marginTop: 12 }} />
+        {all.isError || mine.isError ? <ProfileQueryError onRetry={() => { void all.refetch(); void mine.refetch(); }} /> : isLoading ? (
+          <ActivityIndicator color="#1AB3FF" className="mt-[12px]" />
         ) : (
           <>
             {unlocked.length > 0 && (
               <Section title={t('ach.unlocked', { count: unlocked.length })}>
                 {unlocked.map((a) => (
-                  <View key={a.id} style={{ width: '48%' }}>
+                  <View key={a.id} className="w-[48%]">
                     <AchievementCard achievement={a} user={ownedMap.get(a.id)} />
                   </View>
                 ))}
@@ -82,14 +65,14 @@ export default function AchievementsScreen() {
             {locked.length > 0 && (
               <Section title={t('ach.locked', { count: locked.length })}>
                 {locked.map((a) => (
-                  <View key={a.id} style={{ width: '48%' }}>
+                  <View key={a.id} className="w-[48%]">
                     <AchievementCard achievement={a} />
                   </View>
                 ))}
               </Section>
             )}
             {items.length === 0 && (
-              <Text style={s.empty}>{t('ach.empty')}</Text>
+              <Text className="text-mieo-body font-nunito-semibold text-center py-[32px]">{t('ach.empty')}</Text>
             )}
           </>
         )}
@@ -100,20 +83,9 @@ export default function AchievementsScreen() {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <View style={{ gap: 12 }}>
-      <Text style={s.sectionTitle}>{title}</Text>
-      <View style={s.grid}>{children}</View>
+    <View className="gap-[12px]">
+      <Text className="text-mieo-body font-nunito-black uppercase tracking-[1.5px] text-[12px]">{title}</Text>
+      <View className="flex-row flex-wrap gap-[8px]">{children}</View>
     </View>
   );
 }
-
-const s = StyleSheet.create({
-  pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  pill: { borderRadius: 999, paddingHorizontal: 16, paddingVertical: 8 },
-  pillText: { color: '#fff', fontWeight: '800', fontSize: 13 },
-  pillTextActive: { color: '#5a3b00', fontWeight: '900', fontSize: 13 },
-
-  sectionTitle: { color: 'rgba(255,255,255,0.78)', fontWeight: '900', textTransform: 'uppercase', letterSpacing: 1.5, fontSize: 12 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  empty: { color: 'rgba(255,255,255,0.72)', fontWeight: '600', textAlign: 'center', paddingVertical: 32 },
-});

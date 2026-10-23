@@ -1,3 +1,4 @@
+import { twMerge } from 'tailwind-merge';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
@@ -7,16 +8,15 @@ import {
   ActivityIndicator,
   Pressable,
   Linking,
-  StyleSheet,
 } from 'react-native';
 import { Stack } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { BookOpenText, BellOff } from 'lucide-react-native';
+import { BellOff } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
 import Toast from 'react-native-toast-message';
 
-import { glass, CtaButton } from '@/components/sunset';
+import { ProfileButton as CtaButton } from '@/components/profile/profile-ui';
 import { useOnboardingState } from '@/hooks/use-onboarding';
 import {
   INTERVAL_CHOICES,
@@ -134,56 +134,54 @@ export default function LockscreenWordsScreen() {
 
   if (!config) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+      <View className="flex-1 items-center justify-center">
         <Stack.Screen options={{ title: t('lockscreen.title') }} />
-        <ActivityIndicator color="#FFD84A" />
+        <ActivityIndicator color="#1AB3FF" />
       </View>
     );
   }
 
   return (
-    <View style={{ flex: 1 }}>
+    <View className="flex-1">
       <Stack.Screen options={{ title: t('lockscreen.title') }} />
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 40 + insets.bottom }}
+        contentContainerClassName="w-full max-w-[600px] self-center p-4 gap-4"
+        contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}
       >
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-          <BookOpenText size={28} color="#FFD84A" />
-          <Text style={s.title}>{t('lockscreen.title')}</Text>
-        </View>
-        <Text style={s.subtitle}>{t('lockscreen.subtitle')}</Text>
+
+        <Text className="text-mieo-body text-[13px] leading-[18px] font-nunito-medium">{t('lockscreen.subtitle')}</Text>
 
         {/* Permission warning */}
         {permission === 'denied' && (
-          <View style={[glass, s.card, { borderColor: 'rgba(249,115,22,0.5)' }]}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <View className="bg-mieo-surface border-[1.5px] rounded-[24px] p-[16px] gap-[4px] border-[rgba(249,115,22,0.5)]">
+            <View className="flex-row items-center gap-[8px]">
               <BellOff size={20} color="#FB923C" />
-              <Text style={s.cardTitle}>{t('lockscreen.permission_blocked')}</Text>
+              <Text className="text-mieo-heading font-nunito-black text-[16px] mb-[4px]">{t('lockscreen.permission_blocked')}</Text>
             </View>
-            <Text style={s.cardSub}>{t('lockscreen.permission_blocked_d')}</Text>
+            <Text className="text-mieo-body text-[13px] leading-[18px] font-nunito-medium">{t('lockscreen.permission_blocked_d')}</Text>
             <CtaButton label={t('lockscreen.open_settings')} onPress={openSystemSettings} block />
           </View>
         )}
 
         {/* Main toggle */}
-        <View style={[glass, s.card]}>
-          <View style={s.toggleRow}>
-            <View style={{ flex: 1, paddingRight: 12 }}>
-              <Text style={s.toggleLabel}>{t('lockscreen.enable')}</Text>
-              <Text style={s.toggleDesc}>{t('lockscreen.enable_d')}</Text>
+        <View className="bg-mieo-surface border-[1.5px] rounded-[24px] p-[16px] gap-[4px] border-mieo-stroke">
+          <View className="flex-row items-center justify-between gap-[12px]">
+            <View className="flex-1 pr-[12px]">
+              <Text className="text-mieo-heading font-nunito-extrabold text-[14px]">{t('lockscreen.enable')}</Text>
+              <Text className="text-mieo-body text-[12px] leading-[16px] mt-[3px]">{t('lockscreen.enable_d')}</Text>
             </View>
             <Switch
               value={config.enabled}
               onValueChange={onToggle}
               disabled={busy}
-              trackColor={{ false: 'rgba(255,255,255,0.18)', true: '#00FFA3' }}
+              trackColor={{ false: '#E3E6E8', true: '#59C8FF' }}
               thumbColor="#fff"
             />
           </View>
 
           {config.enabled && (
-            <Text style={[s.cardSub, { marginTop: 8 }]}>
+            <Text className="text-mieo-body text-[13px] leading-[18px] font-nunito-medium mt-[8px]">
               {queueCount === null
                 ? '…'
                 : t('lockscreen.queue', { count: queueCount })}
@@ -192,9 +190,9 @@ export default function LockscreenWordsScreen() {
         </View>
 
         {/* Interval */}
-        <View style={[glass, s.card, config.enabled ? null : s.dimmed]}>
-          <Text style={s.cardTitle}>{t('lockscreen.interval_title')}</Text>
-          <View style={s.pillRow}>
+        <View className={twMerge("bg-mieo-surface border-[1.5px] border-[#C9EDFF]", "rounded-[24px] p-[16px] gap-[4px] border-mieo-stroke", (config.enabled ? undefined : "opacity-[0.55]"))}>
+          <Text className="text-mieo-heading font-nunito-black text-[16px] mb-[4px]">{t('lockscreen.interval_title')}</Text>
+          <View className="flex-row flex-wrap gap-[8px] mt-[10px]">
             {INTERVAL_CHOICES.map((min) => {
               const active = config.intervalMin === min;
               return (
@@ -202,9 +200,9 @@ export default function LockscreenWordsScreen() {
                   key={min}
                   onPress={() => onInterval(min)}
                   disabled={!config.enabled || busy}
-                  style={[s.pill, active && s.pillActive]}
+                  className={twMerge("rounded-[999px] px-[14px] py-[8px] bg-[#F0F9FF] border-[1px] border-mieo-stroke", (active ? "bg-[#59C8FF] border-[#59C8FF]" : undefined))}
                 >
-                  <Text style={[s.pillText, active && s.pillTextActive]}>
+                  <Text className={twMerge("text-mieo-body font-nunito-extrabold text-[12px]", (active ? "text-mieo-heading" : undefined))}>
                     {t('lockscreen.every_min', { count: min })}
                   </Text>
                 </Pressable>
@@ -214,10 +212,10 @@ export default function LockscreenWordsScreen() {
         </View>
 
         {/* Quiet hours */}
-        <View style={[glass, s.card, config.enabled ? null : s.dimmed]}>
-          <Text style={s.cardTitle}>{t('lockscreen.quiet_title')}</Text>
-          <Text style={s.cardSub}>{t('lockscreen.quiet_d')}</Text>
-          <View style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>
+        <View className={twMerge("bg-mieo-surface border-[1.5px] border-[#C9EDFF]", "rounded-[24px] p-[16px] gap-[4px] border-mieo-stroke", (config.enabled ? undefined : "opacity-[0.55]"))}>
+          <Text className="text-mieo-heading font-nunito-black text-[16px] mb-[4px]">{t('lockscreen.quiet_title')}</Text>
+          <Text className="text-mieo-body text-[13px] leading-[18px] font-nunito-medium">{t('lockscreen.quiet_d')}</Text>
+          <View className="flex-row gap-[12px] mt-[12px]">
             <HourStepper
               label={t('notif.from')}
               value={config.quietFrom}
@@ -235,16 +233,16 @@ export default function LockscreenWordsScreen() {
 
         {/* Test + выключение вручную */}
         {config.enabled && (
-          <View style={[glass, s.card]}>
-            <Text style={s.cardTitle}>{t('lockscreen.test_title')}</Text>
-            <Text style={s.cardSub}>{t('lockscreen.test_d')}</Text>
-            <View style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>
-              <View style={{ flex: 1 }}>
+          <View className="bg-mieo-surface border-[1.5px] rounded-[24px] p-[16px] gap-[4px] border-mieo-stroke">
+            <Text className="text-mieo-heading font-nunito-black text-[16px] mb-[4px]">{t('lockscreen.test_title')}</Text>
+            <Text className="text-mieo-body text-[13px] leading-[18px] font-nunito-medium">{t('lockscreen.test_d')}</Text>
+            <View className="flex-row gap-[12px] mt-[12px]">
+              <View className="flex-1">
                 <CtaButton label={t('lockscreen.test_cta')} onPress={onTest} block />
               </View>
-              <View style={{ flex: 1 }}>
-                <Pressable style={s.secondaryBtn} onPress={() => void refreshQueue()}>
-                  <Text style={s.secondaryBtnText}>{t('lockscreen.refresh_queue')}</Text>
+              <View className="flex-1">
+                <Pressable className="rounded-[16px] py-[15px] items-center border-[1px] border-mieo-stroke" onPress={() => void refreshQueue()}>
+                  <Text className="text-mieo-heading font-nunito-black text-[15px]">{t('lockscreen.refresh_queue')}</Text>
                 </Pressable>
               </View>
             </View>
@@ -268,79 +266,17 @@ function HourStepper({
 }) {
   const step = (delta: number) => onChange(((value + delta) % 24 + 24) % 24);
   return (
-    <View style={[s.stepper, disabled && { opacity: 0.5 }]}>
-      <Text style={s.stepperLabel}>{label}</Text>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Pressable style={s.stepperBtn} onPress={() => step(-1)} disabled={disabled}>
-          <Text style={s.stepperBtnText}>−</Text>
+    <View className={twMerge("flex-1 rounded-[18px] p-[12px] gap-[8px] bg-[#F0F9FF] border-[1px] border-mieo-stroke", (disabled ? "opacity-[0.5]" : undefined))}>
+      <Text className="text-mieo-body text-[11px] uppercase font-nunito-extrabold tracking-[1px]">{label}</Text>
+      <View className="flex-row items-center justify-between">
+        <Pressable className="bg-[#F0F9FF] rounded-[12px] w-8 min-h-11 items-center justify-center" onPress={() => step(-1)} disabled={disabled}>
+          <Text className="text-mieo-heading font-nunito-black text-[18px]">−</Text>
         </Pressable>
-        <Text style={s.stepperValue}>{String(value).padStart(2, '0')}:00</Text>
-        <Pressable style={s.stepperBtn} onPress={() => step(1)} disabled={disabled}>
-          <Text style={s.stepperBtnText}>+</Text>
+        <Text className="text-mieo-heading font-nunito-black text-[16px]">{String(value).padStart(2, '0')}:00</Text>
+        <Pressable className="bg-[#F0F9FF] rounded-[12px] w-8 min-h-11 items-center justify-center" onPress={() => step(1)} disabled={disabled}>
+          <Text className="text-mieo-heading font-nunito-black text-[18px]">+</Text>
         </Pressable>
       </View>
     </View>
   );
 }
-
-const s = StyleSheet.create({
-  title: { color: '#fff', fontWeight: '900', fontSize: 28 },
-  subtitle: { color: 'rgba(255,255,255,0.72)', fontSize: 13, lineHeight: 18, fontWeight: '500' },
-
-  card: { borderRadius: 24, padding: 16, gap: 4, borderColor: 'rgba(255,255,255,0.22)' },
-  cardTitle: { color: '#fff', fontWeight: '900', fontSize: 16, marginBottom: 4 },
-  cardSub: { color: 'rgba(255,255,255,0.72)', fontSize: 13, lineHeight: 18, fontWeight: '500' },
-
-  dimmed: { opacity: 0.55 },
-
-  toggleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
-  toggleLabel: { color: '#fff', fontWeight: '800', fontSize: 14 },
-  toggleDesc: { color: 'rgba(255,255,255,0.65)', fontSize: 12, lineHeight: 16, marginTop: 3 },
-
-  pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 },
-  pill: {
-    borderRadius: 999,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.18)',
-  },
-  pillActive: { backgroundColor: '#00FFA3', borderColor: '#00FFA3' },
-  pillText: { color: 'rgba(255,255,255,0.85)', fontWeight: '800', fontSize: 12 },
-  pillTextActive: { color: '#06170F' },
-
-  stepper: {
-    flex: 1,
-    borderRadius: 18,
-    padding: 12,
-    gap: 8,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.18)',
-  },
-  stepperLabel: {
-    color: 'rgba(255,255,255,0.7)',
-    fontSize: 11,
-    textTransform: 'uppercase',
-    fontWeight: '800',
-    letterSpacing: 1,
-  },
-  stepperBtn: { backgroundColor: 'rgba(255,255,255,0.16)', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 6 },
-  stepperBtnText: { color: '#fff', fontWeight: '900', fontSize: 18 },
-  stepperValue: { color: '#fff', fontWeight: '900', fontSize: 22 },
-
-  secondaryBtn: {
-    borderRadius: 16,
-    paddingVertical: 15,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.25)',
-  },
-  secondaryBtnText: { color: '#fff', fontWeight: '900', fontSize: 15 },
-});

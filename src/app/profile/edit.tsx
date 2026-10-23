@@ -42,7 +42,7 @@ export default function EditProfileScreen() {
     <View className="flex-1 bg-mieo-bg">
       <Stack.Screen options={{ headerShown: false }} />
       <KeyboardLift>
-<ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingTop: insets.top + 12, paddingBottom: 40, alignItems: 'center' }}>
+<ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingTop: insets.top + 12, paddingBottom: 32 + insets.bottom, alignItems: 'center' }}>
         {/* Top bar */}
         <View className="flex-row items-center gap-4 px-4" style={{ width: contentWidth }}>
           <Pressable accessibilityRole="button" accessibilityLabel={t('common.back')} onPress={() => router.back()} style={dimShadow} className="rounded-xl border-[1.5px] border-mieo-stroke bg-mieo-surface p-3">
@@ -92,7 +92,10 @@ export default function EditProfileScreen() {
       {/* Gender picker */}
       <Modal visible={genderOpen} animationType="slide" onRequestClose={() => setGenderOpen(false)}>
         <View className="flex-1 bg-mieo-bg">
-          <View className="flex-row items-center justify-center px-4 pt-16 pb-4">
+          <View className="flex-row items-center gap-4 px-4 pb-4" style={{ paddingTop: insets.top + 12 }}>
+            <Pressable accessibilityRole="button" accessibilityLabel={t('common.close')} onPress={() => setGenderOpen(false)} className="rounded-xl border-[1.5px] border-mieo-stroke bg-mieo-surface p-3">
+              <ChevronLeft size={24} color="#171A1C" />
+            </Pressable>
             <Text className="font-nunito-black text-2xl text-mieo-heading">{t('profile.gender')}</Text>
           </View>
           {(['female', 'male'] as Gender[]).map((option) => {

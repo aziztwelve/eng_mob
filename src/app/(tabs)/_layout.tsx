@@ -14,7 +14,7 @@ export default function TabsLayout() {
   const pathname = usePathname();
   const isHome = pathname === "/";
   // Pages drawn on the light sky background (no purple strip under the status bar).
-  const isSky = isHome || pathname.startsWith("/practice") || pathname.startsWith("/tracks");
+  const isSky = isHome || pathname.startsWith("/practice") || pathname.startsWith("/tracks") || pathname === "/profile";
   const isWordBankLesson = /^\/practice\/vocabulary\/[^/]+\/learn\/?$/.test(pathname);
 
   // === Auth gate (option B): регистрация обязательна для входа в app. ===
