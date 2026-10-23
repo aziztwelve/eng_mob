@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { useFlashcards, useFlashcardStats, useSeedStarter } from '@/hooks/use-flashcards';
 import { AddFlashcardSheet } from '@/components/flashcards/AddFlashcardSheet';
 import { GoalRing } from '@/components/flashcards/GoalRing';
+import { flashcardDailyProgress } from '@/lib/flashcard-daily-progress';
 import type { Flashcard } from '@/types/api';
 
 const CTA = ['#59C8FF', '#2FA8E6'] as const;
@@ -39,9 +40,7 @@ export default function FlashcardsHubScreen() {
   const flashcards = useFlashcards({ search: search || undefined, limit: 50 });
   const seedStarter = useSeedStarter();
 
-  const todayDue = stats.data?.today_due ?? 0;
-  const todayCompleted = stats.data?.today_completed ?? 0;
-  const todayGoal = todayCompleted + todayDue;
+  const { selected: todayDue, completed: todayCompleted, remaining, goal: todayGoal } = flashcardDailyProgress(stats.data);
   const learning = stats.data?.learning_count ?? 0;
   const mastered = stats.data?.mastered_count ?? 0;
   const total = stats.data?.total_count ?? 0;
@@ -82,11 +81,13 @@ export default function FlashcardsHubScreen() {
           <>
             {/* Stats: кольцо дневной цели + компактные счётчики */}
             <View style={[st.card, { flexDirection: 'row', alignItems: 'center', padding: 16, gap: 18 }]}>
-              <GoalRing completed={todayCompleted} total={todayGoal} />
+              {todayGoal === null ? <View className="items-center gap-2"><Text className="text-3xl font-black text-[#171A1C]">{todayCompleted}</Text><Text className="text-xs text-[#5D686F]">{t('fc.reviewed_today')}</Text></View> : <GoalRing completed={todayCompleted} total={todayGoal} />}
               <View style={{ flex: 1, gap: 12 }}>
                 <MiniStat label={t('fc.learning')} value={learning} color="#2FA8E6" />
                 <MiniStat label={t('fc.mastered')} value={mastered} color="#239A42" />
                 <MiniStat label={t('fc.total')} value={total} color="#171A1C" />
+                <MiniStat label={t('fc.selected_today')} value={todayDue} color="#2FA8E6" />
+                {remaining !== null ? <MiniStat label={t('fc.remaining_today')} value={remaining} color="#239A42" /> : null}
               </View>
             </View>
 
@@ -95,7 +96,7 @@ export default function FlashcardsHubScreen() {
               <Pressable onPress={() => router.push('/flashcards/session' as any)} style={st.ctaWrap}>
                 <LinearGradient colors={CTA} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={st.cta}>
                   <View style={{ flex: 1 }}>
-                    <Text style={st.ctaTitle}>{t('fc.review_words')}</Text>
+                    <Text style={st.ctaTitle}>{t(remaining === 0 ? 'practice.review_again' : 'fc.review_words')}</Text>
                     <Text style={st.ctaSub}>
                       {t('fc.due_today', { count: todayDue, unit: t(wordUnitKey(todayDue) as never) })}
                     </Text>

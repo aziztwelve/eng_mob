@@ -997,6 +997,9 @@ const en = {
     add_all: 'Add all',
   },
   fc: {
+    selected_today: 'Selected today',
+    remaining_today: 'Remaining today',
+    reviewed_today: 'Reviewed today',
     review_title: 'Word review 🎴',
     review_sub: 'Flashcards with spaced repetition',
     learning: 'Learning',
@@ -1009,7 +1012,7 @@ const en = {
     due_today: '{{count}} {{unit}} for today',
     search_ph: 'Search words…',
     nothing_found: 'Nothing found',
-    today_badge: 'Today',
+    today_badge: 'Selected today',
     add_own: 'Add your own word',
     empty_text: 'Load a starter set of words to review or add your own. Words from lessons are added automatically.',
     no_cards: 'No cards for today',

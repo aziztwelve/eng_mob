@@ -1706,7 +1706,10 @@ export interface Flashcard {
 }
 
 export interface FlashcardStats {
+  /** Legacy: all selected cards, including cards already reviewed today. */
   today_due: number;
+  /** Selected today and not yet reviewed today; absent on older servers. */
+  today_remaining?: number;
   today_completed: number;
   learning_count: number;
   mastered_count: number;
