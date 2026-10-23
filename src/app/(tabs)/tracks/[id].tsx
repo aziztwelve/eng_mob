@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { View, Text, ScrollView, Pressable, Image, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -16,12 +16,16 @@ export default function TrackDetailsScreen() {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const query = useTrack(id, true);
-  const setActiveTrack = useSetActiveTrack();
+  const { mutate: setActiveTrack } = useSetActiveTrack();
+  const activated = useRef<string | null>(null);
   const local = useCompletedLessons();
   const progress = useTrackProgress(id);
   const track = query.data;
   useEffect(() => {
-    if (id && query.data) setActiveTrack.mutate(id);
+    if (id && query.data && activated.current !== id) {
+      activated.current = id;
+      setActiveTrack(id, { onError: () => { activated.current = null; } });
+    }
   }, [id, query.data, setActiveTrack]);
   const lessons = [...(track?.lessons ?? [])].sort((a, b) => a.order_index - b.order_index);
   const completed = new Set([...(local.data ?? []), ...(progress.data ?? [])]);
@@ -31,7 +35,7 @@ export default function TrackDetailsScreen() {
   const current = lessons.findIndex((_, index) => unlocked(index) && !isDone(index));
   const doneCount = lessons.filter(lesson => completed.has(lesson.id)).length;
   const allDone = lessons.length > 0 && doneCount === lessons.length;
-  const loading = query.isPending || local.isPending || progress.isPending;
+  const loading = query.isPending || local.isLoading || progress.isPending;
   const error = query.error || progress.error;
   const tiles: TileLesson[] = lessons.map((lesson, index) => ({ id: lesson.id, title: lesson.title, state: isDone(index) ? 'done' : index === current ? 'current' : 'locked' }));
   const openLesson = (index: number) => {

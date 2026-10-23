@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, Pressable, ActivityIndicator, StyleSheet, StatusBar, KeyboardAvoidingView, Keyboard, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -66,6 +66,7 @@ export default function LessonPlayerScreen() {
     [lessonData],
   );
   const [startTime] = useState(Date.now());
+  const legacySaving = useRef(false);
 
   // Local FX state — рендерим оверлеи прямо в этом экране.
   const [xpGain, setXpGain] = useState<{ amount: number; key: number } | null>(null);
@@ -169,26 +170,21 @@ export default function LessonPlayerScreen() {
   };
 
   // Legacy путь (text/video, legacy quiz): MarkStepComplete + advance.
-  const handleStepComplete = (score?: number) => {
-    const timeSpent = Math.floor((Date.now() - startTime) / 1000);
-
-    completeStepMutation.mutate(
-      {
+  const handleStepComplete = async (score?: number) => {
+    if (legacySaving.current) return;
+    legacySaving.current = true;
+    try {
+      const response = await completeStepMutation.mutateAsync({
         stepId: currentStep.id,
-        data: {
-          time_spent_seconds: timeSpent,
-          score: score ?? undefined,
-          attempts: 1,
-        },
-      },
-      {
-        onSuccess: (response) => {
-          triggerFxFromGamification(response.gamification ?? null);
-        },
-      },
-    );
-
-    advance();
+        data: { time_spent_seconds: Math.floor((Date.now() - startTime) / 1000), score, attempts: 1 },
+      });
+      triggerFxFromGamification(response.gamification ?? null);
+      advance();
+    } catch {
+      // useCompleteStep shows the save error; retain this step for retry.
+    } finally {
+      legacySaving.current = false;
+    }
   };
 
   // Phase 2: интерактивный submit. Возвращает SubmitAnswerResponse —
@@ -253,7 +249,7 @@ export default function LessonPlayerScreen() {
               <Text style={styles.fallbackBody}>
                 {t('lesson.video_unavailable')}
               </Text>
-              <Pressable onPress={() => handleStepComplete()}>
+              <Pressable disabled={completeStepMutation.isPending} onPress={() => void handleStepComplete()}>
                 <LinearGradient colors={CTA_GRADIENT} style={styles.fallbackCta}>
                   <Text style={styles.fallbackCtaText}>{t('lesson.continue').toUpperCase()}</Text>
                 </LinearGradient>
@@ -331,7 +327,7 @@ export default function LessonPlayerScreen() {
               </Pressable>
             )}
 
-            <Pressable onPress={() => handleStepComplete()} style={styles.navBtn}>
+            <Pressable disabled={completeStepMutation.isPending} onPress={() => void handleStepComplete()} style={styles.navBtn}>
               <LinearGradient colors={CTA_GRADIENT} style={styles.navBtnCta}>
                 <Text style={styles.navBtnCtaText}>
                   {isLastStep ? t('lesson.finish').toUpperCase() : `${t('lesson.continue').toUpperCase()} →`}

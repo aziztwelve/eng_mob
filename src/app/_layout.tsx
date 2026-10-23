@@ -1,3 +1,4 @@
+import { drainFlashcardReviews } from '@/lib/flashcard-review-queue';
 import { drainVocabularyAttempts } from '@/lib/vocabulary-attempt-queue';
 import { DarkTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack, useSegments } from 'expo-router';
@@ -138,7 +139,7 @@ export default function TabLayout() {
     };
     void run();
     const sub = AppState.addEventListener('change', (state) => {
-      if (state === 'active') { void run(); void drainVocabularyAttempts().catch(() => undefined); }
+      if (state === 'active') { void run(); void drainVocabularyAttempts().catch(() => undefined); void drainFlashcardReviews().catch(() => undefined); }
     });
     return () => sub.remove();
   }, []);
@@ -148,12 +149,12 @@ export default function TabLayout() {
   useEffect(() => {
     let lastWasOffline = false;
     void drainOnboardingQueue();
-    void drainVocabularyAttempts().catch(() => undefined);
+    void drainVocabularyAttempts().catch(() => undefined); void drainFlashcardReviews().catch(() => undefined);
     const unsub = NetInfo.addEventListener((state) => {
       const isOnline = !!state.isConnected && state.isInternetReachable !== false;
       if (isOnline && lastWasOffline) {
         void drainOnboardingQueue();
-        void drainVocabularyAttempts().catch(() => undefined);
+        void drainVocabularyAttempts().catch(() => undefined); void drainFlashcardReviews().catch(() => undefined);
       }
       lastWasOffline = !isOnline;
     });

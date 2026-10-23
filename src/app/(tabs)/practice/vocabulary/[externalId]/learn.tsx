@@ -1,7 +1,7 @@
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
@@ -34,6 +34,7 @@ export default function VocabularyBankLessonScreen() {
   const [pending, setPending] = useState(false);
   const pendingRef = useRef(false);
   const [saveError, setSaveError] = useState(false);
+  const [rejected, setRejected] = useState(false);
   const [feedback, setFeedback] = useState<BankFeedback>(null);
   const confirmedStep = useRef<number | null>(null);
   const [reset, setReset] = useState(0);
@@ -61,7 +62,7 @@ export default function VocabularyBankLessonScreen() {
     let active = true;
     const unsubscribe = vocabularyAttemptQueue.subscribe((owner, item, response) => {
       if (owner !== userId || item.externalId !== externalId) return;
-      pendingRef.current = false; setPending(false); setSaveError(false);
+      pendingRef.current = false; setPending(false); setSaveError(false); setRejected(false);
       if (response.xp) setXpAward(response.xp);
       if (response.can_advance) {
         if (response.assessment_mode === 'checked') {
@@ -80,12 +81,19 @@ export default function VocabularyBankLessonScreen() {
       startedAt.current = Date.now();
       void queryClient.invalidateQueries({ queryKey: VOCABULARY_BANK_KEY });
     });
+    const unsubscribeFailures = vocabularyAttemptQueue.subscribeFailures((owner, item) => {
+      if (!active || owner !== userId || item.externalId !== externalId) return;
+      setSaveError(true); setRejected(!!item.failure);
+      if (item.failure) { pendingRef.current = false; setPending(false); }
+    });
     void vocabularyAttemptQueue.pending(userId).then((items) => {
       if (!active) return;
-      if (items.some((item) => item.externalId === externalId)) { pendingRef.current = true; setPending(true); }
+      const saved = items.find(item => item.externalId === externalId);
+      if (saved?.failure) { setRejected(true); setSaveError(true); }
+      else if (saved) { pendingRef.current = true; setPending(true); }
       void drainVocabularyAttempts().catch(() => undefined);
     }).catch(() => { if (active) setSaveError(true); });
-    return () => { active = false; unsubscribe(); };
+    return () => { active = false; unsubscribe(); unsubscribeFailures(); };
   }, [activities, externalId, queryClient, userId]);
 
   // Next-word candidate for the finish screen: first untouched word from the
@@ -96,7 +104,7 @@ export default function VocabularyBankLessonScreen() {
   }, [feed.data, externalId]);
 
   const advance = async (result: BankAnswer) => {
-    if (index === null || !userId || pendingRef.current) return;
+    if (index === null || !userId || pendingRef.current || rejected) return;
     const activity = activities[index];
     pendingRef.current = true; setPending(true); setSaveError(false); setFeedback(null);
     try {
@@ -126,9 +134,10 @@ export default function VocabularyBankLessonScreen() {
   if (finished && showWordSelection && entry) return <WordSelectionStep
     source="bank"
     candidates={[{
-      vocabulary_id: entry.word.external_id,
+      id: entry.word.external_id,
       word: entry.word.word,
       translation: entry.word.translation,
+      translation_language: locale,
     }]}
     onDone={() => router.back()}
     onSkip={() => router.back()}
@@ -141,12 +150,27 @@ export default function VocabularyBankLessonScreen() {
   </WordBankFrame>;
   const activity = activities[index];
   if (!activity) return <View className="flex-1 bg-white p-6">{chrome}<BankText>{t('practice.bank_player.load_error')}</BankText></View>;
-  const blocked = pending || feedback?.kind === 'correct';
+  const blocked = pending || rejected || feedback?.kind === 'correct';
   return <WordBankFrame step={activity.step} title={t(`practice.bank_player.headings.${activity.type}`, { defaultValue: activity.instruction })} onBack={() => router.back()} bottomInset={insets.bottom}>
     {chrome}
     <View className="flex-1" pointerEvents={blocked ? 'none' : 'auto'} accessibilityElementsHidden={blocked} importantForAccessibility={blocked ? 'no-hide-descendants' : 'auto'}>
       <WordBankActivityView pending={pending} confirmed={feedback?.kind === 'correct'} key={`${externalId}:${activity.step}:${reset}`} entry={entry} activity={activity} onSubmit={advance} onPlay={(value, speed) => playWordTTS(value, 'en', undefined, speed)} renderRecording={({ target, onRecognized }) => <BankPronunciationRecorder target={target} onRecognized={onRecognized} />} />
     </View>
+    {rejected ? <BankButton label={t('practice.bank_player.reload_step')} secondary onPress={() => Alert.alert(t('practice.bank_player.reload_step'), t('practice.bank_player.reload_confirm'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('practice.bank_player.reload_step'), onPress: () => { void (async () => {
+        if (!userId) return;
+        try {
+          // Fetch first: a failed fetch must not destroy the saved answer.
+          const fresh = await progressQuery.refetch({ throwOnError: true });
+          await vocabularyAttemptQueue.discardWord(userId, externalId);
+          confirmedStep.current = null; pendingRef.current = false;
+          setPending(false); setSaveError(false); setRejected(false); setFeedback(null);
+          setIndex(Math.max(0, activities.findIndex(a => a.step === (fresh.data?.progress.current_step ?? 1))));
+          setReset(value => value + 1);
+        } catch { setSaveError(true); }
+      })(); } },
+    ])} /> : null}
     <BankFeedbackPanel feedback={feedback} pending={pending} saveError={saveError} onRetry={() => { void drainVocabularyAttempts().catch(() => undefined); }} />
     {feedback?.kind === 'correct' ? <BankButton label={t('practice.bank_player.next')} tone="green" onPress={continueConfirmed} /> : null}
   </WordBankFrame>;

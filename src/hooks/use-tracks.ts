@@ -24,9 +24,9 @@ export function useSetActiveTrack() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (trackId: string) => ActiveTrackApi.set(trackId),
-    onSuccess: (_data, trackId) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['active-track'] });
-      queryClient.invalidateQueries({ queryKey: ['track', trackId, true] });
+
     },
   });
 }

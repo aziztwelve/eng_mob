@@ -6,8 +6,10 @@ import { useTranslation } from 'react-i18next';
 
 import { useTodayQueue, useReviewFlashcard } from '@/hooks/use-flashcards';
 import { FlashcardView } from '@/components/flashcards/FlashcardView';
+import { drainFlashcardReviews } from '@/lib/flashcard-review-queue';
+import { newVocabularyAttemptId } from '@/lib/vocabulary-attempt-queue';
 import { fx } from '@/lib/fx';
-import type { Flashcard } from '@/types/api';
+import type { Flashcard, FlashcardReviewRequest } from '@/types/api';
 
 /**
  * /flashcards/session — сессия повторения «забыл/помню».
@@ -15,7 +17,7 @@ import type { Flashcard } from '@/types/api';
  * Best-practice SRS-цикл:
  *  - показываем слово (active recall) → переворот → самооценка;
  *  - «Помню» (quality 5) / «Забыл» (quality 2) уходят в SM-2 на бэк
- *    через POST /flashcards/:id/review (оптимистично, UI не ждёт сети);
+ *    через POST /flashcards/:id/review; переход ждёт подтверждения;
  *  - забытые карточки возвращаются в конец очереди и показываются снова
  *    в этой же сессии (re-queue), пока не будут отмечены «помню»;
  *  - прогресс считается по уникальным выученным словам.
@@ -30,10 +32,23 @@ export default function FlashcardSessionScreen() {
   const [index, setIndex] = useState(0);
   const [rememberedIds, setRememberedIds] = useState<Set<string>>(new Set());
   const seededRef = useRef(false);
+  const saving = useRef(false);
+  const intent = useRef<{ flashcardId: string; data: FlashcardReviewRequest } | null>(null);
+  const [saveError, setSaveError] = useState(false);
+  const [recovering, setRecovering] = useState(true);
+  const [recoveryError, setRecoveryError] = useState(false);
+  const recover = useCallback(async () => {
+    setRecovering(true); setRecoveryError(false);
+    try { await drainFlashcardReviews(); }
+    catch { setRecoveryError(true); }
+    finally { setRecovering(false); }
+  }, []);
+  useEffect(() => { void recover(); }, [recover]);
+  const [pending, setPending] = useState(false);
   const shownAtRef = useRef<number>(Date.now());
 
   // Инициализируем очередь один раз, когда пришли данные.
-  const sourceCards = todayQueue.data?.items ?? [];
+  const sourceCards = useMemo(() => todayQueue.data?.items ?? [], [todayQueue.data?.items]);
   useEffect(() => {
     if (!seededRef.current && sourceCards.length > 0) {
       seededRef.current = true;
@@ -42,7 +57,7 @@ export default function FlashcardSessionScreen() {
     }
   }, [sourceCards]);
 
-  const total = sourceCards.length; // уникальных слов на сегодня
+  const total = new Set(queue.map(card => card.id)).size; // уникальных слов на сегодня
   const currentCard = queue[index];
   const rememberedCount = rememberedIds.size;
 
@@ -71,13 +86,22 @@ export default function FlashcardSessionScreen() {
   );
 
   const handleAnswer = useCallback(
-    (remembered: boolean) => {
+    async (remembered: boolean) => {
       const card = queue[index];
-      if (!card) return;
+      if (!card || saving.current) return;
+      saving.current = true; setPending(true); setSaveError(false);
 
-      const responseTimeMs = Date.now() - shownAtRef.current;
-      // Оптимистично: шлём ревью в фон, не блокируя UI.
-      review.mutate({ flashcardId: card.id, data: { remembered, response_time_ms: responseTimeMs } });
+      const responseTimeMs = Math.min(2147483647, Math.max(0, Date.now() - shownAtRef.current));
+      // Persist a stable retry intent and await the server before showing success.
+      if (!intent.current) intent.current = { flashcardId: card.id, data: { remembered, response_time_ms: responseTimeMs, attempt_id: newVocabularyAttemptId() } };
+      try {
+        await review.mutateAsync(intent.current);
+      } catch {
+        setSaveError(true); saving.current = false; setPending(false); return;
+      }
+      remembered = intent.current.data.remembered;
+      intent.current = null;
+      saving.current = false; setPending(false);
 
       const nextRemembered = new Set(rememberedIds);
       let nextQueue = queue;
@@ -98,7 +122,7 @@ export default function FlashcardSessionScreen() {
 
   const handleSkip = useCallback(() => {
     const card = queue[index];
-    if (!card) return;
+    if (!card || saving.current || intent.current) return;
     // Skip без оценки — карта возвращается в конец, чтобы не потерять её.
     const nextQueue = [...queue, card];
     setQueue(nextQueue);
@@ -111,13 +135,17 @@ export default function FlashcardSessionScreen() {
     [rememberedCount, total],
   );
 
-  if (todayQueue.isLoading) {
+  if (recoveryError) return <View className="flex-1 items-center justify-center gap-4 p-6"><Text className="text-white">{t('common.save_failed')}</Text><Pressable onPress={() => void recover()}><Text className="text-white">{t('practice.bank_player.retry_sync')}</Text></Pressable></View>;
+
+  if (recovering || todayQueue.isLoading) {
     return (
       <View className="flex-1 items-center justify-center">
         <ActivityIndicator size="large" color="#FFD84A" />
       </View>
     );
   }
+
+  if (todayQueue.isError) return <View className="flex-1 items-center justify-center gap-4 p-6"><Text>{t('common.save_failed')}</Text><Pressable onPress={() => void todayQueue.refetch()}><Text>{t('practice.bank_player.retry_sync')}</Text></Pressable></View>;
 
   if (!total || !currentCard) {
     return (
@@ -147,7 +175,7 @@ export default function FlashcardSessionScreen() {
       />
 
       <View className="flex-1 p-6 justify-center">
-        <FlashcardView
+        <View pointerEvents={pending || saveError ? 'none' : 'auto'}><FlashcardView
           key={`${currentCard.id}-${index}`}
           word={currentCard.word}
           translation={currentCard.translation}
@@ -157,10 +185,12 @@ export default function FlashcardSessionScreen() {
           audioUrl={currentCard.audio_url}
           ttsLanguage={currentCard.language}
           stackCount={Math.max(0, queue.length - index - 1)}
-          onRemember={() => handleAnswer(true)}
-          onForgot={() => handleAnswer(false)}
+          onRemember={() => void handleAnswer(true)}
+          onForgot={() => void handleAnswer(false)}
           onSkip={handleSkip}
-        />
+        /></View>
+        {pending ? <ActivityIndicator color="#FFD84A" /> : null}
+        {saveError ? <View className="gap-3 py-4"><Text accessibilityRole="alert" className="text-center text-white">{t('common.save_failed')}</Text><Pressable onPress={() => void handleAnswer(intent.current?.data.remembered ?? true)} className="rounded-2xl bg-[#A8243F] p-4"><Text className="text-center text-white">{t('practice.bank_player.retry_sync')}</Text></Pressable></View> : null}
       </View>
 
       <View className="px-6 pb-6">

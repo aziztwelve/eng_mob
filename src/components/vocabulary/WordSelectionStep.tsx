@@ -2,10 +2,13 @@ import React, { useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { Check, ChevronLeft } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useBulkCreateFlashcards } from '@/hooks/use-flashcards';
 
 export interface WordSelectionCandidate {
-  vocabulary_id: string;
+  id: string;
+  vocabulary_id?: string;
+  translation_language?: string;
   word: string;
   translation: string;
   transcription?: string;
@@ -23,11 +26,13 @@ interface WordSelectionStepProps {
 
 export function WordSelectionStep({ candidates, source, onDone, onSkip, onBack }: WordSelectionStepProps) {
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   const add = useBulkCreateFlashcards();
-  const [selected, setSelected] = useState<Set<string>>(() => new Set(candidates.map((item) => item.vocabulary_id)));
+  const [failed, setFailed] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(() => new Set(candidates.map((item) => item.id)));
 
   const selectedItems = useMemo(
-    () => candidates.filter((item) => selected.has(item.vocabulary_id)),
+    () => candidates.filter((item) => selected.has(item.id)),
     [candidates, selected],
   );
 
@@ -41,24 +46,30 @@ export function WordSelectionStep({ candidates, source, onDone, onSkip, onBack }
   };
 
   const submit = async () => {
+    if (add.isPending) return;
+    setFailed(false);
     if (!selectedItems.length) {
       onDone();
       return;
     }
-    await add.mutateAsync({
-      items: selectedItems.map((item) => ({
-        word: item.word,
-        translation: item.translation,
-        language: 'en',
-        target_language: 'ru',
-        source,
-        vocabulary_id: item.vocabulary_id,
-        transcription: item.transcription,
-        definition: item.definition,
-        example_sentence: item.example_sentence,
-      })),
-    });
-    onDone();
+    try {
+      await add.mutateAsync({
+        items: selectedItems.map((item) => ({
+          word: item.word,
+          translation: item.translation,
+          language: 'en',
+          target_language: item.translation_language ?? 'ru',
+          source,
+          vocabulary_id: item.vocabulary_id,
+          transcription: item.transcription,
+          definition: item.definition,
+          example_sentence: item.example_sentence,
+        })),
+      });
+      onDone();
+    } catch {
+      setFailed(true);
+    }
   };
 
   if (!candidates.length) {
@@ -73,23 +84,23 @@ export function WordSelectionStep({ candidates, source, onDone, onSkip, onBack }
   }
 
   return (
-    <View className="flex-1 bg-[#E8F7FF] px-5 pt-10">
+    <View className="flex-1 bg-[#E8F7FF] px-5" style={{ paddingTop: insets.top + 16 }}>
       <View className="flex-row items-center gap-3">
         {onBack ? <Pressable onPress={onBack} hitSlop={10}><ChevronLeft size={28} color="#152F60" /></Pressable> : null}
         <View className="flex-1">
           <Text className="text-[#152F60] font-nunito-extrabold text-2xl">{t('words.selection_title')}</Text>
           <Text className="text-[#5E7180] font-nunito-semibold mt-1">{t('words.selection_subtitle')}</Text>
         </View>
-        <Text className="text-[#2FA8E6] font-nunito-extrabold">16 / 16</Text>
+        <Text className="text-[#2FA8E6] font-nunito-extrabold">{selected.size} / {candidates.length}</Text>
       </View>
 
       <ScrollView className="mt-5" contentContainerStyle={{ gap: 10, paddingBottom: 160 }}>
         {candidates.map((item) => {
-          const isSelected = selected.has(item.vocabulary_id);
+          const isSelected = selected.has(item.id);
           return (
             <Pressable
-              key={item.vocabulary_id}
-              onPress={() => toggle(item.vocabulary_id)}
+              key={item.id}
+              onPress={() => toggle(item.id)}
               className={`rounded-2xl border-2 p-4 flex-row items-center gap-3 ${isSelected ? 'bg-white border-[#2FA8E6]' : 'bg-white/70 border-[#C9E6F4]'}`}
             >
               <View className={`w-7 h-7 rounded-lg items-center justify-center ${isSelected ? 'bg-[#2FA8E6]' : 'bg-white border-2 border-[#C9E6F4]'}`}>
@@ -104,7 +115,8 @@ export function WordSelectionStep({ candidates, source, onDone, onSkip, onBack }
         })}
       </ScrollView>
 
-      <View className="absolute left-5 right-5 bottom-7 gap-2">
+      <View className="absolute left-5 right-5 gap-2 bg-[#E8F7FF] pt-3" style={{ bottom: insets.bottom + 16 }}>
+        {failed ? <Text accessibilityRole="alert" className="text-center text-red-700 font-nunito-bold">{t('common.save_failed')}</Text> : null}
         <Pressable disabled={add.isPending} onPress={() => void submit()} className="rounded-2xl bg-[#2FA8E6] p-4 items-center">
           {add.isPending ? <ActivityIndicator color="#fff" /> : <Text className="text-white font-nunito-extrabold text-lg">{t('words.add_selected', { count: selected.size })}</Text>}
         </Pressable>
@@ -128,7 +140,11 @@ export function selectionCandidatesFromSteps(steps: { content: string }[]): Word
     const translation = String(value.translation ?? value.right ?? value.correct_translation ?? value.meaning ?? '');
     if (!word || !translation) return;
     seen.add(id);
-    result.push({ vocabulary_id: id, word, translation, transcription: typeof value.transcription === 'string' ? value.transcription : undefined });
+    // IDs of lesson pairs/options are local selection keys, not vocabulary UUIDs.
+    const vocabularyId = typeof value.vocabulary_id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value.vocabulary_id)
+      ? value.vocabulary_id
+      : undefined;
+    result.push({ id, vocabulary_id: vocabularyId, word, translation, transcription: typeof value.transcription === 'string' ? value.transcription : undefined });
   };
   for (const step of steps) {
     try {

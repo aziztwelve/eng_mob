@@ -123,26 +123,35 @@ let refreshing: Promise<boolean> | null = null;
 export async function tryRefreshTokens(): Promise<boolean> {
   if (refreshing) return refreshing;
   refreshing = (async () => {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10_000);
     try {
       // Прямой fetch, минуя ApiClient.request — иначе рекурсия.
       const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
         method: 'POST',
+        signal: controller.signal,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ refresh_token: await AuthService.getRefreshToken() }),
       });
-      if (!response.ok) return false;
+      if (!response.ok) {
+        if ([400, 401, 403].includes(response.status)) return false;
+        throw { message: 'Sign-in service temporarily unavailable. Please retry.', statusCode: response.status } as ApiError;
+      }
       const data = (await response.json()) as {
         access_token: string;
         refresh_token?: string;
       };
-      if (!data.access_token) return false;
+      if (!data.access_token) throw { message: 'Invalid refresh response. Please retry.', statusCode: 502 } as ApiError;
       const newRefresh = data.refresh_token || (await AuthService.getRefreshToken());
-      if (!newRefresh) return false;
+      if (!newRefresh) throw { message: 'Invalid refresh response. Please retry.', statusCode: 502 } as ApiError;
       await AuthService.setTokens(data.access_token, newRefresh);
       return true;
-    } catch {
-      return false;
+    } catch (error) {
+      // Offline and 5xx must retain the user's valid session for a later retry.
+      if ((error as ApiError)?.statusCode !== undefined) throw error;
+      throw { message: 'Could not refresh sign-in. Please retry.', statusCode: 0 } as ApiError;
     } finally {
+      clearTimeout(timeout);
       setTimeout(() => {
         refreshing = null;
       }, 100);

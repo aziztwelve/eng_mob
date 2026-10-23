@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { useIsAuthenticated } from '@/hooks/use-auth';
+import { saveFlashcardReview } from '@/lib/flashcard-review-queue';
 import { FlashcardsApi } from '@/lib/api-client';
 import type {
   CreateFlashcardRequest,
@@ -151,7 +152,7 @@ export function useReviewFlashcard() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ flashcardId, data }: { flashcardId: string; data: FlashcardReviewRequest }) =>
-      FlashcardsApi.review(flashcardId, data),
+      saveFlashcardReview(flashcardId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: TODAY_QUEUE_KEY });
       queryClient.invalidateQueries({ queryKey: FLASHCARD_STATS_KEY });

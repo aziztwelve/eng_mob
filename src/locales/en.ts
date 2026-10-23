@@ -627,7 +627,9 @@ const en = {
 
       pending_sync: 'Answer saved on this device. Waiting for server confirmation; it will retry when connected.',
       retry_sync: 'Retry sync',
-      save_error: 'Could not save the answer on this device. Please try again.',
+      save_error: 'Could not synchronize your answer. You can retry.',
+      reload_step: 'Reload step',
+      reload_confirm: 'The saved answer was rejected by the server. Discard it and reload your saved progress?',
       practice_only: 'Practice with a model: free responses are not automatically graded.',
 
       check: 'Check',

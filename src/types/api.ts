@@ -1752,6 +1752,7 @@ export interface UpdateFlashcardRequest {
 
 /** Запрос ревью карточки: бинарная самооценка «помню/забыл». */
 export interface FlashcardReviewRequest {
+  attempt_id?: string;
   remembered: boolean;
   response_time_ms?: number;
 }
