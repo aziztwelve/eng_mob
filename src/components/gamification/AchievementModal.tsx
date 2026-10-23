@@ -7,6 +7,7 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
+import { useTranslation } from 'react-i18next';
 import type { UserAchievement } from '@/types/api';
 
 const TIER_BG: Record<number, string> = {
@@ -28,6 +29,7 @@ export interface AchievementModalProps {
 }
 
 export function AchievementModal({ achievement, visible, onClose }: AchievementModalProps) {
+  const { t } = useTranslation();
   const scale = useSharedValue(0.7);
   const opacity = useSharedValue(0);
 
@@ -65,8 +67,8 @@ export function AchievementModal({ achievement, visible, onClose }: AchievementM
           style={animStyle}
           className={`w-full max-w-sm rounded-3xl border-4 p-6 items-center ${TIER_BG[a.tier] ?? TIER_BG[1]} ${TIER_BORDER[a.tier] ?? TIER_BORDER[1]}`}
         >
-          <Text className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">
-            Achievement unlocked
+          <Text className="text-xs font-bold uppercase tracking-widest text-[#5D686F] mb-2">
+            {t('learning_feedback.achievement_unlocked')}
           </Text>
           <View
             className="h-20 w-20 rounded-2xl bg-background border-4 border-border items-center justify-center mb-3"
@@ -77,11 +79,11 @@ export function AchievementModal({ achievement, visible, onClose }: AchievementM
               <Award size={40} color="#d97706" />
             )}
           </View>
-          <Text className="text-foreground font-black text-xl text-center mb-1">
+          <Text className="text-[#171A1C] font-black text-xl text-center mb-1">
             {a.title}
           </Text>
           {!!a.description && (
-            <Text className="text-muted-foreground font-medium text-sm text-center mb-3">
+            <Text className="text-[#5D686F] font-medium text-sm text-center mb-3">
               {a.description}
             </Text>
           )}
@@ -97,10 +99,10 @@ export function AchievementModal({ achievement, visible, onClose }: AchievementM
           )}
           <Pressable
             onPress={onClose}
-            className="bg-primary rounded-2xl px-6 py-3 active:scale-95"
+            className="bg-[#59C8FF] rounded-2xl px-6 py-3 active:scale-95"
           >
-            <Text className="text-primary-foreground font-black uppercase tracking-wider">
-              Круто!
+            <Text className="text-white font-black uppercase tracking-wider">
+              {t('learning_feedback.awesome')}
             </Text>
           </Pressable>
         </Animated.View>

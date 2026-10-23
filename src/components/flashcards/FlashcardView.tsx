@@ -186,7 +186,7 @@ export function FlashcardView({
       {/* Top actions */}
       <View className="flex-row items-center justify-between px-2">
         {canUndo && onUndo ? (
-          <Pressable onPress={onUndo} className="p-2 active:opacity-60">
+          <Pressable onPress={onUndo} accessibilityRole="button" accessibilityLabel={t('cards.undo')} className="p-2 active:opacity-60">
             <Undo2 size={24} color="#999" />
           </Pressable>
         ) : (
@@ -197,6 +197,9 @@ export function FlashcardView({
             переворачивал карточку. */}
         <Pressable
           onPress={playTTS}
+          accessibilityRole="button"
+          accessibilityLabel={t('practice.bank_player.listen_word')}
+          accessibilityState={{ busy: ttsBusy, disabled: ttsBusy }}
           disabled={ttsBusy}
           hitSlop={8}
           className="p-3 rounded-2xl bg-[#EAF8FF] active:opacity-60 flex-row items-center"
@@ -205,7 +208,7 @@ export function FlashcardView({
         </Pressable>
 
         {onSkip ? (
-          <Pressable onPress={onSkip} className="p-2 active:opacity-60">
+          <Pressable onPress={onSkip} accessibilityRole="button" accessibilityLabel={t('practice.bank_player.skip')} className="p-2 active:opacity-60">
             <SkipForward size={24} color="#999" />
           </Pressable>
         ) : (
@@ -233,7 +236,7 @@ export function FlashcardView({
 
         <GestureDetector gesture={panGesture}>
           <Animated.View style={cardContainerStyle} className="absolute inset-0">
-            <Pressable onPress={handleFlip} className="flex-1">
+            <Pressable onPress={handleFlip} accessibilityRole="button" accessibilityLabel={t(isFlipped ? 'cards.flip_to_word' : 'cards.tap_to_flip')} className="flex-1">
               <View className="flex-1 relative">
               {/* Front */}
               <Animated.View
@@ -256,7 +259,7 @@ export function FlashcardView({
                   <Text className="text-[#171A1C] font-black text-3xl text-center flex-shrink">
                     {translation}
                   </Text>
-                  <Pressable onPress={playTTS} disabled={ttsBusy} hitSlop={8} className="p-1 active:opacity-60">
+                  <Pressable onPress={playTTS} accessibilityRole="button" accessibilityLabel={t('practice.bank_player.listen_word')} accessibilityState={{ busy: ttsBusy }} disabled={ttsBusy} hitSlop={8} className="p-1 active:opacity-60">
                     <Volume2 size={22} color={ttsBusy ? '#C9EDFF' : '#2FA8E6'} />
                   </Pressable>
                 </View>

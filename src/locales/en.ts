@@ -345,6 +345,7 @@ const en = {
     not_found: 'Track not found',
     continue_lesson: 'Continue · lesson {{n}}',
     level_titles: {
+      C2: 'Proficiency',
       A1: 'Beginner',
       A2: 'Elementary',
       B1: 'Intermediate',
@@ -765,6 +766,7 @@ const en = {
     logout: 'Log out',
   },
   common: {
+    load_failed: 'Could not load data. Please try again.',
     close: 'Close',
     ok: 'Done',
     error: 'Error',
@@ -975,6 +977,9 @@ const en = {
     skip_selection: 'Skip',
   },
   cards: {
+    undo: 'Undo answer',
+    flip_to_word: 'Show the word',
+
     translation_language: 'Translation language',
     tap_to_flip: 'Tap to flip',
     add_title: 'Add word',
@@ -1098,6 +1103,12 @@ const en = {
     sounds: 'Sound effects',
     sounds_desc: 'Short UI sounds for quiz/XP/achievements. Does not affect video lessons.',
     note: 'Changes are stored on your device and apply instantly. Gamification keeps working with effects off — only sound and vibration are disabled.',
+  },
+  learning_feedback: {
+    achievement_unlocked: 'Achievement unlocked',
+    awesome: 'Great!',
+    level_up: 'Level up',
+    tap_continue: 'Tap to continue',
   },
   lesson: {
     start_over: 'Start over',

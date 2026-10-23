@@ -76,7 +76,7 @@ export default function VocabularyBankTab() {
       </View>
 
       {bank.isLoading ? <ActivityIndicator color={SKY.blue} style={{ marginVertical: 28 }} /> : null}
-      {bank.isError ? <Text style={st.note}>{t('practice.bank_error')}</Text> : null}
+      {bank.isError ? <SkyPanel style={{ padding: 16, gap: 12 }}><Text accessibilityRole="alert" style={st.note}>{t('common.load_failed')}</Text><Pressable accessibilityRole="button" onPress={() => void bank.refetch()} style={st.more}><Text style={st.moreText}>{t('home.path_retry')}</Text></Pressable></SkyPanel> : null}
       {!bank.isLoading && !bank.isError && entries.length === 0 ? (
         <Text style={st.note}>{query ? t('practice.bank_empty_search') : t('practice.bank_empty_level')}</Text>
       ) : null}

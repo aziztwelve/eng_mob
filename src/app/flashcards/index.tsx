@@ -51,7 +51,7 @@ export default function FlashcardsHubScreen() {
         options={{
           title: t('home.flashcards'),
           headerRight: () => (
-            <Pressable onPress={() => setShowAddSheet(true)} style={{ padding: 8 }}>
+            <Pressable onPress={() => setShowAddSheet(true)} accessibilityRole="button" accessibilityLabel={t('cards.add_title')} style={{ padding: 8 }}>
               <Plus size={24} color="#2FA8E6" />
             </Pressable>
           ),
@@ -146,7 +146,7 @@ export default function FlashcardsHubScreen() {
 function LoadError({ onRetry }: { onRetry: () => void }) {
   const { t } = useTranslation();
   return <View className="gap-3 rounded-2xl border border-[#FFC9CC] bg-white p-4">
-    <Text accessibilityRole="alert" accessibilityLiveRegion="polite" className="text-center text-[#B4232A]">{t('practice.bank_error')}</Text>
+    <Text accessibilityRole="alert" accessibilityLiveRegion="polite" className="text-center text-[#B4232A]">{t('common.load_failed')}</Text>
     <Pressable accessibilityRole="button" onPress={onRetry} className="min-h-[44px] items-center justify-center rounded-xl bg-[#EAF8FF] px-4 py-3"><Text className="font-nunito-bold text-[#247FA8]">{t('home.path_retry')}</Text></Pressable>
   </View>;
 }

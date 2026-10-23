@@ -264,6 +264,7 @@ const kk = {
       signup_link: 'Тіркелу',
     },
     register: {
+      no_account: 'Тіркелгі жоқ па? ',
       profile_title: 'Профиль жасау',
       profile_subtitle: 'Профильді сақтау үшін бірнеше дерек беріңіз',
       gender_label: 'Жынысы',
@@ -343,6 +344,7 @@ const kk = {
     not_found: 'Трек табылмады',
     continue_lesson: 'Жалғастыру · {{n}}-сабақ',
     level_titles: {
+      C2: 'Еркін меңгеру',
       A1: 'Бастауыш',
       A2: 'Негізгі',
       B1: 'Орташа',
@@ -763,6 +765,7 @@ const kk = {
     logout: 'Аккаунттан шығу',
   },
   common: {
+    load_failed: 'Деректерді жүктеу мүмкін болмады. Қайталап көріңіз.',
     close: 'Жабу',
     ok: 'Дайын',
     error: 'Қате',
@@ -973,6 +976,9 @@ const kk = {
     skip_selection: 'Өткізу',
   },
   cards: {
+    undo: 'Жауапты болдырмау',
+    flip_to_word: 'Сөзді көрсету',
+
     translation_language: 'Аударма тілі',
     tap_to_flip: 'Аудару үшін түртіңіз',
     add_title: 'Сөз қосу',
@@ -1096,6 +1102,12 @@ const kk = {
     sounds: 'Дыбыс эффектілері',
     sounds_desc: 'Quiz/XP/achievement кезіндегі қысқа дыбыстар. Видео сабақтарға әсер етпейді.',
     note: 'Өзгерістер құрылғыда сақталып, бірден қолданылады. Геймификация эффекттер өшірулі болса да жұмыс істейді — тек дыбыс пен діріл өшеді.',
+  },
+  learning_feedback: {
+    achievement_unlocked: 'Жетістік ашылды',
+    awesome: 'Керемет!',
+    level_up: 'Жаңа деңгей',
+    tap_continue: 'Жалғастыру үшін басыңыз',
   },
   lesson: {
     start_over: 'Басынан бастау',

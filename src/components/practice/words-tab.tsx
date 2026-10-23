@@ -59,7 +59,7 @@ export function WordsTab() {
 
   if (recoveryError || (deck === null && (stats.isError || today.isError || all.isError))) {
     return <SkyPanel style={st.emptyCard}>
-      <Text accessibilityRole="alert" style={st.emptyText}>{t(recoveryError ? 'common.save_failed' : 'practice.bank_error')}</Text>
+      <Text accessibilityRole="alert" style={st.emptyText}>{t(recoveryError ? 'common.save_failed' : 'common.load_failed')}</Text>
       <Pressable onPress={() => { void recover(); void stats.refetch(); void today.refetch(); void all.refetch(); }} style={st.btn}>
         <Text style={st.btnText}>{t('practice.bank_player.retry_sync')}</Text>
       </Pressable>

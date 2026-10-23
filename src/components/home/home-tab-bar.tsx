@@ -80,12 +80,15 @@ export function HomeTabBar({ state, navigation }: BottomTabBarProps) {
                 if (name === 'practice') router.navigate('/(tabs)/practice');
                 else if (!focused) navigation.navigate(name as never);
               }}
-              style={{ width: TAB*S, height: TAB*S, alignItems: 'center', justifyContent: 'center', opacity: isComingSoon ? 0.58 : 1 }}
+              style={{ width: TAB*S, height: TAB*S, alignItems: 'center', justifyContent: 'center', gap: 3*S, opacity: isComingSoon ? 0.58 : 1 }}
             >
               {i === 3 ? <View style={{width:24*S,height:24*S}}>
                 <FigmaSvg source={require('../../../assets/figma/home-map/nav-podium-star.svg')} width={10*S} height={10*S} style={{position:'absolute',left:7*S,top:0}}/>
                 {[{x:2,y:15,h:8},{x:8,y:11,h:12},{x:14,y:15,h:8}].map((bar,j)=><View key={j} style={{position:'absolute',left:bar.x*S,top:bar.y*S,width:8*S,height:bar.h*S,borderTopLeftRadius:2*S,borderTopRightRadius:2*S,backgroundColor:focused?'#59C8FF':'#464E53'}}/>)}
               </View> : <FigmaSvg source={focused ? icon.active : icon.inactive} width={24*S} height={24*S} />}
+              <Text numberOfLines={1} style={{ fontFamily: 'Nunito_800ExtraBold', fontSize: 8*S, color: focused ? '#247FA8' : '#464E53' }}>
+                {t(`tabs.${["home","practice","ai","social","profile"][i]}`)}
+              </Text>
               {isComingSoon && (
                 <View
                   style={{

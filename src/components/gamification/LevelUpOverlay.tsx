@@ -1,10 +1,10 @@
 import React, { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Modal, Pressable, Text, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withDelay,
-  withSequence,
   withSpring,
   withTiming,
   Easing,
@@ -35,6 +35,7 @@ const AUTO_DISMISS_MS = 3200;
  * рендерился поверх header/tabbar и не зависел от parent-layout.
  */
 export function LevelUpOverlay({ level, onDismiss }: LevelUpOverlayProps) {
+  const { t } = useTranslation();
   const visible = level != null && level > 0;
 
   const lottieRef = useRef<LottieView>(null);
@@ -125,7 +126,7 @@ export function LevelUpOverlay({ level, onDismiss }: LevelUpOverlayProps) {
 
           <Animated.View style={labelStyle} className="items-center -mt-4">
             <Text className="text-yellow-300 font-black text-base tracking-[6px]">
-              LEVEL UP
+              {t('learning_feedback.level_up')}
             </Text>
             <View className="mt-2 rounded-3xl border-4 border-amber-300 bg-amber-400 px-8 py-3 shadow-lg">
               <Text className="text-amber-900 font-black text-5xl">
@@ -133,7 +134,7 @@ export function LevelUpOverlay({ level, onDismiss }: LevelUpOverlayProps) {
               </Text>
             </View>
             <Text className="mt-5 text-white/70 font-bold text-xs uppercase tracking-widest">
-              Tap to continue
+              {t('learning_feedback.tap_continue')}
             </Text>
           </Animated.View>
         </Animated.View>

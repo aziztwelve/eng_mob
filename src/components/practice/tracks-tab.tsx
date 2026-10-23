@@ -11,7 +11,7 @@ import { SkyPanel } from './practice-ui';
 
 // "Level grid" variant: CEFR levels as two-column cards with a colored level letter,
 // the track count and an "Open" button, plus a bear card at the end.
-const LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1'] as const;
+const LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'] as const;
 const COLORS: Record<string, string> = {
   A1: '#59C8FF',
   A2: '#FFB338',
@@ -91,10 +91,10 @@ export function TracksTab() {
             >
               <SkyPanel style={[st.card, !open && { opacity: 0.7 }]}>
                 <Text style={[st.level, { color: open ? COLORS[lvl] : '#B8C4CC' }]}>{lvl}</Text>
-                <Text style={st.name} numberOfLines={1}>{t(`tracks.level_titles.${lvl}` as never)}</Text>
+                <Text style={st.name} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.85}>{t(`tracks.level_titles.${lvl}` as never).replace(/-/g, '-\n')}</Text>
                 <Text style={st.count}>{open ? t(nTracksKey(count), { count }) : t('practice.tracks_closed')}</Text>
                 <View style={[st.open, !open && st.openOff]}>
-                  <Text style={[st.openText, !open && { color: '#8A949B' }]}>{t('practice.open_btn')}</Text>
+                  <Text style={[st.openText, !open && { color: '#8A949B' }]}>{t(open ? 'practice.open_btn' : 'ai.soon')}</Text>
                 </View>
               </SkyPanel>
             </Pressable>
@@ -117,7 +117,7 @@ const st = StyleSheet.create({
   cell: { width: '47.8%', flexGrow: 1 },
   card: { padding: 14 },
   level: { fontFamily: skyFont.title, fontSize: 36 },
-  name: { fontFamily: skyFont.title, fontSize: 15, color: SKY.ink },
+  name: { fontFamily: skyFont.title, fontSize: 15, lineHeight: 20, minHeight: 40, color: SKY.ink },
   count: { fontFamily: skyFont.bold, fontSize: 12, color: SKY.muted, marginTop: 2 },
   open: { height: 38, borderRadius: 14, marginTop: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: SKY.blue, borderBottomWidth: 4, borderBottomColor: SKY.blueDark },
   openOff: { backgroundColor: '#E6ECF0', borderBottomColor: '#CDD4D9' },
