@@ -67,11 +67,13 @@ export default function FlashcardsHubScreen() {
           <Text style={st.subtitle}>{t('fc.review_sub')}</Text>
         </View>
 
+        {stats.isError ? <LoadError onRetry={() => void stats.refetch()} /> : null}
+        {seedStarter.isError ? <View accessibilityRole="alert"><Text className="text-center text-[#B4232A]">{t('common.save_failed')}</Text></View> : null}
         {stats.isLoading ? (
           <View style={[st.card, { padding: 40, alignItems: 'center' }]}>
             <ActivityIndicator color="#2FA8E6" />
           </View>
-        ) : total === 0 ? (
+        ) : stats.isError && !stats.data ? null : total === 0 ? (
           <EmptyState
             onSeed={() => seedStarter.mutate('en')}
             onAdd={() => setShowAddSheet(true)}
@@ -121,7 +123,7 @@ export default function FlashcardsHubScreen() {
             {/* List */}
             {flashcards.isLoading ? (
               <ActivityIndicator color="#2FA8E6" />
-            ) : (
+            ) : flashcards.isError ? <LoadError onRetry={() => void flashcards.refetch()} /> : (
               <View style={{ gap: 10 }}>
                 {flashcards.data?.items.map((card) => (
                   <FlashcardItem key={card.id} card={card} />
@@ -139,6 +141,14 @@ export default function FlashcardsHubScreen() {
       <AddFlashcardSheet visible={showAddSheet} onDismiss={() => setShowAddSheet(false)} />
     </View>
   );
+}
+
+function LoadError({ onRetry }: { onRetry: () => void }) {
+  const { t } = useTranslation();
+  return <View className="gap-3 rounded-2xl border border-[#FFC9CC] bg-white p-4">
+    <Text accessibilityRole="alert" accessibilityLiveRegion="polite" className="text-center text-[#B4232A]">{t('practice.bank_error')}</Text>
+    <Pressable accessibilityRole="button" onPress={onRetry} className="min-h-[44px] items-center justify-center rounded-xl bg-[#EAF8FF] px-4 py-3"><Text className="font-nunito-bold text-[#247FA8]">{t('home.path_retry')}</Text></Pressable>
+  </View>;
 }
 
 function MiniStat({ label, value, color }: { label: string; value: number; color: string }) {

@@ -763,6 +763,7 @@ const kk = {
     logout: 'Аккаунттан шығу',
   },
   common: {
+    close: 'Жабу',
     ok: 'Дайын',
     error: 'Қате',
     saved: 'Сақталды',
@@ -972,6 +973,7 @@ const kk = {
     skip_selection: 'Өткізу',
   },
   cards: {
+    translation_language: 'Аударма тілі',
     tap_to_flip: 'Аудару үшін түртіңіз',
     add_title: 'Сөз қосу',
     add_def2: 'Анықтама',

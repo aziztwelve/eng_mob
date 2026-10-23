@@ -766,6 +766,7 @@ const ru = {
     logout: 'Выйти из аккаунта',
   },
   common: {
+    close: 'Закрыть',
     ok: 'Готово',
     error: 'Ошибка',
     saved: 'Сохранено',
@@ -975,6 +976,7 @@ const ru = {
     skip_selection: 'Пропустить',
   },
   cards: {
+    translation_language: 'Язык перевода',
     tap_to_flip: 'Нажмите для перевода',
     add_title: 'Добавить слово',
     add_def2: 'Определение',

@@ -765,6 +765,7 @@ const en = {
     logout: 'Log out',
   },
   common: {
+    close: 'Close',
     ok: 'Done',
     error: 'Error',
     saved: 'Saved',
@@ -974,6 +975,7 @@ const en = {
     skip_selection: 'Skip',
   },
   cards: {
+    translation_language: 'Translation language',
     tap_to_flip: 'Tap to flip',
     add_title: 'Add word',
     add_def2: 'Definition',
