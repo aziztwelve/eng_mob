@@ -40,11 +40,10 @@ export function ListeningShadowingStep({ step, onSubmit, onContinue, isLast }: S
       }
       const accuracy = pronunciationResult.accuracy_score;
       if (accuracy < content.min_accuracy) {
-        setState({
-          kind: 'wrong',
-          correctText: content.audio_text,
-          explanation: t('lesson.shadow_low_acc', { acc: Math.round(accuracy * 100), min: Math.round(content.min_accuracy * 100) }),
-        });
+        // A failed pronunciation check has not submitted this lesson step.
+        // Keep the recorder available so the learner can retry the same phrase.
+        setFailed(t('lesson.shadow_low_acc', { acc: Math.round(accuracy * 100), min: Math.round(content.min_accuracy * 100) }));
+        setState({ kind: 'idle' });
         return;
       }
 
