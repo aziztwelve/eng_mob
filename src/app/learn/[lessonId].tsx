@@ -5,6 +5,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Toast from 'react-native-toast-message';
+import { useLessonResume } from '@/hooks/use-lesson-resume';
+import { resolveLessonPosition, saveLessonPosition } from '@/lib/lesson-resume';
 import { useLesson } from '@/hooks/use-lessons';
 import { useCompleteStep } from '@/hooks/use-progress';
 import { useStepSubmit } from '@/hooks/use-step-submit';
@@ -48,11 +50,12 @@ function tryHasQuestions(raw: string): boolean {
 }
 
 export default function LessonPlayerScreen() {
-  const { lessonId } = useLocalSearchParams<{ lessonId: string }>();
+  const { lessonId, restart } = useLocalSearchParams<{ lessonId: string; restart?: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
-  const { data: lessonData, isLoading, error } = useLesson(lessonId);
+  const { data: lessonData, isLoading, error, refetch: reloadLesson } = useLesson(lessonId);
+  const resume = useLessonResume(lessonId);
   const completeStepMutation = useCompleteStep();
   const submitStepMutation = useStepSubmit();
   const fireGamificationFx = useLessonGamificationFx();
@@ -61,6 +64,18 @@ export default function LessonPlayerScreen() {
 
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [showWordSelection, setShowWordSelection] = useState(false);
+  const sessionKey = `${resume.owner ?? ''}:${lessonId}:${restart ?? ''}`;
+  const [initializedSession, setInitializedSession] = useState<string | null>(null);
+  useEffect(() => {
+    if (!lessonData || !resume.data || resume.isLoading || resume.isError || initializedSession === sessionKey) return;
+    setCurrentStepIndex(resolveLessonPosition(lessonData.steps, resume.data.progress, resume.data.checkpoint, restart === 'true'));
+    setShowWordSelection(false);
+    setInitializedSession(sessionKey);
+  }, [lessonData, resume.data, resume.isLoading, resume.isError, sessionKey, initializedSession, restart]);
+  useEffect(() => {
+    if (initializedSession !== sessionKey || !resume.owner || !lessonData?.steps[currentStepIndex]) return;
+    void saveLessonPosition(resume.owner, lessonId, lessonData.steps[currentStepIndex].id).catch(() => {});
+  }, [initializedSession, sessionKey, resume.owner, lessonId, lessonData, currentStepIndex]);
   const wordCandidates = useMemo(
     () => lessonData ? selectionCandidatesFromSteps(lessonData.steps) : [],
     [lessonData],
@@ -91,7 +106,7 @@ export default function LessonPlayerScreen() {
     };
   }, []);
 
-  if (isLoading) {
+  if (isLoading || resume.isLoading || (!error && !resume.isError && initializedSession !== sessionKey)) {
     return (
       <SkyScreen style={styles.center}>
         <StatusBar barStyle="dark-content" />
@@ -101,15 +116,17 @@ export default function LessonPlayerScreen() {
     );
   }
 
-  if (error || !lessonData) {
+  if (error || resume.isError || !lessonData) {
     return (
       <SkyScreen style={styles.center}>
         <StatusBar barStyle="dark-content" />
         <Text style={styles.errorEmoji}>😕</Text>
         <Text style={styles.errorTitle}>{t('lesson.not_found')}</Text>
         <Text style={styles.errorBody}>
-          {(error as any)?.message || t('lesson.not_found_desc')}
+          {(error as any)?.message || (resume.error as any)?.message || t('lesson.not_found_desc')}
         </Text>
+        <Pressable accessibilityRole="button" onPress={() => { void reloadLesson(); void resume.refetch(); }} className="mt-4 rounded-2xl bg-[#59C8FF] px-6 py-4"><Text className="font-nunito-extrabold text-white">{t('home.path_retry')}</Text></Pressable>
+        <Pressable accessibilityRole="button" onPress={() => router.back()} className="mt-3 p-3"><Text className="font-nunito-bold text-[#171A1C]">{t('common.back')}</Text></Pressable>
       </SkyScreen>
     );
   }
@@ -162,6 +179,7 @@ export default function LessonPlayerScreen() {
     if (isLastStep) {
       // Фиксируем прохождение урока (для последовательной разблокировки в треке).
       void markLessonCompleted(lessonId);
+      if (resume.owner) void saveLessonPosition(resume.owner, lessonId, null).catch(() => {});
       if (wordCandidates.length > 0) setShowWordSelection(true);
       else router.back();
     } else {

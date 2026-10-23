@@ -1098,6 +1098,7 @@ const en = {
     note: 'Changes are stored on your device and apply instantly. Gamification keeps working with effects off — only sound and vibration are disabled.',
   },
   lesson: {
+    start_over: 'Start over',
     loading: 'Loading lesson…',
     not_found: 'Lesson not found',
     not_found_desc: 'Unable to load lesson',

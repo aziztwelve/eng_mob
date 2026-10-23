@@ -38,10 +38,10 @@ export default function TrackDetailsScreen() {
   const loading = query.isPending || local.isLoading || progress.isPending;
   const error = query.error || progress.error;
   const tiles: TileLesson[] = lessons.map((lesson, index) => ({ id: lesson.id, title: lesson.title, state: isDone(index) ? 'done' : index === current ? 'current' : 'locked' }));
-  const openLesson = (index: number) => {
+  const openLesson = (index: number, restart = false) => {
     if (index < 0 || index >= lessons.length) return;
     if (!unlocked(index)) { Toast.show({ type: 'info', text1: t('lesson.locked') }); return; }
-    router.push(`/learn/${lessons[index].id}`);
+    router.push({ pathname: '/learn/[lessonId]', params: { lessonId: lessons[index].id, ...(isDone(index) || restart ? { restart: 'true' } : {}) } });
   };
   return <View className="flex-1 bg-[#B6E8FF]">
     <Stack.Screen options={{ headerShown: false }} />
@@ -59,10 +59,11 @@ export default function TrackDetailsScreen() {
             {lessons.map((lesson, index) => <React.Fragment key={lesson.id}>{index > 0 ? <View className={`h-0.5 w-8 ${isDone(index - 1) ? 'bg-[#60C6EC]' : 'bg-[#C5DFEC]'}`} /> : null}<View className={`h-3 w-3 rounded-full ${isDone(index) ? 'bg-[#34C759]' : index === current ? 'bg-[#1AB3FF]' : 'bg-[#C5DFEC]'}`} /></React.Fragment>)}
           </View>
         </View>
-        {lessons.length ? <LessonTileMap lessons={tiles} onOpen={openLesson} /> : <Text className="py-12 text-center font-nunito-bold text-base text-[#526879]">{t('tracks.lessons_soon')}</Text>}
+        {lessons.length ? <LessonTileMap lessons={tiles} onOpen={(index) => openLesson(index)} /> : <Text className="py-12 text-center font-nunito-bold text-base text-[#526879]">{t('tracks.lessons_soon')}</Text>}
         <View className="mt-auto gap-2 pb-3 pt-2">
           {allDone ? <View className="flex-row items-center justify-center gap-2"><Trophy size={22} color="#239A42" /><Text className="font-nunito-bold text-sm text-[#239A42]">{t('tracks.track_done')}</Text></View> : null}
           {current >= 0 ? <View className="rounded-[18px] bg-white p-1"><BankButton label={t('cloud_tracks.continue')} onPress={() => openLesson(current)} /></View> : allDone ? <Pressable accessibilityRole="button" onPress={() => openLesson(0)} className="min-h-[52px] flex-row items-center justify-center gap-2 rounded-2xl border-b-4 border-[#3E8CB2] bg-[#59C8FF] px-4 py-3"><RotateCcw size={19} color="white" /><Text className="font-nunito-extrabold text-base text-white">{t('practice.bank_retry')}</Text></Pressable> : null}
+          {current >= 0 ? <Pressable accessibilityRole="button" onPress={() => openLesson(current, true)} className="min-h-[44px] flex-row items-center justify-center gap-2 rounded-2xl border border-[#D4EEFF] bg-white px-4 py-2"><RotateCcw size={17} color="#247FA8" /><Text className="font-nunito-bold text-sm text-[#247FA8]">{t('lesson.start_over')}</Text></Pressable> : null}
         </View>
       </>}
     </ScrollView>
