@@ -2,7 +2,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const root = path.resolve(__dirname, '..');
-const screens = ['src/components/home/home-map.tsx', 'src/components/home/home-tab-bar.tsx', 'src/components/brand-splash.tsx'];
+const screens = ['src/components/home/home-tab-bar.tsx', 'src/components/brand-splash.tsx', 'src/components/onboarding/CloudScreen.tsx'];
 const names = new Set();
 for (const screen of screens) {
   const source = fs.readFileSync(path.join(root, screen), 'utf8');

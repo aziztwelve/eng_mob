@@ -26,50 +26,50 @@ export default function FriendsLeaderboardScreen() {
   const entries = board.data?.entries ?? [];
 
   return (
-    <View className="flex-1 bg-background">
+    <View className="flex-1 bg-transparent">
       <Stack.Screen options={{ title: t('friends.lb_title') }} />
       <ScrollView contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 80 }}>
         <Pressable
           onPress={() => router.back()}
           className="flex-row items-center gap-1 self-start active:opacity-60"
         >
-          <ArrowLeft size={16} color="#9ca3af" />
-          <Text className="text-muted-foreground font-bold">{t('friends.to_friends')}</Text>
+          <ArrowLeft size={16} color="#5D686F" />
+          <Text className="text-mieo-body font-nunito-bold">{t('friends.to_friends')}</Text>
         </Pressable>
 
         <View className="gap-2">
           <View className="flex-row items-center gap-2">
             <Trophy size={28} color="#f59e0b" />
-            <Text className="text-foreground font-black text-3xl">
+            <Text className="text-mieo-heading font-nunito-black text-3xl">
               {t('friends.lb_title')}
             </Text>
           </View>
-          <Text className="text-muted-foreground font-medium">
+          <Text className="text-mieo-body font-nunito-medium">
             {t('friends.lb_desc')}
           </Text>
         </View>
 
         {board.isLoading ? (
-          <View className="bg-card rounded-3xl border-4 border-border p-12 items-center">
-            <ActivityIndicator color="#00FFA3" />
+          <View className="bg-mieo-surface rounded-3xl border-[1.5px] border-b-4 border-mieo-stroke p-12 items-center">
+            <ActivityIndicator color="#2FA8E6" />
           </View>
         ) : entries.length === 0 ? (
-          <View className="bg-card rounded-3xl border-4 border-border p-8 items-center gap-3">
-            <Users size={42} color="#9ca3af" />
-            <Text className="text-foreground font-black text-xl">{t('friends.lb_empty')}</Text>
-            <Text className="text-muted-foreground font-medium text-center">
+          <View className="bg-mieo-surface rounded-3xl border-[1.5px] border-b-4 border-mieo-stroke p-8 items-center gap-3">
+            <Users size={42} color="#5D686F" />
+            <Text className="text-mieo-heading font-nunito-black text-xl">{t('friends.lb_empty')}</Text>
+            <Text className="text-mieo-body font-nunito-medium text-center">
               {t('friends.lb_empty_desc')}
             </Text>
             <Link href="/friends/search" asChild>
-              <Pressable className="bg-primary rounded-2xl px-5 py-3 mt-2 active:opacity-80">
-                <Text className="text-primary-foreground font-black">
+              <Pressable className="bg-mieo-primary rounded-2xl px-5 py-3 mt-2 active:opacity-80">
+                <Text className="text-white font-nunito-black">
                   {t('friends.find_friends')}
                 </Text>
               </Pressable>
             </Link>
           </View>
         ) : (
-          <View className="bg-card rounded-3xl border-4 border-border overflow-hidden">
+          <View className="bg-mieo-surface rounded-3xl border-[1.5px] border-b-4 border-mieo-stroke overflow-hidden">
             {entries.map((e, i) => (
               <Row
                 key={e.user_id}
@@ -98,8 +98,8 @@ function Row({
   return (
     <View
       className={`flex-row items-center gap-3 px-4 py-3 ${
-        entry.is_me ? 'bg-primary/10' : ''
-      } ${!isLast ? 'border-b border-border' : ''}`}
+        entry.is_me ? 'bg-mieo-primary/10' : ''
+      } ${!isLast ? 'border-b border-mieo-stroke' : ''}`}
     >
       <View className="w-10 items-center justify-center">
         {isTop3 ? (
@@ -114,8 +114,8 @@ function Row({
             }
           />
         ) : (
-          <View className="border-2 border-border rounded-xl px-2 py-1 min-w-[36px] items-center">
-            <Text className="text-foreground font-black tabular-nums">
+          <View className="border-2 border-mieo-stroke rounded-xl px-2 py-1 min-w-[36px] items-center">
+            <Text className="text-mieo-heading font-nunito-black tabular-nums">
               {entry.rank}
             </Text>
           </View>
@@ -127,17 +127,17 @@ function Row({
       <View className="flex-1 min-w-0">
         <View className="flex-row items-center gap-2">
           <Text
-            className="text-foreground font-bold flex-shrink"
+            className="text-mieo-heading font-nunito-bold flex-shrink"
             numberOfLines={1}
           >
             {name}
           </Text>
           {entry.is_me && (
-            <Text className="text-primary font-black text-xs">{t('friends.you')}</Text>
+            <Text className="text-mieo-primary-full font-nunito-black text-xs">{t('friends.you')}</Text>
           )}
         </View>
         <Text
-          className="text-muted-foreground font-medium text-xs"
+          className="text-mieo-body font-nunito-medium text-xs"
           numberOfLines={1}
         >
           {entry.username ? `@${entry.username}` : '—'}
@@ -145,10 +145,10 @@ function Row({
       </View>
 
       <View>
-        <Text className="text-foreground font-black tabular-nums text-right">
+        <Text className="text-mieo-heading font-nunito-black tabular-nums text-right">
           {entry.weekly_xp.toLocaleString('ru')}
         </Text>
-        <Text className="text-muted-foreground font-bold text-[10px] uppercase tracking-wider text-right">
+        <Text className="text-mieo-body font-nunito-bold text-[10px] uppercase tracking-wider text-right">
           XP
         </Text>
       </View>

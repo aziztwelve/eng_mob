@@ -1,9 +1,14 @@
 import React, { useMemo } from 'react';
-import { View, Text, Pressable, ScrollView, Image, useWindowDimensions } from 'react-native';
+import { View, Text, Pressable, ScrollView, Image, ActivityIndicator, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Award, Flame, Gem, Heart, Settings, Zap } from 'lucide-react-native';
+import { Award, ChevronRight, Flame, Gem, Heart, Settings, Zap } from 'lucide-react-native';
+import { achievementText } from '@/lib/achievement-text';
+import { useAccountProfile } from '@/hooks/use-account-profile';
+import { useHearts } from '@/hooks/use-hearts';
+import { useFriends } from '@/hooks/use-friends';
+import { ProfileQueryError } from '@/components/profile/profile-ui';
 import { useCurrentUser } from '@/hooks/use-auth';
 import { useUserStats } from '@/hooks/use-user-stats';
 import { useMyAchievements, useAchievements } from '@/hooks/use-achievements';
@@ -33,32 +38,38 @@ export default function ProfileScreen() {
   const contentWidth = Math.min(width, 375);
   const heroScale = contentWidth / HERO_W;
 
-  const { data: user } = useCurrentUser();
-  const { data: stats } = useUserStats();
-  const { data: onboarding } = useOnboardingState();
+  const userQuery = useCurrentUser();
+  const user = userQuery.data;
+  const profile = useAccountProfile();
+  const friends = useFriends({ limit: 1 });
+  const hearts = useHearts();
+  const statsQuery = useUserStats();
+  const stats = statsQuery.data;
+  const onboardingQuery = useOnboardingState();
+  const onboarding = onboardingQuery.data;
   const mine = useMyAchievements();
   const all = useAchievements();
   const mistakes = useMistakes({ resolved: 'unresolved', limit: 1 });
 
   const ui = uiLang(i18n.language);
   const course = onboarding?.target_language ? languageNameForUi(onboarding.target_language, ui) : '';
-  const displayName = user?.name || user?.username || t('profile.student');
+  const displayName = [profile.data?.first_name, profile.data?.last_name].filter(Boolean).join(' ') || user?.name || user?.username || t('profile.student');
   const mistakeCount = mistakes.data?.total ?? mistakes.data?.mistakes?.length ?? 0;
 
   const achievements = useMemo(() => {
-    const unlocked = (mine.data?.achievements ?? []).filter(ua => ua.achievement?.id).map((ua) => ({ id: ua.achievement.id, title: ua.achievement.title, locked: false }));
+    const unlocked = (mine.data?.achievements ?? []).filter(ua => ua.achievement?.id).map((ua) => ({ id: ua.achievement.id, title: achievementText(ua.achievement, t).title, locked: false }));
     const unlockedIds = new Set(unlocked.map((u) => u.id));
     const locked = (all.data?.achievements ?? [])
       .filter((a) => !unlockedIds.has(a.id))
-      .map((a) => ({ id: a.id, title: a.title, locked: true }));
+      .map((a) => ({ id: a.id, title: achievementText(a, t).title, locked: true }));
     return [...unlocked, ...locked].slice(0, 6);
-  }, [mine.data, all.data]);
+  }, [mine.data, all.data, t]);
 
   const statTiles = [
-    { key: 'xp', icon: Zap, color: '#FFB020', value: stats?.total_xp ?? 0, label: t('profile.total_xp') },
-    { key: 'streak', icon: Flame, color: '#FF7A3D', value: stats?.current_streak ?? 0, label: t('profile.day_streak') },
-    { key: 'gems', icon: Gem, color: '#36B6FF', value: stats?.gems ?? 0, label: t('profile.gems') },
-    { key: 'hearts', icon: Heart, color: '#FF4B7E', value: stats?.hearts ?? 0, label: t('profile.hearts') },
+    { key: 'xp', icon: Zap, color: '#FFB020', value: statsQuery.isError ? '—' : statsQuery.isLoading ? '…' : stats?.total_xp ?? 0, label: t('profile.total_xp') },
+    { key: 'streak', icon: Flame, color: '#FF7A3D', value: statsQuery.isError ? '—' : statsQuery.isLoading ? '…' : stats?.current_streak ?? 0, label: t('profile.day_streak') },
+    { key: 'gems', icon: Gem, color: '#36B6FF', value: statsQuery.isError ? '—' : statsQuery.isLoading ? '…' : stats?.gems ?? 0, label: t('profile.gems') },
+    { key: 'hearts', icon: Heart, color: '#FF4B7E', value: hearts.isError ? '—' : hearts.isLoading ? '…' : hearts.data?.unlimited ? '∞' : hearts.data?.hearts ?? 0, label: t('profile.hearts') },
   ];
 
   return (
@@ -67,6 +78,7 @@ export default function ProfileScreen() {
         {/* Hero */}
         <View style={{ width: contentWidth, height: HERO_CROP * heroScale, overflow: 'hidden' }}>
           <Image source={heroImage} style={{ width: contentWidth, height: HERO_H * heroScale, marginTop: -STATUS_BAR * heroScale }} resizeMode="cover" />
+          {!!profile.data?.avatar_url && <Image accessibilityLabel={displayName} source={{ uri: profile.data.avatar_url }} className="absolute bottom-4 h-24 w-24 rounded-full border-4 border-white" style={{ left: contentWidth / 2 - 48 }} />}
         </View>
 
         {/* Name + email */}
@@ -75,21 +87,20 @@ export default function ProfileScreen() {
           {!!user?.email && <Text className="font-nunito-medium text-sm text-mieo-body">{user.email}</Text>}
         </View>
 
-        {/* Courses / following / followers */}
+        {(userQuery.isError || profile.isError || statsQuery.isError || onboardingQuery.isError || friends.isError || hearts.isError) && <View className="px-4 mt-4 w-full">
+          <ProfileQueryError onRetry={() => { void userQuery.refetch(); void profile.refetch(); void statsQuery.refetch(); void onboardingQuery.refetch(); void friends.refetch(); void hearts.refetch(); }} />
+        </View>}
+        {/* Course and accepted friends */}
         <View className="flex-row items-start gap-6 rounded-2xl border-[1.5px] border-[#C9EDFF] bg-mieo-surface px-5 py-3 mt-3" style={{ width: contentWidth - 32 }}>
           <View className="gap-2">
             <Text className="font-nunito-medium text-sm text-mieo-body">{t('profile.courses')}</Text>
             <Text className="font-nunito-semibold text-sm text-mieo-heading">{course || '—'}</Text>
           </View>
           <View className="w-px self-stretch bg-mieo-stroke" />
-          <View className="gap-2">
-            <Text className="font-nunito-medium text-sm text-mieo-body">{t('profile.following')}</Text>
-            <Text className="font-nunito-extrabold text-base text-mieo-heading">—</Text>
-          </View>
-          <View className="gap-2">
-            <Text className="font-nunito-medium text-sm text-mieo-body">{t('profile.followers')}</Text>
-            <Text className="font-nunito-extrabold text-base text-mieo-heading">—</Text>
-          </View>
+          <Pressable accessibilityRole="button" onPress={() => router.push('/friends')} className="gap-2">
+            <Text className="font-nunito-medium text-sm text-mieo-body">{t('profile.friends')}</Text>
+            <Text className="font-nunito-extrabold text-base text-mieo-heading">{friends.isError ? '—' : friends.data?.total ?? '…'}</Text>
+          </Pressable>
         </View>
 
         {/* Stat tiles */}
@@ -118,10 +129,11 @@ export default function ProfileScreen() {
           <Text className="font-nunito-extrabold text-lg text-mieo-heading">{t('profile.mistakes_practice')}</Text>
           <Pressable onPress={() => router.push('/(tabs)/practice/mistakes' as never)} className="flex-row items-center gap-3 rounded-2xl border-[1.5px] border-[#F0A5A5] bg-mieo-surface px-4 py-3">
             <Heart size={24} color="#E26A6A" />
-            <Text className="flex-1 font-nunito-extrabold text-base text-mieo-heading">{t('profile.mistakes_count', { count: mistakeCount })}</Text>
+            <Text className="flex-1 font-nunito-extrabold text-base text-mieo-heading">{mistakes.isError || mistakes.isLoading ? t('profile.mistakes_practice') : t('profile.mistakes_count', { count: mistakeCount })}</Text>
           </Pressable>
         </View>
 
+        {mistakes.isError && <View className="px-4 mt-3 w-full"><ProfileQueryError onRetry={() => { void mistakes.refetch(); }} /></View>}
         {/* Achievements */}
         <View className="gap-3 px-4 mt-5" style={{ width: contentWidth }}>
           <View className="flex-row items-center justify-between">
@@ -130,16 +142,26 @@ export default function ProfileScreen() {
               <Text className="font-nunito-semibold text-sm text-mieo-body">{t('profile.view_all')}</Text>
             </Pressable>
           </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 16 }}>
+          {all.isError || mine.isError ? <ProfileQueryError onRetry={() => { void all.refetch(); void mine.refetch(); }} /> : all.isLoading || mine.isLoading ? <ActivityIndicator color="#1AB3FF" /> : <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 16 }}>
             {achievements.map((a) => (
               <View key={a.id} className={`h-[96px] w-[92px] items-center justify-center gap-1.5 rounded-2xl border-[1.5px] border-mieo-stroke bg-mieo-surface p-2 ${a.locked ? 'opacity-40' : ''}`}>
                 <Award size={28} color={a.locked ? '#9AA5AD' : '#FFB020'} />
                 <Text numberOfLines={2} className="text-center font-nunito-extrabold text-xs text-mieo-heading">{a.title}</Text>
               </View>
             ))}
-          </ScrollView>
+          </ScrollView>}
         </View>
 
+        <View className="w-full max-w-[375px] px-4 mt-5 gap-3">
+          <Text className="font-nunito-extrabold text-lg text-mieo-heading">{t('profile.more')}</Text>
+          <Pressable accessibilityRole="button" onPress={() => router.push('/profile/subscription' as never)} className="flex-row items-center gap-3 rounded-2xl border border-[#C9EDFF] bg-mieo-surface p-4">
+            <Text className="flex-1 font-nunito-bold text-base text-mieo-heading">{ui === 'ru' ? 'Подписка' : ui === 'kk' ? 'Жазылым' : 'Subscription'}</Text>
+            <ChevronRight size={20} color="#5D686F" />
+          </Pressable>
+          {([
+            ['/profile/strength', 'profile.strength'], ['/profile/notifications', 'profile.notifications'], ['/profile/lockscreen-words', 'profile.lockscreen_words'],
+          ] as const).map(([href, label]) => <Pressable key={href} accessibilityRole="button" onPress={() => router.push(href)} className="flex-row items-center gap-3 rounded-2xl border border-[#C9EDFF] bg-mieo-surface p-4"><Text className="flex-1 font-nunito-bold text-base text-mieo-heading">{t(label)}</Text><ChevronRight size={20} color="#5D686F" /></Pressable>)}
+        </View>
         {/* Settings */}
         <View className="w-full items-center px-4 mt-5">
           <Pressable onPress={() => router.push('/profile/settings')} className="w-full min-h-[46px] flex-row items-center justify-center gap-2 rounded-2xl border-2 border-mieo-dim bg-mieo-surface px-6 py-2.5">

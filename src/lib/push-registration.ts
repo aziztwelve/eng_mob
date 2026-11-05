@@ -91,7 +91,7 @@ export async function requestPushPermission(): Promise<Notifications.PermissionS
  * Получить projectId из expo конфига. На EAS-build — из `eas.projectId`,
  * в dev / Expo Go — из `easConfig.projectId` (если задан).
  */
-function getExpoProjectId(): string | null {
+export function getExpoProjectId(): string | null {
   const fromExtra =
     (Constants.expoConfig?.extra as Record<string, unknown> | undefined)?.eas;
   if (fromExtra && typeof fromExtra === 'object') {
@@ -147,8 +147,7 @@ export async function registerForPushNotifications(): Promise<PushRegistrationRe
   try {
     tokenResponse = await Notifications.getExpoPushTokenAsync({ projectId });
   } catch (err) {
-    console.warn('[push] getExpoPushTokenAsync failed:', err);
-    return null;
+    throw err;
   }
 
   const token = tokenResponse.data;
@@ -173,8 +172,7 @@ export async function registerForPushNotifications(): Promise<PushRegistrationRe
       created: resp.created,
     };
   } catch (err) {
-    console.warn('[push] register device failed:', err);
-    return null;
+    throw err;
   }
 }
 
@@ -184,4 +182,11 @@ export async function registerForPushNotifications(): Promise<PushRegistrationRe
 export async function getPushPermissionStatus(): Promise<Notifications.PermissionStatus> {
   const r = await Notifications.getPermissionsAsync();
   return r.status;
+}
+
+/** Resolve the token of this installation; another phone's token is not proof of subscription. */
+export async function getCurrentDeviceExpoToken(): Promise<string | null> {
+ const projectId = getExpoProjectId();
+ if (!Device.isDevice || !projectId || await getPushPermissionStatus() !== 'granted') return null;
+ return (await Notifications.getExpoPushTokenAsync({ projectId })).data || null;
 }

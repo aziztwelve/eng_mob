@@ -13,7 +13,7 @@ export function QuotaWidget({ compact = false }: { compact?: boolean }) {
   if (isLoading) {
     return (
       <View style={[compact ? s.compactLoader : s.fullLoader, glass]}>
-        <ActivityIndicator color="rgba(255,255,255,0.5)" size="small" />
+        <ActivityIndicator color="#5D686F" size="small" />
       </View>
     );
   }
@@ -28,8 +28,8 @@ export function QuotaWidget({ compact = false }: { compact?: boolean }) {
         <View style={[s.planPill, isPremium ? s.planPillGold : s.planPillFree]}>
           {isPremium
             ? <Crown size={11} color="#f59e0b" />
-            : <Sparkles size={11} color="#FFD84A" />}
-          <Text style={[s.planPillText, { color: isPremium ? '#f59e0b' : '#FFD84A' }]}>
+            : <Sparkles size={11} color="#1789BD" />}
+          <Text style={[s.planPillText, { color: isPremium ? '#f59e0b' : '#1789BD' }]}>
             {isPremium ? 'Premium' : 'Free'}
           </Text>
         </View>
@@ -48,12 +48,12 @@ export function QuotaWidget({ compact = false }: { compact?: boolean }) {
     <View style={[s.fullCard, glass]}>
       <View style={s.fullHeader}>
         <View style={s.fullHeaderLeft}>
-          <Sparkles size={16} color="#FFD84A" />
+          <Sparkles size={16} color="#1789BD" />
           <Text style={s.fullTitle}>{t('ai.quota_title')}</Text>
         </View>
-        <View style={[s.planPill, isPremium ? s.planPillGold : { backgroundColor: 'rgba(255,255,255,0.1)' }]}>
+        <View style={[s.planPill, isPremium ? s.planPillGold : { backgroundColor: '#EAF8FF' }]}>
           {isPremium && <Crown size={11} color="#f59e0b" />}
-          <Text style={[s.planPillText, { color: isPremium ? '#f59e0b' : 'rgba(255,255,255,0.6)' }]}>
+          <Text style={[s.planPillText, { color: isPremium ? '#f59e0b' : '#5D686F' }]}>
             {isPremium ? 'Premium' : 'Free'}
           </Text>
         </View>
@@ -73,7 +73,7 @@ export function QuotaWidget({ compact = false }: { compact?: boolean }) {
 function Counter({ label, used, limit }: { label: string; used: number; limit: number }) {
   const unlimited = limit < 0;
   const exceeded = !unlimited && used >= limit;
-  const color = exceeded ? '#f87171' : unlimited ? '#f59e0b' : '#fff';
+  const color = exceeded ? '#f87171' : unlimited ? '#f59e0b' : '#171A1C';
   return (
     <View style={{ flex: 1 }}>
       <Text style={s.counterLabel}>{label}</Text>
@@ -95,8 +95,8 @@ function Pill({ label, used, limit, suffix }: { label: string; used: number; lim
   }
   const exceeded = used >= limit;
   return (
-    <View style={[s.pill, exceeded ? { backgroundColor: 'rgba(248,113,113,0.12)' } : { backgroundColor: 'rgba(255,255,255,0.1)' }]}>
-      <Text style={[s.pillText, exceeded ? { color: '#f87171' } : { color: 'rgba(255,255,255,0.8)' }]}>
+    <View style={[s.pill, exceeded ? { backgroundColor: 'rgba(248,113,113,0.12)' } : { backgroundColor: '#EAF8FF' }]}>
+      <Text style={[s.pillText, exceeded ? { color: '#f87171' } : { color: '#5D686F' }]}>
         {label}: {used}/{limit}{suffix ? suffix : ''}
       </Text>
     </View>
@@ -125,18 +125,18 @@ const s = StyleSheet.create({
   planPill: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 4 },
   planPillFree: { backgroundColor: 'rgba(255,216,74,0.12)' },
   planPillGold: { backgroundColor: 'rgba(245,158,11,0.12)' },
-  planPillText: { fontSize: 11, fontWeight: '800' },
+  planPillText: { fontSize: 11, fontFamily: 'Nunito_800ExtraBold' },
 
   pill: { borderRadius: 10, paddingHorizontal: 9, paddingVertical: 4 },
-  pillText: { fontSize: 11, fontWeight: '700' },
+  pillText: { fontSize: 11, fontFamily: 'Nunito_700Bold' },
 
   fullCard: { borderRadius: 22, padding: 16, gap: 12, marginTop: 14 },
   fullHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   fullHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 7 },
-  fullTitle: { color: '#fff', fontSize: 15, fontWeight: '800' },
+  fullTitle: { color: '#171A1C', fontSize: 15, fontFamily: 'Nunito_800ExtraBold' },
   countersRow: { flexDirection: 'row', gap: 4 },
-  counterLabel: { color: 'rgba(255,255,255,0.55)', fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.6 },
-  counterValue: { fontSize: 22, fontWeight: '900', lineHeight: 28 },
-  counterLimit: { fontSize: 13, color: 'rgba(255,255,255,0.45)', fontWeight: '600' },
-  resetsText: { color: 'rgba(255,255,255,0.45)', fontSize: 11, fontWeight: '500' },
+  counterLabel: { color: '#5D686F', fontSize: 10, fontFamily: 'Nunito_700Bold', textTransform: 'uppercase', letterSpacing: 0.6 },
+  counterValue: { fontSize: 22, fontFamily: 'Nunito_900Black', lineHeight: 28 },
+  counterLimit: { fontSize: 13, color: '#5D686F', fontFamily: 'Nunito_600SemiBold' },
+  resetsText: { color: '#5D686F', fontSize: 11, fontFamily: 'Nunito_600SemiBold' },
 });

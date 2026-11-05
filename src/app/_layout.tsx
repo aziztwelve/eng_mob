@@ -94,7 +94,7 @@ export default function TabLayout() {
   useEffect(() => {
     void (async () => {
       try {
-        const asset = Asset.fromModule(require('../../assets/figma/home-map/map-scenery.png'));
+        const asset = Asset.fromModule(require('../../assets/home-variants/bg10.png'));
         // Android's prefetch accepts remote URLs; bundled files are already local.
         if (/^https?:/.test(asset.uri)) await Image.prefetch(asset.uri);
       } catch (error) {

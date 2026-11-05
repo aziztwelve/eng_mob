@@ -1,7 +1,7 @@
 import { KeyboardLift } from '@/components/keyboard-lift';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ScrollView, StatusBar, StyleSheet, View } from 'react-native';
-import { Stack } from 'expo-router';
+import { Stack, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -25,6 +25,10 @@ export default function LessonsScreen() {
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
   const [activeTab, setActiveTab] = useState<PracticeTab>('tracks');
+  const { tab, selection } = useLocalSearchParams<{ tab?: string; selection?: string }>();
+  useEffect(() => {
+    if (tab === 'tracks' || tab === 'courses' || tab === 'words' || tab === 'bank') setActiveTab(tab);
+  }, [tab, selection]);
 
   const { data: stats } = useUserStats();
   const { data: hearts } = useHearts();

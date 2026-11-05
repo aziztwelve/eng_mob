@@ -16,7 +16,8 @@ export function MatchPairsVoiceStep({ step, onSubmit, onContinue, isLast }: Step
   const { t } = useTranslation();
   const content = parseStepContent<MatchPairsVoiceContent>(step);
   const pairs = content?.pairs ?? [];
-  const textOrder = useMemo(() => [...pairs.keys()].reverse(), [pairs.length]);
+  const pairCount = pairs.length;
+  const textOrder = useMemo(() => Array.from({ length: pairCount }, (_, index) => pairCount - index - 1), [pairCount]);
   const [selectedAudio, setSelectedAudio] = useState<number | null>(null);
   const [matched, setMatched] = useState<number[]>([]);
   const [wrongText, setWrongText] = useState<number | null>(null);

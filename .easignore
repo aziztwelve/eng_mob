@@ -1,4 +1,4 @@
-# Same as .gitignore — EAS reads this when project is not a git repo
+# EAS uses this file instead of .gitignore for the project upload.
 node_modules/
 .expo/
 dist/
@@ -20,15 +20,18 @@ web-build/
 .DS_Store
 
 # Secrets
+/credentials.json
+/credentials/
 *.jks
 *.p8
 *.p12
 *.key
 *.mobileprovision
 *.pem
+*.keystore
 
 # Git (just in case)
-.git/
+.git
 
 # Local design explorations and QA evidence are not build inputs
 store-assets/
@@ -36,8 +39,47 @@ design-explorations/
 docs/qa/
 .device*.png
 .tmp_qr/
+/docs/
+/scripts/test-*.cjs
+/scripts/wordbank-preview/
+/coverage/
+/design-qa.md
+/user-context.md
+/AGENTS.md
+/*.md
+/app-example/
+/.devin/
+/.kotlin/
+*.orig.*
+*.log
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+.metro-health-check*
 
 # Ad-hoc archives and exports in project root (not build inputs)
 /*.zip
 /engmob.apk
 /engmob-production.aab
+
+# Reference-only design exports; keep the profile hero used by the app
+/assets/figma/screen-assets/
+/assets/figma/mieo-components/
+/assets/figma/mieo-cover/
+/assets/figma/screens/*
+!/assets/figma/screens/Light__Profile__Profile__304-2746.png
+/assets/figma/home-map/map-scenery*
+/assets/figma/wordbank/*.png
+/assets/ai/adult-robot-options.png
+/assets/ai/free-talk-robot.png
+/assets/ai/free-talk-robot-adult.png
+/assets/expo.icon/
+/assets/images/react-logo*
+/assets/images/expo-*
+/assets/images/tutorial-web.png
+/assets/images/tabIcons/
+
+/assets/figma/home-map/tracks*
+/assets/figma/home-map/body-scene.svg
+
+/scripts/check-release-routes.cjs

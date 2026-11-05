@@ -1,3 +1,4 @@
+import { calendarDates, localCalendarToday } from '@/lib/calendar-dates';
 import React, { useMemo } from 'react';
 import { View, Text, ActivityIndicator } from 'react-native';
 import { Snowflake } from 'lucide-react-native';
@@ -18,17 +19,8 @@ export function StreakCalendar({ days = 30 }: StreakCalendarProps) {
     return m;
   }, [data]);
 
-  const dates = useMemo(() => {
-    const out: string[] = [];
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    for (let i = days - 1; i >= 0; i--) {
-      const d = new Date(today);
-      d.setDate(today.getDate() - i);
-      out.push(d.toISOString().slice(0, 10));
-    }
-    return out;
-  }, [days]);
+  const today = data?.today ?? localCalendarToday();
+  const dates = useMemo(() => calendarDates(today, days), [today, days]);
 
   if (isError) return <ProfileQueryError onRetry={() => { void refetch(); }} />;
 
@@ -40,13 +32,12 @@ export function StreakCalendar({ days = 30 }: StreakCalendarProps) {
     );
   }
 
-  const today = new Date().toISOString().slice(0, 10);
 
   return (
     <View className="flex-row flex-wrap gap-1.5">
       {dates.map((iso) => {
         const day = map.get(iso);
-        const dayNum = new Date(iso).getDate();
+        const dayNum = Number(iso.slice(-2));
         const isToday = iso === today;
 
         let bg = 'bg-[#F0F8FC]';

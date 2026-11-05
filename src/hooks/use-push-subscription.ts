@@ -1,11 +1,15 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import * as Device from 'expo-device';
 
 import {
   getPushPermissionStatus,
+  getExpoProjectId,
+  getCurrentDeviceExpoToken,
   registerForPushNotifications,
 } from '@/lib/push-registration';
+import { isCurrentPushDevice } from '@/lib/current-push-device';
 import { NotificationsApi } from '@/lib/api-client';
 import { NOTIF_DEVICES_KEY } from './use-notifications';
 
@@ -32,12 +36,13 @@ export interface UsePushSubReturn {
  * Хук состояния push-подписки на mobile.
  *
  * - На mount проверяет permission + список зарегистрированных devices.
- * - Если есть expo-device c platform=expo → state='subscribed'.
+ * - Только совпадение Expo token этого устройства → state='subscribed'.
  * - subscribe() запускает full flow registerForPushNotifications +
  *   инвалидирует devices.
  */
 export function usePushSubscription(): UsePushSubReturn {
   const qc = useQueryClient();
+  const { t } = useTranslation();
   const [state, setState] = useState<PushSubState>('unknown');
   const [ready, setReady] = useState(false);
   const [lastError, setLastError] = useState<string | null>(null);
@@ -62,14 +67,13 @@ export function usePushSubscription(): UsePushSubReturn {
         return;
       }
       // permission granted — проверяем наличие зарегистрированного device.
+      const token = await getCurrentDeviceExpoToken();
       const list = await NotificationsApi.listDevices();
-      const hasExpo = list.devices?.some((d) => {
-        // platform: 2 (число) или 'PLATFORM_EXPO' (строка).
-        return d.platform === 2 || d.platform === 'PLATFORM_EXPO';
-      });
-      setState(hasExpo ? 'subscribed' : 'granted_no_token');
+      const hasCurrentDevice = isCurrentPushDevice(list.devices, token);
+      setState(hasCurrentDevice ? 'subscribed' : 'granted_no_token');
       setReady(true);
     } catch (err) {
+      setState('granted_no_token');
       setLastError(err instanceof Error ? err.message : 'refresh failed');
       setReady(true);
     }
@@ -80,9 +84,14 @@ export function usePushSubscription(): UsePushSubReturn {
   }, [refresh]);
 
   const subscribeMut = useMutation({
+    retry: false,
     mutationFn: async () => {
       const result = await registerForPushNotifications();
-      if (!result) throw new Error('Не удалось зарегистрировать устройство');
+      if (!result) {
+        const status = await getPushPermissionStatus();
+        if (status === 'denied') setState('denied');
+        throw new Error(t(status === 'denied' ? 'profile.push_denied' : !getExpoProjectId() ? 'profile.push_missing_config' : 'profile.push_failed'));
+      }
       return result;
     },
     onSuccess: () => {

@@ -145,3 +145,56 @@ final result: passed
 Live server evidence confirmed real Google login 200 and /auth/me 200; local token presence checked without outputting tokens. New users now enter goal selection instead of returning to welcome. At retained final step 6/6, an existing session displays the connected-account state without registration fields (`docs/qa/social-auth/google-connected-no-repeat-registration.png`, physical Android 720x1520). Existing cloud typography/colors/art and clear centered action retained; no clipping found. The user still chooses learning preferences. Nine mobile regression tests, TypeScript and scoped ESLint pass. Full learning preferences completion was not submitted for the user.
 
 final result: passed
+
+## 2026-11-04: AI topics, selected concept 1
+
+- Source: `/home/aziz/.codex/generated_images/01a14f90-07d9-71a2-b59d-76533ac763db/exec-23cd2799-6766-42b7-9762-a15d8bd233e4.png`, first screen, 298 × 695 px crop.
+- Android: `docs/qa/ai-topics/b1-final.png`, physical Redmi 8A screenshot 720 × 1520 px; comparison `docs/qa/ai-topics/b1-comparison.png`. Both images were resized to 430 × 908 for side-by-side comparison; source and device have different aspect ratios, so do not infer exact vertical pixel equality.
+- State: AI tab, B1, first five work lessons, Russian UI. Focused comparison: header, level pills, five nodes and route in the side-by-side image. Card interaction: `docs/qa/ai-topics/lesson-card.png`.
+- Earlier P1: large rectangular rows, short hidden route, clipped avatar and early second section (`b1-before.png`). Fixed with narrower alternating cards, protruding round icon badges, curved route, larger node spacing and an avatar aligned to the hero bottom. Later P2: blue-to-white page and uneven level pills; fixed page background and equal-width level pills. A further text-size iteration caused the fifth label to wrap; restored the smaller label after Android capture.
+- Typography/copy: existing Nunito and current bilingual lesson copy retained, all first five labels visible. Spacing/layout: five separate nodes visible above the shared navigation; no clipped text in final capture. Colors: light blue background, white pills, pastel icons, blue route. Assets: existing user-selected robot and Lucide icons retained; their exact appearance differs from generated art. Existing floating navigation and native device chrome intentionally remain app-owned. Accessibility and other screen sizes were not separately tested.
+- Checks: selected B1 and opened a lesson preview on Android; TypeScript and scoped ESLint passed. Full voice session and iOS were not retested for this visual change.
+- Follow-up P3: route details, icon stroke shapes, shadows and selected robot differ from the generated reference; exact art would require approved production assets. Navigation shape is intentionally the existing shared component.
+
+final result: passed
+
+## 2026-11-05: AI home, retain selected option 10 only
+
+### Findings and fixes
+
+- [Resolved P1] The initial option 10 used an undersized conversation icon and card artwork, with excess space in the hero. Evidence: `docs/qa/home-variants/10-before.png` and `10-comparison-before.jpg`. The primary icon is now 37 dp, the two card illustrations use 146 × 92 dp slots, the hero is 204 dp high and the card corners explicitly use 20 dp rather than the project's larger `rounded-3xl` token. Revised full and focused comparisons below were opened and inspected.
+- [Resolved P2] The user selected option 10 and requested deletion of options 4 and 6. Their rendering branches, selection state, AsyncStorage preference handling, selector, seven exclusive images and QA copies have been removed. A previously saved choice of 4 or 6 is no longer read. The retained home always renders option 10.
+- [Resolved P1, linked page] Opening the track dictionary exposed white text on a light background. The dictionary now uses dark text, white bordered cards and readable search/error states. Native evidence: `dictionary-before.png` and `dictionary-after.png` in the same QA folder.
+- No actionable P0/P1/P2 findings remain in the inspected Android states for this selection/removal scope. The screenshots demonstrate the retained design direction; they do not establish pixel equality to the generated mock.
+
+### Evidence and normalization
+
+- Visual source: `/home/aziz/.codex/generated_images/01a14f90-07d9-71a2-b59d-76533ac763db/exec-e3a27077-96a1-4cbe-812f-8f34daa19c54.png`, retained copy `docs/qa/home-variants/reference-10.png`, 852 × 1846 px.
+- Final implementation: `docs/qa/home-variants/10-final-top.png` and `10-final-bottom.png`, physical Redmi 8A, 720 × 1520 px, 360 dp wide at density 2. Native captures include OS chrome and the existing floating app menu. The generated source does not; the menu is intentionally retained at the user's request, so the resource row remains reachable by scrolling.
+- State: authenticated home, English UI, top and bottom scroll positions after removal of the selector. The source copy is Russian; localized wording and wrapping are intentional. Earlier Russian captures remain available as `10-top.png` and `10-bottom.png`.
+- Full comparison: `docs/qa/home-variants/10-final-comparison.jpg`. Source is proportionally resized to 720 px width; both native captures remain 720 px wide. Different viewport heights and source/device chrome are explicitly accounted for rather than stretched.
+- Focused comparisons: `10-final-actions-comparison.jpg` and `10-final-links-comparison.jpg`. Source regions (0,912)-(852,1394) and (0,1472)-(852,1712) are resized proportionally to 720 px width. Actual regions are top capture (0,826)-(720,1241) and bottom capture (0,1033)-(720,1240). These isolate actual UI controls from OS/menu chrome.
+
+### Required fidelity surfaces
+
+- Fonts/typography: rounded Nunito, heavy navy headings and action labels, softer body text; localized labels remain readable without clipping. The current English two-line Topics label differs intentionally from the Russian source.
+- Spacing/layout: large hero, yellow pill action, paired white cards and four resource links retained. The final bottom capture shows every resource above the floating menu and Android navigation. A small resource-label baseline variation is P3 polish.
+- Colors/tokens: sky-blue background, yellow action, dark navy text and white cards match the selected direction. The mock's softer gradient/shadows are P3 visual differences.
+- Image quality: separate transparent robot, logo and conversation/level/resource artwork are sharp at the tested density. Generated pose, rendering and decorative details vary from the source. Standard interface arrows and the action icon use Lucide.
+- Copy/content: existing localized app labels and working destinations are used; design-option controls no longer appear in the product.
+
+### Verification and practical limits
+
+- Free Talk CTA/card, topics, tracks, words, Word Bank and dictionary destinations were opened on Android during this pass. No real voice conversation or assessment submission is claimed by this visual check.
+- TypeScript, scoped ESLint and `git diff --check` passed after removal. Recent React Native/Android error logs were empty. Metro remains on 8091; other projects' ports were not changed.
+- iOS and other device sizes were not run; no native dependencies changed.
+
+### Implementation checklist
+
+- [x] Keep option 10 as the sole home layout.
+- [x] Remove options 4/6, their assets and switcher.
+- [x] Retain bottom navigation and safe-area spacing.
+- [x] Inspect final full and focused native comparisons.
+- [x] Complete type, lint and whitespace checks.
+
+final result: passed

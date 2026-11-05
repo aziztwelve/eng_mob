@@ -37,7 +37,7 @@ export default function PracticeLandingScreen() {
 
         {/* Hero card — due now */}
         <LinearGradient
-          colors={[neon.greenHero, '#0B3F32']}
+          colors={[neon.greenHero, '#FFFFFF']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={{
@@ -51,7 +51,7 @@ export default function PracticeLandingScreen() {
             position: 'absolute', right: 14, top: 14,
               backgroundColor: neon.xp, borderRadius: 99,
             paddingHorizontal: 11, paddingVertical: 6,
-            shadowColor: '#FFD54F', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.6, shadowRadius: 16,
+            shadowColor: '#FFD54F', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0, shadowRadius: 16,
           }}>
             <Text style={{ color: '#1a1100', fontWeight: '900', fontSize: 13 }}>+15 XP</Text>
           </View>
@@ -59,11 +59,11 @@ export default function PracticeLandingScreen() {
           {/* Tag */}
           <View style={{
             flexDirection: 'row', alignItems: 'center', gap: 6,
-            backgroundColor: 'rgba(0,0,0,0.3)',
+            backgroundColor: '#D6EFFC',
             alignSelf: 'flex-start', borderRadius: 99,
             paddingHorizontal: 10, paddingVertical: 5, marginBottom: 10,
           }}>
-            <Text style={{ color: '#fff', fontWeight: '800', fontSize: 12 }}>
+            <Text style={{ color: '#171A1C', fontWeight: '800', fontSize: 12 }}>
               ⚡ {stats.isLoading ? '...' : t('practice.cards_due', { count: dueNow })}
             </Text>
           </View>
@@ -71,14 +71,14 @@ export default function PracticeLandingScreen() {
           <Text style={{ color: neon.text, fontWeight: '900', fontSize: 22, marginBottom: 4 }}>
             {t('practice.time_review')}
           </Text>
-          <Text style={{ color: '#D7E2F0', fontWeight: '600', fontSize: 13, maxWidth: '65%', marginBottom: 14 }}>
+          <Text style={{ color: '#5D686F', fontWeight: '600', fontSize: 13, maxWidth: '65%', marginBottom: 14 }}>
             {t('practice.review_hint')}
           </Text>
 
           <Link href="/practice/session" asChild>
             <Pressable style={{
               borderRadius: 16, alignItems: 'center', width: '60%', overflow: 'hidden',
-              shadowColor: neon.primary, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.55, shadowRadius: 24,
+              shadowColor: neon.primary, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0, shadowRadius: 24,
             }}>
               <LinearGradient
                 colors={[neon.primary, neon.cyan]}
@@ -86,7 +86,7 @@ export default function PracticeLandingScreen() {
                 end={{ x: 1, y: 1 }}
                 style={{ width: '100%', paddingVertical: 15, alignItems: 'center' }}
               >
-                <Text style={{ color: 'neon.ink', fontWeight: '900', fontSize: 16, textTransform: 'uppercase', letterSpacing: 0.3 }}>
+                <Text style={{ color: neon.ink, fontWeight: '900', fontSize: 16, textTransform: 'uppercase', letterSpacing: 0.3 }}>
                   {t('practice.start_review')}
                 </Text>
               </LinearGradient>
@@ -171,7 +171,7 @@ export default function PracticeLandingScreen() {
                     style={{
                       height: '100%', width: `${Math.min(100, (unresolvedMistakes / 10) * 100)}%`,
                       borderRadius: 99,
-                      shadowColor: '#FF4B6E', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.6, shadowRadius: 8,
+                      shadowColor: '#FF4B6E', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0, shadowRadius: 8,
                     }}
                   />
                 </View>

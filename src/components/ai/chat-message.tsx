@@ -21,20 +21,30 @@ import type { AIMessage } from '@/types/api';
 function SpeechButton({
   text,
   language,
+  rate = 1,
+  onPlaybackChange,
+  compact = false,
 }: {
+  compact?: boolean;
+  rate?: number;
   text: string;
   language?: string;
+  onPlaybackChange?: (playing: boolean, text: string) => void;
 }) {
   const [playing, setPlaying] = useState(false);
   const [loading, setLoading] = useState(false);
   const soundRef = useRef(new SoundSlot());
+  const alive = useRef(true);
+  const playbackCallback = useRef(onPlaybackChange);
+  playbackCallback.current = onPlaybackChange;
 
   // Cleanup при unmount
   useEffect(() => {
-    return () => {
-      soundRef.current.stop();
-    };
+    alive.current = true;
+    const slot = soundRef.current;
+    return () => { alive.current = false; slot.stop(); };
   }, []);
+  useEffect(() => { soundRef.current.setRate(rate); }, [rate]);
 
   const toggle = async () => {
     if (loading) return;
@@ -47,7 +57,7 @@ function SpeechButton({
     setLoading(true);
     try {
       const uri = await getChatTTSUri(text, language ?? 'en');
-      await playUri(uri);
+      if (alive.current) await playUri(uri);
     } catch (e) {
       console.warn('[TTS] google tts failed', e);
       Toast.show({
@@ -56,14 +66,15 @@ function SpeechButton({
         text2: e instanceof Error ? e.message : undefined,
       });
     } finally {
-      setLoading(false);
+      if (alive.current) setLoading(false);
     }
   };
 
   // --- expo-audio: первый запуск URI (локальный mp3 или storage URL) ---
   const playUri = async (uri: string) => {
     await setAudioModeAsync({ playsInSilentMode: true }).catch(() => {});
-    soundRef.current.play({ uri }, { keep: true, onFinish: () => setPlaying(false) });
+    if (!alive.current) return;
+    soundRef.current.play({ uri }, { rate, keep: true, onFinish: () => setPlaying(false), onPlaybackChange: value => playbackCallback.current?.(value, text) });
     setPlaying(true);
   };
 
@@ -77,17 +88,17 @@ function SpeechButton({
   };
 
   return (
-    <Pressable onPress={toggle} disabled={loading} style={[s.audioBtn, glass]}>
+    <Pressable onPress={toggle} disabled={loading} accessibilityRole="button" accessibilityLabel={playing ? 'Стоп' : 'Прослушать'} style={[s.audioBtn, glass, compact && s.audioCompact]}>
       {loading ? (
-        <ActivityIndicator size="small" color="#FFD84A" />
+        <ActivityIndicator size="small" color="#1789BD" />
       ) : playing ? (
-        <Square size={12} color="#FFD84A" fill="#FFD84A" />
+        <Square size={12} color="#1789BD" fill="#1789BD" />
       ) : (
-        <Play size={13} color="rgba(255,255,255,0.7)" />
+        <Play size={13} color="#5D686F" />
       )}
-      <Text style={s.audioBtnText}>
+      {!compact && <Text style={s.audioBtnText}>
         {loading ? 'Озвучка…' : playing ? 'Стоп' : 'Прослушать'}
-      </Text>
+      </Text>}
     </Pressable>
   );
 }
@@ -127,11 +138,11 @@ function TranslationToggle({ translation }: { translation: string }) {
   return (
     <View style={{ width: '100%' }}>
       <Pressable onPress={() => setOpen((v) => !v)} style={s.transToggle}>
-        <Languages size={11} color="rgba(255,255,255,0.5)" />
+        <Languages size={11} color="#5D686F" />
         <Text style={s.transToggleText}>{open ? 'Скрыть перевод' : 'Показать перевод'}</Text>
         <ChevronDown
           size={11}
-          color="rgba(255,255,255,0.5)"
+          color="#5D686F"
           style={{ transform: [{ rotate: open ? '180deg' : '0deg' }] }}
         />
       </Pressable>
@@ -168,7 +179,9 @@ function roleKind(role: unknown): RoleKind {
   return 'other';
 }
 
-export function ChatMessage({ message, language }: { message: AIMessage; language?: string }) {
+export function ChatMessage({ message, language, showAvatar = true, audioDisabled = false, playbackRate = 1, onPlaybackChange, compact = false }: {
+  message: AIMessage; language?: string; showAvatar?: boolean; audioDisabled?: boolean; compact?: boolean; playbackRate?: number; onPlaybackChange?: (playing: boolean, text: string) => void;
+}) {
   const kind = roleKind(message.role);
   const isUser = kind === 'user';
   const isSystem = kind === 'system';
@@ -176,30 +189,33 @@ export function ChatMessage({ message, language }: { message: AIMessage; languag
 
   return (
     <View style={[s.row, { flexDirection: isUser ? 'row-reverse' : 'row' }]}>
-      {isUser ? (
+      {showAvatar && (isUser ? (
         <LinearGradient colors={CTA} style={s.avatar}>
           <UserIcon size={15} color="#fff" />
         </LinearGradient>
       ) : (
         <View style={[s.avatar, glass]}>
-          <Bot size={15} color="#fff" />
+          <Bot size={15} color="#2FA8E6" />
         </View>
-      )}
+      ))}
 
       <View style={[s.col, { alignItems: isUser ? 'flex-end' : 'flex-start' }]}>
+        <View style={[s.messageLine, isUser && s.messageLineUser]}>
         {isUser ? (
-          <LinearGradient colors={CTA} style={[s.bubble, s.bubbleUser]}>
-            <Markdown style={mdUser}>{message.content || ' '}</Markdown>
+          <LinearGradient colors={CTA} style={[s.bubble, s.bubbleUser, compact && s.compactBubble]}>
+            <Markdown style={compact ? mdUserCompact : mdUser}>{message.content || ' '}</Markdown>
           </LinearGradient>
         ) : (
-          <View style={[s.bubble, s.bubbleAI, glass]}>
-            <Markdown style={mdAI}>{message.content || ' '}</Markdown>
+          <View style={[s.bubble, s.bubbleAI, glass, compact && s.compactBubble]}>
+            <Markdown style={compact ? mdCompact : mdAI}>{message.content || ' '}</Markdown>
           </View>
         )}
 
-        {!isUser && message.content ? (
-          <SpeechButton text={message.content} language={language} />
+        {compact && !isUser && message.content && !audioDisabled ? (
+          <SpeechButton text={message.content} language={language} rate={playbackRate} onPlaybackChange={onPlaybackChange} compact={compact} />
         ) : null}
+        </View>
+        {!compact && !isUser && message.content && !audioDisabled ? <SpeechButton text={message.content} language={language} rate={playbackRate} onPlaybackChange={onPlaybackChange} /> : null}
         {!isUser && message.corrections && message.corrections.length > 0 && (
           <CorrectionsList corrections={message.corrections} />
         )}
@@ -218,39 +234,46 @@ const s = StyleSheet.create({
   avatar: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
   col: { flex: 1, gap: 6 },
   bubble: { borderRadius: 18, paddingHorizontal: 13, paddingVertical: 9, maxWidth: '88%' },
+  messageLine: { flexDirection: 'row', alignItems: 'flex-end', gap: 6, width: '100%' },
+  messageLineUser: { justifyContent: 'flex-end' },
+  compactBubble: { maxWidth: '78%', paddingHorizontal: 11, paddingVertical: 8, borderRadius: 16 },
+  audioCompact: { width: 38, height: 38, justifyContent: 'center', borderRadius: 19, paddingHorizontal: 0, paddingVertical: 0 },
   bubbleUser: {},
   bubbleAI: {},
   audioBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 6, alignSelf: 'flex-start' },
-  audioBtnText: { color: 'rgba(255,255,255,0.7)', fontSize: 12, fontWeight: '600' },
+  audioBtnText: { color: '#5D686F', fontSize: 12, fontFamily: 'Nunito_600SemiBold' },
   corrections: {
     borderRadius: 14, paddingHorizontal: 12, paddingVertical: 9, gap: 6,
     backgroundColor: 'rgba(245,158,11,0.08)', borderWidth: 1, borderColor: 'rgba(245,158,11,0.25)', width: '100%',
   },
   corrHeader: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  corrLabel: { color: '#f59e0b', fontSize: 10, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.6 },
+  corrLabel: { color: '#f59e0b', fontSize: 10, fontFamily: 'Nunito_800ExtraBold', textTransform: 'uppercase', letterSpacing: 0.6 },
   corrRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
   corrOrigWrap: { backgroundColor: 'rgba(248,113,113,0.15)', borderRadius: 7, paddingHorizontal: 6, paddingVertical: 2 },
   corrOrig: { color: '#f87171', fontSize: 12, fontFamily: 'monospace', textDecorationLine: 'line-through' },
-  corrArrow: { color: 'rgba(255,255,255,0.5)', fontWeight: '700' },
+  corrArrow: { color: '#5D686F', fontFamily: 'Nunito_700Bold' },
   corrFixWrap: { backgroundColor: 'rgba(16,185,129,0.15)', borderRadius: 7, paddingHorizontal: 6, paddingVertical: 2 },
   corrFix: { color: '#10b981', fontSize: 12, fontFamily: 'monospace' },
-  corrExpl: { color: 'rgba(255,255,255,0.55)', fontSize: 11, fontWeight: '500' },
+  corrExpl: { color: '#5D686F', fontSize: 11, fontFamily: 'Nunito_600SemiBold' },
   transToggle: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 4, paddingVertical: 4 },
-  transToggleText: { color: 'rgba(255,255,255,0.5)', fontSize: 12, fontWeight: '600' },
+  transToggleText: { color: '#5D686F', fontSize: 12, fontFamily: 'Nunito_600SemiBold' },
   transBox: { borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8, marginTop: 2 },
-  transText: { color: 'rgba(255,255,255,0.75)', fontSize: 13, fontWeight: '500', fontStyle: 'italic' },
+  transText: { color: '#5D686F', fontSize: 13, fontFamily: 'Nunito_600SemiBold', fontStyle: 'italic' },
 });
 
 const mdBase = {
-  body: { color: '#fff', fontSize: 14, fontWeight: '500' as const, lineHeight: 20 },
+  body: { color: '#171A1C', fontSize: 14, fontFamily: 'Nunito_600SemiBold' as const, lineHeight: 20 },
   paragraph: { marginTop: 0, marginBottom: 0 },
-  link: { color: '#FFD84A', textDecorationLine: 'underline' as const },
-  code_inline: { backgroundColor: 'rgba(255,255,255,0.12)', color: '#fff', borderRadius: 4, paddingHorizontal: 4, fontFamily: 'monospace', fontSize: 12 },
-  fence: { backgroundColor: 'rgba(255,255,255,0.06)', color: '#fff', borderRadius: 8, padding: 8, fontFamily: 'monospace', fontSize: 12 },
+  link: { color: '#1789BD', textDecorationLine: 'underline' as const },
+  code_inline: { backgroundColor: '#EAF8FF', color: '#171A1C', borderRadius: 4, paddingHorizontal: 4, fontFamily: 'monospace', fontSize: 12 },
+  fence: { backgroundColor: '#EAF8FF', color: '#171A1C', borderRadius: 8, padding: 8, fontFamily: 'monospace', fontSize: 12 },
   list_item: { marginBottom: 2 },
   bullet_list: { marginVertical: 2 },
   ordered_list: { marginVertical: 2 },
 };
 
 const mdAI = StyleSheet.create({ ...mdBase });
-const mdUser = StyleSheet.create({ ...mdBase, body: { color: '#fff', fontSize: 14, fontWeight: '500' as const, lineHeight: 20 } });
+const mdUser = StyleSheet.create({ ...mdBase, body: { color: '#FFFFFF', fontSize: 14, fontFamily: 'Nunito_600SemiBold' as const, lineHeight: 20 } });
+
+const mdCompact = StyleSheet.create({ ...mdBase, body: { ...mdBase.body, fontSize: 13, lineHeight: 19 } });
+const mdUserCompact = StyleSheet.create({ ...mdBase, body: { ...mdBase.body, color: '#FFFFFF', fontSize: 13, lineHeight: 19 } });

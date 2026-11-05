@@ -49,5 +49,7 @@ assert(!calls.some(call => call[0] === 'router' || call[0] === 'tab'));
 setup('practice'); buttons.find(button => button.accessibilityLabel === 'tabs.profile').onPress();
 assert(calls.some(call => call[0] === 'tab' && call[1] === 'profile'));
 setup('practice'); buttons.find(button => button.accessibilityLabel === 'tabs.ai').onPress();
+assert(calls.some(call => call[0] === 'tab' && call[1] === 'ai'));
+setup('practice'); buttons.find(button => button.accessibilityLabel === 'tabs.social').onPress();
 assert.equal(calls.length, 0);
-console.log('PASS: Practice always opens its index, including Mistakes as stack root; prevention and other tabs unchanged');
+console.log('PASS: Practice opens its index; AI is available; only Social is coming soon; prevention and Profile navigation preserved');

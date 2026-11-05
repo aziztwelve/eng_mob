@@ -57,7 +57,7 @@ export default function PracticeSessionScreen() {
 
   const [items, setItems] = useState<PracticeItem[]>([]);
   const [index, setIndex] = useState(0);
-  const [results, setResults] = useState<Array<{ correct: boolean }>>([]);
+  const [results, setResults] = useState<{ correct: boolean }[]>([]);
   const startedAtRef = useRef<number>(0);
 
   // На mount запрашиваем сессию ровно один раз.
@@ -87,8 +87,8 @@ export default function PracticeSessionScreen() {
   if (generate.isPending && items.length === 0) {
     return (
       <Container>
-        <View className="bg-card rounded-3xl border-4 border-border p-12 items-center justify-center">
-          <ActivityIndicator color="#FFD84A" />
+        <View className="bg-mieo-surface rounded-3xl border-[1.5px] border-b-4 border-mieo-stroke p-12 items-center justify-center">
+          <ActivityIndicator color="#2FA8E6" />
         </View>
       </Container>
     );
@@ -96,15 +96,15 @@ export default function PracticeSessionScreen() {
   if (generate.isError) {
     return (
       <Container>
-        <View className="bg-card rounded-3xl border-4 border-border p-8 items-center gap-3">
-          <Text className="text-foreground font-bold text-center">
+        <View className="bg-mieo-surface rounded-3xl border-[1.5px] border-b-4 border-mieo-stroke p-8 items-center gap-3">
+          <Text className="text-mieo-heading font-nunito-bold text-center">
             {t('practice.gen_failed')}
           </Text>
           <Pressable
             onPress={() => generate.mutate({ size: SESSION_SIZE })}
-            className="bg-primary rounded-2xl px-5 py-3 active:opacity-80"
+            className="bg-mieo-primary rounded-2xl px-5 py-3 active:opacity-80"
           >
-            <Text className="text-primary-foreground font-black">
+            <Text className="text-white font-nunito-black">
               {t('practice.retry')}
             </Text>
           </Pressable>
@@ -115,17 +115,17 @@ export default function PracticeSessionScreen() {
   if (items.length === 0) {
     return (
       <Container>
-        <View className="bg-card rounded-3xl border-4 border-border p-8 items-center gap-3">
-          <Clock size={48} color="#9ca3af" />
-          <Text className="text-foreground font-black text-2xl text-center">
+        <View className="bg-mieo-surface rounded-3xl border-[1.5px] border-b-4 border-mieo-stroke p-8 items-center gap-3">
+          <Clock size={48} color="#5D686F" />
+          <Text className="text-mieo-heading font-nunito-black text-2xl text-center">
             {t('practice.nothing_now')}
           </Text>
-          <Text className="text-muted-foreground font-medium text-center">
+          <Text className="text-mieo-body font-nunito-medium text-center">
             {t('practice.nothing_now_desc')}
           </Text>
           <Link href="/practice" asChild>
-            <Pressable className="bg-primary rounded-2xl px-5 py-3 mt-2 active:opacity-80">
-              <Text className="text-primary-foreground font-black">
+            <Pressable className="bg-mieo-primary rounded-2xl px-5 py-3 mt-2 active:opacity-80">
+              <Text className="text-white font-nunito-black">
                 {t('practice.to_practice')}
               </Text>
             </Pressable>
@@ -139,12 +139,12 @@ export default function PracticeSessionScreen() {
     const correct = results.filter((r) => r.correct).length;
     return (
       <Container>
-        <View className="bg-card rounded-3xl border-4 border-border p-8 items-center gap-3">
-          <Sparkles size={48} color="#FFD84A" />
-          <Text className="text-foreground font-black text-3xl text-center">
+        <View className="bg-mieo-surface rounded-3xl border-[1.5px] border-b-4 border-mieo-stroke p-8 items-center gap-3">
+          <Sparkles size={48} color="#2FA8E6" />
+          <Text className="text-mieo-heading font-nunito-black text-3xl text-center">
             {t('practice.finished')}
           </Text>
-          <Text className="text-muted-foreground font-medium text-center">
+          <Text className="text-mieo-body font-nunito-medium text-center">
             {t('practice.correct_of', { correct, total })}
           </Text>
           <View className="flex-row flex-wrap gap-2 justify-center pt-2">
@@ -167,15 +167,15 @@ export default function PracticeSessionScreen() {
                   },
                 );
               }}
-              className="bg-primary rounded-2xl px-5 py-3 active:opacity-80"
+              className="bg-mieo-primary rounded-2xl px-5 py-3 active:opacity-80"
             >
-              <Text className="text-primary-foreground font-black">
+              <Text className="text-white font-nunito-black">
                 {t('practice.another')}
               </Text>
             </Pressable>
             <Link href="/practice" asChild>
-              <Pressable className="bg-card border-2 border-border rounded-2xl px-5 py-3 active:opacity-80">
-                <Text className="text-foreground font-black">{t('practice.to_practice')}</Text>
+              <Pressable className="bg-mieo-surface border-2 border-mieo-stroke rounded-2xl px-5 py-3 active:opacity-80">
+                <Text className="text-mieo-heading font-nunito-black">{t('practice.to_practice')}</Text>
               </Pressable>
             </Link>
           </View>
@@ -206,15 +206,15 @@ export default function PracticeSessionScreen() {
 function Container({ children }: { children: React.ReactNode }) {
   const { t } = useTranslation();
   return (
-    <View className="flex-1 bg-background">
+    <View className="flex-1 bg-transparent">
       <Stack.Screen options={{ title: t('practice.session_title') }} />
       <ScrollView contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 80 }}>
         <Pressable
           onPress={() => router.back()}
           className="flex-row items-center gap-1 self-start active:opacity-60"
         >
-          <ArrowLeft size={16} color="#9ca3af" />
-          <Text className="text-muted-foreground font-bold">{t('practice.to_practice')}</Text>
+          <ArrowLeft size={16} color="#5D686F" />
+          <Text className="text-mieo-body font-nunito-bold">{t('practice.to_practice')}</Text>
         </Pressable>
         {children}
       </ScrollView>
@@ -233,13 +233,13 @@ function ProgressBar({
 }) {
   return (
     <View className="flex-row items-center gap-3">
-      <View className="flex-1 h-3 bg-muted rounded-full overflow-hidden border-2 border-border">
+      <View className="flex-1 h-3 bg-mieo-bg rounded-full overflow-hidden border-2 border-mieo-stroke">
         <View
-          className="h-full bg-primary"
+          className="h-full bg-mieo-primary"
           style={{ width: `${pct}%` }}
         />
       </View>
-      <Text className="text-foreground font-black text-sm tabular-nums">
+      <Text className="text-mieo-heading font-nunito-black text-sm tabular-nums">
         {index + 1} / {total}
       </Text>
     </View>
@@ -251,9 +251,9 @@ function SourceBadge({ item }: { item: PracticeItem }) {
   const src = practiceSourceLabel(item.source);
   if (src === 'overdue') {
     return (
-      <View className="flex-row items-center gap-1 bg-primary rounded-full px-3 py-1">
+      <View className="flex-row items-center gap-1 bg-mieo-primary rounded-full px-3 py-1">
         <Clock size={12} color="#ffffff" />
-        <Text className="text-primary-foreground font-bold text-xs">
+        <Text className="text-white font-nunito-bold text-xs">
           {t('practice.src_overdue')}
         </Text>
       </View>
@@ -263,7 +263,7 @@ function SourceBadge({ item }: { item: PracticeItem }) {
     return (
       <View className="flex-row items-center gap-1 bg-orange-500 rounded-full px-3 py-1">
         <AlertTriangle size={12} color="#ffffff" />
-        <Text className="text-white font-bold text-xs">{t('practice.src_mistake')}</Text>
+        <Text className="text-white font-nunito-bold text-xs">{t('practice.src_mistake')}</Text>
       </View>
     );
   }
@@ -271,7 +271,7 @@ function SourceBadge({ item }: { item: PracticeItem }) {
     return (
       <View className="flex-row items-center gap-1 bg-amber-500 rounded-full px-3 py-1">
         <TrendingDown size={12} color="#ffffff" />
-        <Text className="text-white font-bold text-xs">{t('practice.src_weak')}</Text>
+        <Text className="text-white font-nunito-bold text-xs">{t('practice.src_weak')}</Text>
       </View>
     );
   }
@@ -339,34 +339,34 @@ function CurrentStepCard({
 
   if (step.isLoading) {
     return (
-      <View className="bg-card rounded-3xl border-4 border-border p-12 items-center justify-center">
-        <ActivityIndicator color="#FFD84A" />
+      <View className="bg-mieo-surface rounded-3xl border-[1.5px] border-b-4 border-mieo-stroke p-12 items-center justify-center">
+        <ActivityIndicator color="#2FA8E6" />
       </View>
     );
   }
   if (step.isError || !step.data?.step) {
     return (
-      <View className="bg-card rounded-3xl border-4 border-border p-6 items-center gap-3">
-        <Text className="text-foreground font-bold text-center">
+      <View className="bg-mieo-surface rounded-3xl border-[1.5px] border-b-4 border-mieo-stroke p-6 items-center gap-3">
+        <Text className="text-mieo-heading font-nunito-bold text-center">
           {t('practice.step_failed')}
         </Text>
         <Pressable
           onPress={onContinue}
-          className="bg-primary rounded-2xl px-5 py-3 active:opacity-80"
+          className="bg-mieo-primary rounded-2xl px-5 py-3 active:opacity-80"
         >
-          <Text className="text-primary-foreground font-black">{t('cards.skip')}</Text>
+          <Text className="text-white font-nunito-black">{t('cards.skip')}</Text>
         </Pressable>
       </View>
     );
   }
   if (!interactive) {
     return (
-      <View className="bg-card rounded-3xl border-4 border-border p-6 gap-3">
+      <View className="bg-mieo-surface rounded-3xl border-[1.5px] border-b-4 border-mieo-stroke p-6 gap-3">
         <SourceBadge item={item} />
-        <Text className="text-foreground font-black text-xl">
+        <Text className="text-mieo-heading font-nunito-black text-xl">
           {stepTitle(step.data.step.type, i18n.language)}
         </Text>
-        <Text className="text-muted-foreground font-medium">
+        <Text className="text-mieo-body font-nunito-medium">
           {t('practice.non_interactive')}
         </Text>
         <Pressable
@@ -374,9 +374,9 @@ function CurrentStepCard({
             onResult(true);
             onContinue();
           }}
-          className="bg-primary rounded-2xl px-5 py-3 self-start active:opacity-80"
+          className="bg-mieo-primary rounded-2xl px-5 py-3 self-start active:opacity-80"
         >
-          <Text className="text-primary-foreground font-black">{t('lesson.feedback.next')}</Text>
+          <Text className="text-white font-nunito-black">{t('lesson.feedback.next')}</Text>
         </Pressable>
       </View>
     );
@@ -386,12 +386,12 @@ function CurrentStepCard({
     <View className="gap-3">
       <View className="flex-row items-center gap-2 flex-wrap">
         <SourceBadge item={item} />
-        <View className="bg-card border-2 border-border rounded-full px-3 py-1">
-          <Text className="text-foreground text-xs font-bold uppercase">
+        <View className="bg-mieo-surface border-2 border-mieo-stroke rounded-full px-3 py-1">
+          <Text className="text-mieo-heading text-xs font-nunito-bold uppercase">
             {step.data.step.type}
           </Text>
         </View>
-        <Text className="text-foreground font-black text-xl">
+        <Text className="text-mieo-heading font-nunito-black text-xl">
           {stepTitle(step.data.step.type, i18n.language)}
         </Text>
       </View>

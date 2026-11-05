@@ -1,68 +1,23 @@
-import React, { useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  Pressable,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import React from 'react';
+import { ActivityIndicator, Alert, FlatList, Pressable, RefreshControl, StatusBar, Text, View } from 'react-native';
 import { Stack, router } from 'expo-router';
-import { MessageSquarePlus, Trash2 } from 'lucide-react-native';
+import { ArrowLeft, ChevronRight, History, MessageCircle, Trash2 } from 'lucide-react-native';
 import Toast from 'react-native-toast-message';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
-import { QuotaWidget, hasQuotaLeft } from '@/components/ai/quota-widget';
-import {
-  useAIConversations,
-  useAIQuota,
-  useDeleteConversation,
-  useStartConversation,
-} from '@/hooks/use-ai';
-import type { AIConversation } from '@/types/api';
-import { AI_TARGET_LANGS, DEFAULT_TARGET_LANG } from '@/lib/ai-languages';
-import { LangPills } from '@/components/ai/lang-pills';
-import {
-  glass,
-  SunsetHeader,
-  SunsetSubhead,
-  CtaButton,
-  CTA,
-} from '@/components/sunset';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
 
+import { useAIConversationHistory, useDeleteConversation } from '@/hooks/use-ai';
+import type { AIConversation } from '@/types/api';
+import { tsToDate } from '@/lib/api-client';
+
 export default function ChatListScreen() {
-  const { t } = useTranslation();
-  const [targetLang, setTargetLang] = useState(DEFAULT_TARGET_LANG);
+  const { t, i18n } = useTranslation();
   const insets = useSafeAreaInsets();
-
-  const list = useAIConversations({ limit: 50 });
-  const quota = useAIQuota();
-  const startMut = useStartConversation();
+  const list = useAIConversationHistory();
   const deleteMut = useDeleteConversation();
-
-  const conversations = list.data?.conversations ?? [];
-  const canChat = hasQuotaLeft(quota.data, 'chat');
-
-  const handleNew = async () => {
-    if (!canChat) return;
-    try {
-      const resp = await startMut.mutateAsync({
-        scenario: 'free_chat',
-        target_language: targetLang,
-      });
-      router.push(`/ai/chat/${resp.conversation.id}`);
-    } catch (err) {
-      Toast.show({
-        type: 'error',
-        text1: t('ai.start_failed'),
-        text2: err instanceof Error ? err.message : undefined,
-      });
-    }
-  };
+  const conversations = [...new Map(
+    (list.data?.pages.flatMap(page => page.conversations ?? []) ?? []).map(item => [item.id, item]),
+  ).values()];
 
   const handleDelete = (id: string) => {
     Alert.alert(t('ai.delete_dialog'), t('ai.delete_desc'), [
@@ -74,167 +29,135 @@ export default function ChatListScreen() {
           try {
             await deleteMut.mutateAsync(id);
             Toast.show({ type: 'success', text1: t('ai.dialog_deleted') });
-          } catch (err) {
-            Toast.show({
-              type: 'error',
-              text1: t('common.delete_failed'),
-              text2: err instanceof Error ? err.message : undefined,
-            });
+          } catch (error) {
+            Toast.show({ type: 'error', text1: t('common.delete_failed'), text2: error instanceof Error ? error.message : undefined });
           }
         },
       },
     ]);
   };
 
+  const retry = () => { void list.refetch(); };
+  const loadMore = () => {
+    if (list.hasNextPage && !list.isFetching && !list.isFetchNextPageError) void list.fetchNextPage();
+  };
+
   return (
-    <View style={{ flex: 1 }}>
+    <View className="flex-1 px-5 pt-2">
       <Stack.Screen options={{ headerShown: false }} />
-      <StatusBar barStyle="light-content" />
-      <ScrollView
+      <StatusBar barStyle="dark-content" />
+      <View className="mb-4 flex-row items-center gap-3">
+        <Pressable
+          onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)/ai')}
+          accessibilityRole="button"
+          accessibilityLabel={t('common.back')}
+          className="h-11 w-11 items-center justify-center rounded-full border border-[#C9EDFF] bg-white"
+        >
+          <ArrowLeft size={22} color="#247FA8" />
+        </Pressable>
+        <Text className="flex-1 font-nunito-black text-[26px] text-[#102350]">{t('ai.history_title')}</Text>
+      </View>
+      <FlatList
+        className="flex-1"
+        data={conversations}
+        keyExtractor={item => item.id}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 100 + insets.bottom }}
-      >
-        <SunsetHeader title="Свободный чат" />
-
-        <QuotaWidget compact />
-
-        {/* Новый чат */}
-        <View style={[s.card, glass, { marginTop: 18 }]}>
-          <View style={s.cardHeader}>
-            <MessageSquarePlus size={18} color="#FFD84A" />
-            <Text style={s.cardTitle}>{t('ai.new_chat')}</Text>
+        contentContainerStyle={{ paddingBottom: 110 + insets.bottom }}
+        ItemSeparatorComponent={() => <View className="h-3" />}
+        refreshControl={<RefreshControl refreshing={list.isRefetching && !list.isFetchingNextPage} onRefresh={retry} tintColor="#1789BD" colors={['#1789BD']} />}
+        onEndReached={loadMore}
+        onEndReachedThreshold={0.4}
+        ListHeaderComponent={
+          <View className="mb-4 gap-3">
+            <Text className="font-nunito-semibold text-sm leading-5 text-[#526879]">{t('ai.history_hint')}</Text>
+            {list.isRefetchError && conversations.length > 0 && <RetryCard label={t('common.load_failed')} retry={retry} />}
           </View>
-          <Text style={s.label}>{t('ai.lang')}</Text>
-          <LangPills
-            options={AI_TARGET_LANGS}
-            value={targetLang}
-            onChange={setTargetLang}
-            variant="full"
-          />
-          <View style={{ marginTop: 14 }}>
-            <CtaButton
-              label={startMut.isPending ? 'Создаём…' : 'Начать'}
-              onPress={handleNew}
-              block
-            />
-          </View>
-          {!canChat && (
-            <Text style={s.limitText}>
-              Лимит чатов на сегодня исчерпан. Сбрасывается завтра.
-            </Text>
-          )}
-        </View>
-
-        {/* История */}
-        <SunsetSubhead title="История" />
-
-        {list.isLoading ? (
-          <View style={[s.emptyCard, glass]}>
-            <ActivityIndicator color="#FFD84A" />
-          </View>
-        ) : conversations.length === 0 ? (
-          <View style={[s.emptyCard, glass]}>
-            <Text style={{ fontSize: 36, marginBottom: 8 }}>💬</Text>
-            <Text style={s.emptyTitle}>{t('ai.empty')}</Text>
-            <Text style={s.emptyText}>{t('ai.start_first')}</Text>
-          </View>
+        }
+        ListEmptyComponent={list.isPending ? (
+          <View className="items-center rounded-[20px] bg-white p-8"><ActivityIndicator color="#1789BD" /></View>
+        ) : list.isError ? (
+          <RetryCard label={t('common.load_failed')} retry={retry} />
         ) : (
-          <View style={{ gap: 10 }}>
-            {conversations.map((c) => (
-              <ConversationRow
-                key={c.id}
-                conv={c}
-                onPress={() => router.push(`/ai/chat/${c.id}`)}
-                onDelete={() => handleDelete(c.id)}
-                deleting={deleteMut.isPending}
-              />
-            ))}
+          <View className="items-center gap-3 rounded-[20px] border border-[#C9EDFF] bg-white px-6 py-10">
+            <History size={36} color="#1789BD" />
+            <Text className="text-center font-nunito-extrabold text-lg text-[#102350]">{t('ai.empty')}</Text>
+            <Text className="text-center font-nunito-semibold text-sm leading-5 text-[#526879]">{t('ai.history_empty_hint')}</Text>
           </View>
         )}
-      </ScrollView>
+        renderItem={({ item }) => (
+          <ConversationRow
+            conv={item}
+            locale={i18n.resolvedLanguage}
+            onPress={() => router.push(item.scenario === 'free_chat' ? `/free-talk/${item.id}` : `/ai/chat/${item.id}`)}
+            onDelete={() => handleDelete(item.id)}
+            deleting={deleteMut.isPending}
+            deletingThis={deleteMut.isPending && deleteMut.variables === item.id}
+          />
+        )}
+        ListFooterComponent={list.isFetchingNextPage ? (
+          <ActivityIndicator className="py-5" color="#1789BD" />
+        ) : list.isFetchNextPageError ? (
+          <View className="mt-3"><RetryCard label={t('common.load_failed')} retry={() => { void list.fetchNextPage(); }} /></View>
+        ) : null}
+      />
     </View>
   );
 }
 
-function ConversationRow({
-  conv,
-  onPress,
-  onDelete,
-  deleting,
-}: {
+function RetryCard({ label, retry }: { label: string; retry: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <View accessibilityRole="alert" className="gap-3 rounded-[20px] border border-[#C9EDFF] bg-white p-5">
+      <Text className="font-nunito-bold text-[#B33D3D]">{label}</Text>
+      <Pressable onPress={retry} accessibilityRole="button" className="min-h-11 items-center justify-center rounded-full bg-[#EAF8FF] px-4">
+        <Text className="font-nunito-extrabold text-[#1789BD]">{t('practice.retry')}</Text>
+      </Pressable>
+    </View>
+  );
+}
+
+function ConversationRow({ conv, locale, onPress, onDelete, deleting, deletingThis }: {
   conv: AIConversation;
+  locale?: string;
   onPress: () => void;
   onDelete: () => void;
   deleting: boolean;
+  deletingThis: boolean;
 }) {
-  const isRoleplay = conv.scenario.startsWith('roleplay_');
-  const isTutor = conv.scenario === 'tutor_qa';
-  const tag = isTutor ? 'Tutor' : isRoleplay ? 'Roleplay' : 'Free chat';
-  const tagColor = isTutor ? '#f59e0b' : isRoleplay ? '#f43f5e' : '#FFD84A';
+  const { t } = useTranslation();
+  const tag = conv.scenario === 'tutor_qa' ? 'Tutor' : conv.scenario.startsWith('roleplay_') ? 'Roleplay' : 'Free Talk';
+  const title = !conv.title || conv.title === 'Free chat' ? 'Free Talk' : conv.title;
+  const date = formatDate(conv.last_message_at || conv.started_at, locale);
 
   return (
-    <View style={[s.row, glass]}>
-      <Pressable onPress={onPress} style={{ flex: 1 }}>
-        <View style={s.rowTop}>
-          <Text style={s.rowTitle} numberOfLines={1}>
-            {conv.title || `Чат от ${formatDate(conv.started_at)}`}
-          </Text>
-          <View style={[s.tag, { backgroundColor: 'rgba(255,255,255,0.1)' }]}>
-            <Text style={[s.tagText, { color: tagColor }]}>{tag}</Text>
-          </View>
-          {conv.target_language ? (
-            <View style={[s.tag, { backgroundColor: 'rgba(255,255,255,0.1)' }]}>
-              <Text style={s.tagText}>{conv.target_language.toUpperCase()}</Text>
-            </View>
-          ) : null}
+    <View className="flex-row items-center rounded-[20px] border border-[#C9EDFF] bg-white">
+      <Pressable onPress={onPress} accessibilityRole="button" className="min-h-[96px] flex-1 flex-row items-center gap-3 py-4 pl-4 pr-2">
+        <View className="h-11 w-11 items-center justify-center rounded-full bg-[#EAF8FF]">
+          <MessageCircle size={22} color="#1789BD" />
         </View>
-        <Text style={s.rowMeta}>
-          {conv.message_count} сообщений
-          {conv.last_message_at ? ` · ${formatDate(conv.last_message_at)}` : ''}
-        </Text>
+        <View className="flex-1 gap-1.5">
+          <Text numberOfLines={2} className="font-nunito-extrabold text-base leading-5 text-[#102350]">{title}</Text>
+          <View className="flex-row flex-wrap items-center gap-2">
+            <Text className="font-nunito-bold text-xs text-[#1789BD]">{tag}</Text>
+            {conv.target_language && <Text className="font-nunito-bold text-xs text-[#526879]">{conv.target_language.toUpperCase()}</Text>}
+          </View>
+          <Text className="font-nunito-semibold text-xs leading-4 text-[#526879]">{t('ai.history_messages', { count: conv.message_count ?? 0 })}{date ? ` · ${date}` : ''}</Text>
+        </View>
+        <ChevronRight size={18} color="#247FA8" />
       </Pressable>
-      <Pressable
-        onPress={onDelete}
-        disabled={deleting}
-        style={s.deleteBtn}
-        accessibilityLabel="Удалить"
-      >
-        <Trash2 size={15} color="rgba(255,255,255,0.5)" />
+      <Pressable onPress={onDelete} disabled={deleting} accessibilityRole="button" accessibilityLabel={`${t('ai.delete_dialog')}: ${title}`} className="mr-1 h-11 w-11 items-center justify-center">
+        {deletingThis ? <ActivityIndicator size="small" color="#526879" /> : <Trash2 size={17} color="#526879" />}
       </Pressable>
     </View>
   );
 }
 
-function formatDate(s?: string): string {
-  if (!s) return '';
+function formatDate(value?: string, locale?: string): string {
+  if (!value) return '';
   try {
-    return new Date(s).toLocaleDateString('ru-RU', {
-      day: 'numeric',
-      month: 'short',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+    const date = tsToDate(value);
+    return date?.toLocaleDateString(locale || 'en', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) ?? '';
   } catch {
-    return s;
+    return '';
   }
 }
-
-const s = StyleSheet.create({
-  card: { borderRadius: 22, padding: 16, gap: 10 },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 2 },
-  cardTitle: { color: '#fff', fontSize: 16, fontWeight: '800' },
-  label: { color: 'rgba(255,255,255,0.6)', fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.8 },
-  limitText: { color: '#f87171', fontSize: 13, fontWeight: '600', marginTop: 4 },
-
-  emptyCard: { borderRadius: 22, padding: 40, alignItems: 'center', marginTop: 4 },
-  emptyTitle: { color: '#fff', fontSize: 18, fontWeight: '800', marginBottom: 4 },
-  emptyText: { color: 'rgba(255,255,255,0.6)', fontSize: 14, fontWeight: '500', textAlign: 'center' },
-
-  row: { flexDirection: 'row', alignItems: 'center', borderRadius: 18, padding: 14, gap: 10 },
-  rowTop: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap', flex: 1 },
-  rowTitle: { color: '#fff', fontSize: 14, fontWeight: '700', flexShrink: 1 },
-  rowMeta: { color: 'rgba(255,255,255,0.55)', fontSize: 12, fontWeight: '500', marginTop: 4 },
-  tag: { borderRadius: 8, paddingHorizontal: 7, paddingVertical: 2 },
-  tagText: { color: 'rgba(255,255,255,0.8)', fontSize: 10, fontWeight: '800', textTransform: 'uppercase' },
-  deleteBtn: { padding: 8, borderRadius: 12 },
-});

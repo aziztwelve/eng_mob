@@ -21,7 +21,7 @@ export function ScenarioCard({
       <View style={s.header}>
         <View style={{ flex: 1, gap: 3, minWidth: 0 }}>
           <View style={s.titleRow}>
-            <Sparkles size={14} color="#FFD84A" />
+            <Sparkles size={14} color="#1789BD" />
             <Text style={s.title} numberOfLines={2}>{scenario.title}</Text>
           </View>
           <Text style={s.desc}>{scenario.description}</Text>
@@ -54,7 +54,7 @@ export function ScenarioCard({
           style={s.cta}
         >
           {loading
-            ? <ActivityIndicator size="small" color="rgba(255,255,255,0.6)" />
+            ? <ActivityIndicator size="small" color="#5D686F" />
             : <Text style={s.ctaText}>{t('ai.start')}</Text>}
         </LinearGradient>
       </Pressable>
@@ -66,16 +66,16 @@ const s = StyleSheet.create({
   card: { borderRadius: 22, padding: 16, gap: 10 },
   header: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
   titleRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 6 },
-  title: { color: '#fff', fontSize: 15, fontWeight: '800', flexShrink: 1 },
-  desc: { color: 'rgba(255,255,255,0.65)', fontSize: 13, fontWeight: '500', lineHeight: 18 },
+  title: { color: '#171A1C', fontSize: 15, fontFamily: 'Nunito_800ExtraBold', flexShrink: 1 },
+  desc: { color: '#5D686F', fontSize: 13, fontFamily: 'Nunito_600SemiBold', lineHeight: 18 },
   levelBadge: { backgroundColor: 'rgba(255,216,74,0.15)', borderRadius: 10, paddingHorizontal: 8, paddingVertical: 4 },
-  levelText: { color: '#FFD84A', fontSize: 11, fontWeight: '800', textTransform: 'uppercase' },
-  role: { color: 'rgba(255,255,255,0.65)', fontSize: 12, fontWeight: '500' },
-  roleLabel: { color: 'rgba(255,255,255,0.45)', fontWeight: '700', textTransform: 'uppercase', fontSize: 10 },
+  levelText: { color: '#1789BD', fontSize: 11, fontFamily: 'Nunito_800ExtraBold', textTransform: 'uppercase' },
+  role: { color: '#5D686F', fontSize: 12, fontFamily: 'Nunito_600SemiBold' },
+  roleLabel: { color: '#5D686F', fontFamily: 'Nunito_700Bold', textTransform: 'uppercase', fontSize: 10 },
   vocabRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   vocabPill: { borderRadius: 9, paddingHorizontal: 9, paddingVertical: 3 },
-  vocabText: { color: 'rgba(255,255,255,0.75)', fontSize: 12, fontWeight: '600' },
+  vocabText: { color: '#5D686F', fontSize: 12, fontFamily: 'Nunito_600SemiBold' },
   ctaWrap: { borderRadius: 14, overflow: 'hidden', alignSelf: 'stretch', marginTop: 2 },
   cta: { paddingVertical: 11, alignItems: 'center', justifyContent: 'center' },
-  ctaText: { color: '#fff', fontSize: 14, fontWeight: '800' },
+  ctaText: { color: '#fff', fontSize: 14, fontFamily: 'Nunito_800ExtraBold' },
 });

@@ -8,9 +8,9 @@ import { parseStepContent, type StepComponentProps } from './step-types';
 import { stepInstruction } from '@/lib/step-titles';
 
 interface CompleteChatContent {
-  dialogue: Array<{ speaker: string; text: string }>;
+  dialogue: { speaker: string; text: string }[];
   answer_speaker?: string;
-  options: Array<{ id: string; text: string; is_correct: boolean }>;
+  options: { id: string; text: string; is_correct: boolean }[];
   explanation?: string;
 }
 

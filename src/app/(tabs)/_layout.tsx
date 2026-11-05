@@ -14,7 +14,7 @@ export default function TabsLayout() {
   const pathname = usePathname();
   const isHome = pathname === "/";
   // Pages drawn on the light sky background (no purple strip under the status bar).
-  const isSky = isHome || pathname.startsWith("/practice") || pathname.startsWith("/tracks") || pathname === "/profile";
+  const isSky = isHome || pathname.startsWith("/practice") || pathname.startsWith("/tracks") || pathname === "/profile" || pathname.startsWith("/ai") || pathname.startsWith("/social");
   const isWordBankLesson = /^\/practice\/vocabulary\/[^/]+\/learn\/?$/.test(pathname);
 
   // === Auth gate (option B): регистрация обязательна для входа в app. ===
@@ -51,7 +51,7 @@ export default function TabsLayout() {
     return (
       <SunsetBg>
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <ActivityIndicator color="#FFD84A" size="large" />
+          <ActivityIndicator color="#2FA8E6" size="large" />
         </View>
       </SunsetBg>
     );
@@ -83,11 +83,6 @@ export default function TabsLayout() {
             {/* Служебные/вложенные маршруты — в меню не показываются
                 (FluentBottomTabs фильтрует их по ROUTE_TO_TAB_ID). */}
             <Tabs.Screen name="tracks" options={{ tabBarButton: () => null, popToTopOnBlur: true }} />
-            <Tabs.Screen name="courses" options={{ tabBarButton: () => null }} />
-            <Tabs.Screen name="home-candy" options={{ tabBarButton: () => null }} />
-            <Tabs.Screen name="home-neon" options={{ tabBarButton: () => null }} />
-            <Tabs.Screen name="home-ruya" options={{ tabBarButton: () => null }} />
-            <Tabs.Screen name="home-ruya-pro" options={{ tabBarButton: () => null }} />
           </Tabs>
         </View>
       </SafeAreaView>

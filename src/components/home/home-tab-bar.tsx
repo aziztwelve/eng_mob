@@ -18,7 +18,8 @@ const ICONS = [
   { active: require('../../../assets/figma/home-map/nav-user-active.svg'), inactive: require('../../../assets/figma/home-map/nav-user-inactive.svg') },
 ];
 const ROUTES = ['index', 'practice', 'ai', 'social', 'profile'];
-const COMING_SOON_TAB_INDICES = new Set([2, 3]);
+// League remains marked as coming soon.
+const COMING_SOON_TAB_INDICES = new Set([3]);
 
 // Design geometry: bar 300x60, 6pt padding, 48pt tabs with 12pt gaps.
 const TAB = 48;

@@ -1,32 +1,18 @@
-import { twMerge } from 'tailwind-merge';
 import React from 'react';
-import { Alert, View, Text, ScrollView, Pressable } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
 import { Stack } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Snowflake } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ProfileQueryError } from '@/components/profile/profile-ui';
 import { useUserStats } from '@/hooks/use-user-stats';
-import { useUseFreeze } from '@/hooks/use-streak';
 import { StreakCalendar } from '@/components/gamification';
 
 export default function StreakScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const { data: stats } = useUserStats();
-  const useFreeze = useUseFreeze();
-
-  const canFreeze = !!stats && stats.streak_freezes > 0 && !useFreeze.isPending;
-
-  const onFreeze = () => {
-    Alert.alert(
-      t('strk.freeze_title'),
-      t('strk.freeze_q'),
-      [
-        { text: t('common.cancel'), style: 'cancel' },
-        { text: t('strk.activate'), onPress: () => useFreeze.mutate() },
-      ]
-    );
-  };
+  const statsQuery = useUserStats();
+  const stats = statsQuery.data;
 
   return (
     <View className="flex-1">
@@ -36,16 +22,16 @@ export default function StreakScreen() {
         contentContainerClassName="w-full max-w-[600px] self-center p-4 gap-4"
         contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}
       >
+        {statsQuery.isError ? <ProfileQueryError onRetry={() => { void statsQuery.refetch(); }} /> : statsQuery.isLoading ? <ActivityIndicator color="#1AB3FF" /> : <>
         <View className="flex-row justify-between items-center">
           <Text className="text-mieo-heading text-[28px] font-nunito-black">{t('strk.title')}</Text>
-          <Pressable onPress={onFreeze} disabled={!canFreeze}>
-            <View className={twMerge("bg-mieo-surface border-[1.5px] border-[#C9EDFF]", "flex-row items-center gap-[8px] rounded-[18px] px-[16px] py-[10px]", (!canFreeze ? "opacity-[0.45]" : undefined))}>
-              <Snowflake size={16} color="#9FE8FF" />
-              <Text className="text-mieo-heading font-nunito-black text-[13px]">{t('strk.freeze', { count: stats?.streak_freezes ?? 0 })}</Text>
-            </View>
-          </Pressable>
+          <View className="flex-row items-center gap-2 rounded-xl border border-[#C9EDFF] bg-mieo-surface px-4 py-3">
+            <Snowflake size={18} color="#1AB3FF" />
+            <Text className="font-nunito-bold text-sm text-mieo-heading">{t('strk.freeze', { count: stats?.streak_freezes ?? 0 })}</Text>
+          </View>
         </View>
 
+        <Text className="font-nunito-medium text-sm text-mieo-body">{t('profile.freeze_auto')}</Text>
         {/* Big streak hero */}
         <View
           className="bg-mieo-surface border-[1.5px] border-[#C9EDFF] rounded-[24px] py-[28px] items-center"
@@ -75,6 +61,7 @@ export default function StreakScreen() {
             <Legend color="#E3E6E8" label={t('strk.legend_miss')} />
           </View>
         </View>
+        </>}
       </ScrollView>
     </View>
   );

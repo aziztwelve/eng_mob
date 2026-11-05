@@ -13,44 +13,60 @@ import {
 } from 'react-native';
 import { Stack, useLocalSearchParams, router } from 'expo-router';
 import { ArrowLeft, Mic, Square, X } from 'lucide-react-native';
-import { AudioQuality, IOSOutputFormat, requestRecordingPermissionsAsync, setAudioModeAsync, useAudioRecorder, type RecordingOptions } from 'expo-audio';
+import { requestRecordingPermissionsAsync, setAudioModeAsync, useAudioRecorder } from 'expo-audio';
+import { STT_RECORDING_OPTIONS, sttFormatMeta } from '@/lib/stt-recording';
 import { SoundSlot } from '@/lib/audio';
+import { warmStreamConnection } from '@/lib/ai-api';
 import Toast from 'react-native-toast-message';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 
 import { ChatInput } from '@/components/ai/chat-input';
 import { ChatMessage } from '@/components/ai/chat-message';
+import { ScenarioTasksPanel } from '@/components/ai/scenario-tasks';
 import { hasQuotaLeft } from '@/components/ai/quota-widget';
-import { useAIConversation, useAIQuota, useSendMessage, useTranscribeAudio } from '@/hooks/use-ai';
+import { useAIConversation, useAIQuota, useAIScenarios, useSendMessage, useSendMessageStream, useTranscribeAudio } from '@/hooks/use-ai';
 import { getChatTTSUri } from '@/lib/tts';
 import { glass, CTA } from '@/components/sunset';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
 
-/* STT — формат записи под Google STT (как в chat-input/ai-hub). */
-const STT_SR = 16000;
-const STT_REC_OPTS: RecordingOptions = {
-  isMeteringEnabled: false,
-  numberOfChannels: 1,
-  extension: '.wav',
-  sampleRate: STT_SR,
-  bitRate: 23850, // AMR-WB max mode (Android); ignored for LINEARPCM on iOS
-  android: { extension: '.amr', outputFormat: 'amrwb', audioEncoder: 'amr_wb', sampleRate: STT_SR },
-  ios: { extension: '.wav', outputFormat: IOSOutputFormat.LINEARPCM, audioQuality: AudioQuality.HIGH, sampleRate: STT_SR, linearPCMBitDepth: 16, linearPCMIsBigEndian: false, linearPCMIsFloat: false },
-  web: { mimeType: 'audio/webm', bitsPerSecond: 128000 },
-};
-function sttMeta(): { encoding: string; sampleRate: number; type: string; name: string } {
-  if (Platform.OS === 'ios') return { encoding: 'LINEAR16', sampleRate: STT_SR, type: 'audio/wav', name: 'rec.wav' };
-  if (Platform.OS === 'web') return { encoding: 'WEBM_OPUS', sampleRate: 48000, type: 'audio/webm', name: 'rec.webm' };
-  return { encoding: 'AMR_WB', sampleRate: STT_SR, type: 'audio/amr-wb', name: 'rec.amr' };
+/**
+ * Splits streamed text into whole sentences. A terminator at the very end of the
+ * buffer is kept back (it may be "Dr." or "..." that is not finished yet) unless
+ * `flush` is set.
+ */
+function takeSentences(buffer: string, flush: boolean, eager = false): { sentences: string[]; rest: string } {
+  const sentences: string[] = [];
+  const re = /^([\s\S]+?[.!?…]+["')\]”’]*)(\s+|$)/;
+  // `eager` (first spoken chunk only): a long first sentence may be cut at a
+  // comma/colon so the audio starts earlier.
+  const eagerRe = /^([\s\S]{20,}?[,;:])(\s+)/;
+  let rest = buffer;
+  for (;;) {
+    const m = re.exec(rest) ?? (eager && sentences.length === 0 ? eagerRe.exec(rest) : null);
+    if (!m || (m[2] === '' && !flush)) break;
+    const sentence = m[1].trim();
+    if (sentence) sentences.push(sentence);
+    rest = rest.slice(m[0].length);
+  }
+  if (flush && rest.trim()) {
+    sentences.push(rest.trim());
+    rest = '';
+  }
+  return { sentences, rest };
 }
 
-type VoicePhase = 'recording' | 'processing' | 'speaking';
+type VoicePhase = 'idle' | 'recording' | 'processing' | 'speaking';
+
+/** Потолок одной записи: STT синхронный, длинные записи дороже и медленнее. */
+const MAX_RECORD_MS = 30_000;
 
 /**
- * VoiceConsole — hands-free голосовой диалог: запись → авто-отправка →
- * ответ AI → авто-озвучка (Google TTS) → снова запись. Цикл до закрытия.
+ * VoiceConsole — пошаговый голосовой диалог: нажали микрофон → говорим →
+ * нажали ещё раз (или истёк потолок записи) → распознавание → ответ AI →
+ * озвучка → ждём следующего нажатия. Пока AI отвечает, микрофон заблокирован,
+ * перебить его нельзя.
  */
 function VoiceConsole({
   language,
@@ -58,16 +74,28 @@ function VoiceConsole({
   onClose,
 }: {
   language?: string;
-  send: (text: string) => Promise<string>;
+  send: (text: string, onDelta: (delta: string) => void) => Promise<string>;
   onClose: () => void;
 }) {
   const { t } = useTranslation();
-  const [phase, setPhase] = useState<VoicePhase>('recording');
-  const recorder = useAudioRecorder(STT_REC_OPTS);
+  const [phase, setPhase] = useState<VoicePhase>('idle');
+  const recorder = useAudioRecorder(STT_RECORDING_OPTIONS);
   const soundRef = useRef(new SoundSlot());
   const activeRef = useRef(true);
+  const limitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const stopAndSendRef = useRef<() => void>(() => {});
   const transcribeMut = useTranscribeAudio();
 
+  const clearLimitTimer = useCallback(() => {
+    if (limitTimerRef.current) { clearTimeout(limitTimerRef.current); limitTimerRef.current = null; }
+  }, []);
+
+  /** Ход закончился: ждём следующего нажатия на микрофон. */
+  const goIdle = useCallback(() => {
+    if (activeRef.current) setPhase('idle');
+  }, []);
+
+  /** Старт записи — только по нажатию пользователя. */
   const beginRecording = useCallback(async () => {
     if (!activeRef.current) return;
     try {
@@ -77,71 +105,124 @@ function VoiceConsole({
       await recorder.prepareToRecordAsync();
       if (!activeRef.current) { try { await recorder.stop(); } catch {} return; }
       recorder.record();
+      warmStreamConnection();
       setPhase('recording');
+      clearLimitTimer();
+      limitTimerRef.current = setTimeout(() => stopAndSendRef.current(), MAX_RECORD_MS);
     } catch (e) { console.error('voice rec failed', e); Toast.show({ type: 'error', text1: 'Не удалось начать запись' }); onClose(); }
-  }, [onClose]);
+  }, [onClose, clearLimitTimer, recorder]);
 
-  const playReply = useCallback(async (reply: string) => {
-    if (!reply.trim()) { void beginRecording(); return; }
-    try {
-      setPhase('speaking');
-      const uri = await getChatTTSUri(reply, language ?? 'en');
-      if (!activeRef.current) return;
-      soundRef.current.play({ uri }, { onFinish: () => { if (activeRef.current) void beginRecording(); } });
-    } catch (e) {
-      console.warn('voice tts failed', e);
-      if (activeRef.current) void beginRecording();
+  // Sentence-by-sentence playback of a streamed reply. The audio of the next
+  // sentence is requested while the previous one is still playing.
+  const speechRef = useRef({ buffer: '', queue: [] as Promise<string>[], playing: false, done: false, spoken: 0 });
+
+  const pumpSpeech = useCallback(() => {
+    const sp = speechRef.current;
+    if (sp.playing || !activeRef.current) return;
+    const next = sp.queue.shift();
+    if (!next) {
+      if (sp.done) goIdle();
+      return;
     }
-  }, [beginRecording, language]);
+    sp.playing = true;
+    setPhase('speaking');
+    void next.then((uri) => {
+      if (!activeRef.current) return;
+      if (!uri) { sp.playing = false; pumpSpeech(); return; }
+      soundRef.current.play({ uri }, { onFinish: () => { sp.playing = false; pumpSpeech(); } });
+    });
+  }, [goIdle]);
+
+  const enqueueSpeech = useCallback((sentences: string[]) => {
+    const sp = speechRef.current;
+    for (const sentence of sentences) {
+      sp.spoken += 1;
+      sp.queue.push(getChatTTSUri(sentence, language ?? 'en').catch((e) => { console.warn('voice tts failed', e); return ''; }));
+    }
+    pumpSpeech();
+  }, [language, pumpSpeech]);
 
   const stopAndSend = useCallback(async () => {
+    clearLimitTimer();
     if (!recorder.isRecording) return;
     setPhase('processing');
     try {
       await recorder.stop();
+      if (!activeRef.current) return;
       const uri = recorder.uri;
       await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true }).catch(() => {});
-      if (!uri) { void beginRecording(); return; }
-      const meta = sttMeta();
+      if (!uri) { goIdle(); return; }
+      const meta = sttFormatMeta();
       const out = await transcribeMut.mutateAsync({ audio: { uri, type: meta.type, name: meta.name }, language: language ?? 'en', encoding: meta.encoding, sample_rate: meta.sampleRate });
-      const text = out.text?.trim();
-      if (!text) { Toast.show({ type: 'info', text1: 'Речь не распознана' }); void beginRecording(); return; }
-      const reply = await send(text);
       if (!activeRef.current) return;
-      await playReply(reply);
+      const text = out.text?.trim();
+      if (!text) { Toast.show({ type: 'info', text1: 'Речь не распознана' }); goIdle(); return; }
+      const sp = speechRef.current;
+      sp.buffer = ''; sp.queue.length = 0; sp.playing = false; sp.done = false; sp.spoken = 0;
+      const reply = await send(text, (delta) => {
+        if (!activeRef.current) return;
+        sp.buffer += delta;
+        const { sentences, rest } = takeSentences(sp.buffer, false, sp.spoken === 0);
+        sp.buffer = rest;
+        if (sentences.length) enqueueSpeech(sentences);
+      });
+      if (!activeRef.current) return;
+      const tail = takeSentences(sp.buffer, true);
+      sp.buffer = '';
+      if (tail.sentences.length) enqueueSpeech(tail.sentences);
+      sp.done = true;
+      if (sp.spoken === 0 && !reply.trim()) {
+        Toast.show({ type: 'info', text1: 'AI не ответил, повторите фразу' });
+        goIdle();
+        return;
+      }
+      pumpSpeech();
     } catch (e) {
-      console.error('voice turn failed', e);
+      console.warn('voice turn failed', e);
       Toast.show({ type: 'error', text1: t('common.error'), text2: e instanceof Error ? e.message : undefined });
-      if (activeRef.current) void beginRecording();
+      goIdle();
     }
-  }, [beginRecording, playReply, send, transcribeMut, language]);
+  }, [clearLimitTimer, goIdle, enqueueSpeech, pumpSpeech, send, transcribeMut, language, recorder, t]);
+
+  stopAndSendRef.current = () => { void stopAndSend(); };
 
   useEffect(() => {
     activeRef.current = true;
-    void beginRecording();
+    const sound = soundRef.current;
     return () => {
       activeRef.current = false;
+      clearLimitTimer();
       if (recorder.isRecording) void recorder.stop().catch(() => {});
-      soundRef.current.stop();
+      sound.stop();
       setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true }).catch(() => {});
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [clearLimitTimer, recorder]);
 
-  const label = phase === 'recording' ? 'Слушаю… нажмите, чтобы отправить' : phase === 'processing' ? 'Обрабатываю…' : 'AI отвечает 🔊';
+  const label =
+    phase === 'idle' ? 'Нажмите на микрофон и говорите'
+    : phase === 'recording' ? 'Слушаю… нажмите, чтобы отправить'
+    : phase === 'processing' ? ''
+    : 'AI отвечает 🔊';
+
+  const onMicPress = () => {
+    if (phase === 'idle') void beginRecording();
+    else if (phase === 'recording') void stopAndSend();
+  };
 
   return (
     <View style={vs.wrap}>
       <Pressable onPress={onClose} style={vs.close} hitSlop={8}>
-        <X size={18} color="rgba(255,255,255,0.7)" />
+        <X size={18} color="#5D686F" />
       </Pressable>
-      <Pressable onPress={stopAndSend} disabled={phase !== 'recording'} style={vs.btnWrap}>
-        {phase === 'recording' ? (
+      <Pressable onPress={onMicPress} disabled={phase === 'processing' || phase === 'speaking'} style={vs.btnWrap}>
+        {phase === 'idle' ? (
+          <View style={[vs.btn, vs.btnIdle]}><Mic size={24} color="#fff" /></View>
+        ) : phase === 'recording' ? (
           <View style={[vs.btn, vs.btnRec]}><Square size={22} color="#fff" fill="#fff" /></View>
         ) : phase === 'speaking' ? (
           <View style={[vs.btn, vs.btnSpeak]}><Text style={{ fontSize: 22 }}>🔊</Text></View>
         ) : (
-          <View style={[vs.btn, vs.btnProc]}><ActivityIndicator color="#fff" /></View>
+          <View style={[vs.btn, vs.btnProc]}><Mic size={24} color="#5D686F" /></View>
         )}
       </Pressable>
       <Text style={vs.label} numberOfLines={2}>{label}</Text>
@@ -154,10 +235,11 @@ const vs = StyleSheet.create({
   close: { padding: 8, borderRadius: 12 },
   btnWrap: {},
   btn: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
+  btnIdle: { backgroundColor: '#2FA8E6' },
   btnRec: { backgroundColor: 'rgba(248,113,113,0.92)' },
-  btnSpeak: { backgroundColor: 'rgba(124,92,255,0.75)' },
-  btnProc: { backgroundColor: 'rgba(255,255,255,0.2)' },
-  label: { flex: 1, color: '#fff', fontSize: 14, fontWeight: '700' },
+  btnSpeak: { backgroundColor: '#59C8FF' },
+  btnProc: { backgroundColor: '#EAF8FF' },
+  label: { flex: 1, color: '#171A1C', fontSize: 14, fontFamily: 'Nunito_700Bold' },
 });
 
 export default function ChatConversationScreen() {
@@ -180,31 +262,33 @@ export default function ChatConversationScreen() {
   const conv = useAIConversation(id);
   const quota = useAIQuota();
   const sendMut = useSendMessage(id ?? '');
+  const streamMut = useSendMessageStream(id ?? '');
   const scrollRef = useRef<ScrollView>(null);
 
-  const messages = conv.data?.messages ?? [];
+  // The backend can store an assistant reply with empty text when the model
+  // answers nothing; such blank bubbles are hidden.
+  const messages = (conv.data?.messages ?? []).filter(
+    (m) => m.role === 'MESSAGE_ROLE_USER' || m.content.trim() !== '',
+  );
   const conversation = conv.data?.conversation;
   const canChat = hasQuotaLeft(quota.data, 'chat');
+  const lastMessageLength = messages.at(-1)?.content.length;
 
   // Скролл вниз при новых сообщениях и при открытии клавиатуры
   useEffect(() => {
     const t = setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
     return () => clearTimeout(t);
-  }, [messages.length, sendMut.isPending, keyboardHeight]);
+  }, [messages.length, lastMessageLength, sendMut.isPending, streamMut.isPending, keyboardHeight]);
 
   const handleSend = async (content: string, wantAudio: boolean) => {
-    try {
-      await sendMut.mutateAsync({ content, want_audio: wantAudio });
-    } catch (e) {
-      console.error('send message failed', e);
-    }
+    await sendMut.mutateAsync({ content, want_audio: wantAudio });
   };
 
   // Голосовой режим: отправляет сообщение и возвращает текст ответа AI
   // (для авто-озвучки в VoiceConsole).
   const [voiceMode, setVoiceMode] = useState(false);
-  const sendForVoice = async (text: string): Promise<string> => {
-    const resp = await sendMut.mutateAsync({ content: text, want_audio: false });
+  const sendForVoice = async (text: string, onDelta: (delta: string) => void): Promise<string> => {
+    const resp = await streamMut.mutateAsync({ content: text, onDelta });
     return resp.assistant_message?.content ?? '';
   };
 
@@ -217,26 +301,34 @@ export default function ChatConversationScreen() {
     if (messages.length > 0) return;
     if (sendMut.isPending) return;
     draftSentRef.current = true;
-    void handleSend(draft, false);
+    void handleSend(draft, false).catch(error => {
+      Toast.show({ type: 'error', text1: t('ai.send_err'), text2: error instanceof Error ? error.message : undefined });
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draft, conversation, messages.length]);
 
   const isRoleplay = conversation?.scenario.startsWith('roleplay_') ?? false;
   const isTutor = conversation?.scenario === 'tutor_qa';
 
+  // Tasks of the scene come with the static scenario list (success_criteria).
+  const scenarioList = useAIScenarios();
+  const sceneTasks = isRoleplay
+    ? scenarioList.data?.scenarios?.find((sc) => sc.id === conversation?.scenario)?.success_criteria ?? []
+    : [];
+
   // Android: adjustResize сам двигает окно → inputBar нужен отступ только от таббара
   // когда клавиатура закрыта. Когда открыта — окно уже сжато, таббар скрыт.
   // iOS: KAV поднимает всё, паддинг = safe area.
-  const inputPaddingBottom = Platform.OS === 'ios'
-    ? (keyboardHeight > 0 ? 8 : tabBarHeight + 8)
-    : (keyboardHeight > 0 ? 8 : tabBarHeight + 8);
+  // The floating tab bar sits above the system inset, so the inset is added too,
+  // otherwise the bar covers the bottom of the input row.
+  const inputPaddingBottom = keyboardHeight > 0 ? 8 : tabBarHeight + insets.bottom + 8;
 
   const content = (
     <View style={{ flex: 1 }}>
       {/* Header */}
       <View style={[s.header, glass, { paddingTop: insets.top + 8 }]}>
         <Pressable onPress={() => router.back()} style={s.backBtn} hitSlop={8}>
-          <ArrowLeft size={20} color="#fff" />
+          <ArrowLeft size={20} color="#171A1C" />
         </Pressable>
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={s.headerTitle} numberOfLines={1}>
@@ -260,6 +352,8 @@ export default function ChatConversationScreen() {
         </View>
       </View>
 
+      <ScenarioTasksPanel tasks={sceneTasks} />
+
       {/* Messages */}
       <ScrollView
         ref={scrollRef}
@@ -270,7 +364,7 @@ export default function ChatConversationScreen() {
       >
         {conv.isLoading ? (
           <View style={[s.emptyCard, glass]}>
-            <ActivityIndicator color="#FFD84A" />
+            <ActivityIndicator color="#1789BD" />
           </View>
         ) : conv.error || !conversation ? (
           <View style={[s.emptyCard, glass]}>
@@ -290,7 +384,7 @@ export default function ChatConversationScreen() {
           messages.map((m) => <ChatMessage key={m.id} message={m} language={conversation?.target_language} />)
         )}
 
-        {sendMut.isPending && (
+        {(sendMut.isPending || streamMut.isPending) && !messages.some((m) => m.id.startsWith('pending-assistant')) && (
           <View style={s.typingRow}>
             <View style={[s.typingAvatar, glass]}>
               <ActivityIndicator size="small" color="#9ca3af" />
@@ -301,7 +395,7 @@ export default function ChatConversationScreen() {
           </View>
         )}
 
-        {sendMut.isError && (
+        {(sendMut.isError || streamMut.isError) && (
           <View style={s.errBubble}>
             <Text style={s.errText}>{t('ai.send_err')}</Text>
           </View>
@@ -354,7 +448,7 @@ export default function ChatConversationScreen() {
     return (
       <View style={{ flex: 1 }}>
         <Stack.Screen options={{ headerShown: false }} />
-        <StatusBar barStyle="light-content" />
+        <StatusBar barStyle="dark-content" />
         <KeyboardAvoidingView
           behavior="padding"
           keyboardVerticalOffset={0}
@@ -369,7 +463,7 @@ export default function ChatConversationScreen() {
   return (
     <View style={{ flex: 1 }}>
       <Stack.Screen options={{ headerShown: false }} />
-      <StatusBar barStyle="light-content" />
+      <StatusBar barStyle="dark-content" />
       {content}
     </View>
   );
@@ -377,7 +471,7 @@ export default function ChatConversationScreen() {
 
 function ScenarioBadge({ isTutor, isRoleplay }: { isTutor: boolean; isRoleplay: boolean }) {
   const tag = isTutor ? 'Tutor' : isRoleplay ? 'Roleplay' : 'Free chat';
-  const color = isTutor ? '#f59e0b' : isRoleplay ? '#f43f5e' : '#FFD84A';
+  const color = isTutor ? '#f59e0b' : isRoleplay ? '#f43f5e' : '#1789BD';
   return (
     <View style={[s.metaBadge, { borderColor: `${color}44` }]}>
       <Text style={[s.metaBadgeText, { color }]}>{tag}</Text>
@@ -393,59 +487,59 @@ const s = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.1)',
+    borderBottomColor: '#C9EDFF',
   },
   backBtn: { padding: 6, borderRadius: 12 },
-  headerTitle: { color: '#fff', fontSize: 16, fontWeight: '800' },
+  headerTitle: { color: '#171A1C', fontSize: 16, fontFamily: 'Nunito_800ExtraBold' },
   badgesRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 3, flexWrap: 'wrap' },
   metaBadge: {
     borderRadius: 8,
     paddingHorizontal: 7,
     paddingVertical: 2,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: '#EAF8FF',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.15)',
+    borderColor: '#C9EDFF',
   },
-  metaBadgeText: { color: 'rgba(255,255,255,0.8)', fontSize: 10, fontWeight: '800', textTransform: 'uppercase' },
+  metaBadgeText: { color: '#5D686F', fontSize: 10, fontFamily: 'Nunito_800ExtraBold', textTransform: 'uppercase' },
 
   scrollContent: { padding: 14, paddingTop: 10, paddingBottom: 14, gap: 12 },
 
   emptyCard: { borderRadius: 22, padding: 40, alignItems: 'center', gap: 10 },
-  emptyTitle: { color: '#fff', fontSize: 17, fontWeight: '800' },
-  emptyText: { color: 'rgba(255,255,255,0.6)', fontSize: 14, fontWeight: '500', textAlign: 'center' },
+  emptyTitle: { color: '#171A1C', fontSize: 17, fontFamily: 'Nunito_800ExtraBold' },
+  emptyText: { color: '#5D686F', fontSize: 14, fontFamily: 'Nunito_600SemiBold', textAlign: 'center' },
   backToListBtn: { borderRadius: 14, overflow: 'hidden', marginTop: 4 },
   backToListGrad: { paddingHorizontal: 20, paddingVertical: 10 },
-  backToListText: { color: '#fff', fontWeight: '800', fontSize: 14 },
+  backToListText: { color: '#fff', fontFamily: 'Nunito_800ExtraBold', fontSize: 14 },
 
   typingRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
   typingAvatar: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
   typingBubble: { borderRadius: 16, paddingHorizontal: 14, paddingVertical: 9 },
-  typingText: { color: 'rgba(255,255,255,0.6)', fontSize: 13, fontWeight: '600' },
+  typingText: { color: '#5D686F', fontSize: 13, fontFamily: 'Nunito_600SemiBold' },
 
   errBubble: {
     borderRadius: 14, paddingHorizontal: 14, paddingVertical: 9,
     backgroundColor: 'rgba(248,113,113,0.08)', borderWidth: 1, borderColor: 'rgba(248,113,113,0.25)',
   },
-  errText: { color: '#f87171', fontSize: 13, fontWeight: '600' },
+  errText: { color: '#f87171', fontSize: 13, fontFamily: 'Nunito_600SemiBold' },
 
   inputBar: {
     paddingHorizontal: 14,
     paddingTop: 10,
     gap: 8,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.1)',
-    backgroundColor: 'rgba(0,0,0,0.25)',
+    borderTopColor: '#C9EDFF',
+    backgroundColor: '#FFFFFF',
   },
   limitBar: {
     borderRadius: 12, paddingHorizontal: 12, paddingVertical: 7,
     backgroundColor: 'rgba(245,158,11,0.08)', borderWidth: 1, borderColor: 'rgba(245,158,11,0.25)',
   },
-  limitText: { color: '#f59e0b', fontSize: 12, fontWeight: '600' },
+  limitText: { color: '#f59e0b', fontSize: 12, fontFamily: 'Nunito_600SemiBold' },
   inputRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
   voiceBtn: {
     width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: 'rgba(124,92,255,0.85)',
+    backgroundColor: '#2FA8E6',
   },
-  voiceBtnDisabled: { backgroundColor: 'rgba(255,255,255,0.12)' },
+  voiceBtnDisabled: { backgroundColor: '#EAF8FF' },
   voiceWrap: { borderRadius: 22, paddingHorizontal: 6, paddingVertical: 4 },
 });

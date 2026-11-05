@@ -1,17 +1,12 @@
 import { KeyboardLift } from '@/components/keyboard-lift';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
-import { BookOpen, Search } from 'lucide-react-native';
+import { BookOpen, Search, TriangleAlert } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useTrackDictionary } from '@/hooks/use-tracks';
-
-const glass = {
-  backgroundColor: 'rgba(255,255,255,0.14)',
-  borderWidth: 1,
-  borderColor: 'rgba(255,255,255,0.22)',
-} as const;
 
 export default function TrackDictionaryScreen() {
   const { t } = useTranslation();
@@ -19,6 +14,7 @@ export default function TrackDictionaryScreen() {
   const [search, setSearch] = useState('');
   const [query, setQuery] = useState('');
   const dictionary = useTrackDictionary(id, query);
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     const timer = setTimeout(() => setQuery(search.trim()), 250);
@@ -27,57 +23,59 @@ export default function TrackDictionaryScreen() {
 
   const entries = dictionary.data?.entries ?? [];
   return (
-    <View style={{ flex: 1 }}>
+    <View className="flex-1">
       <Stack.Screen options={{ title: t('dict.stack_title') }} />
       <KeyboardLift>
-<ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 110 }} keyboardShouldPersistTaps="handled">
+      <View className="gap-4 p-[18px]">
         <View>
-          <Text style={s.title}>{t('dict.title')}</Text>
-          <Text style={s.subtitle}>{t('dict.subtitle')}</Text>
+          <Text className="font-nunito-black text-[26px] text-[#172B43]">{t('dict.title')}</Text>
+          <Text className="mt-2 font-nunito-semibold text-sm leading-5 text-[#536B7B]">{t('dict.subtitle')}</Text>
         </View>
 
-        <View style={[s.search, glass]}>
-          <Search size={19} color="rgba(255,255,255,0.65)" />
+        <View className="min-h-[54px] flex-row items-center gap-3 rounded-[18px] border border-[#C9EDFF] bg-white px-4">
+          <Search size={21} color="#219EC6" />
           <TextInput
             value={search}
             onChangeText={setSearch}
             placeholder={t('dict.search_ph')}
-            placeholderTextColor="rgba(255,255,255,0.48)"
-            style={s.searchInput}
+            placeholderTextColor="#83919B"
+            accessibilityLabel={t('dict.search_ph')}
+            className="flex-1 py-3 font-nunito-semibold text-base text-[#172B43]"
           />
         </View>
 
         {dictionary.isLoading ? (
-          <ActivityIndicator color="#FFD84A" style={{ marginTop: 40 }} />
+          <ActivityIndicator color="#219EC6" className="mt-10" />
         ) : dictionary.error ? (
-          <View style={[s.empty, glass]}>
-            <Text style={s.emptyEmoji}>😕</Text>
-            <Text style={s.emptyTitle}>{t('dict.load_failed')}</Text>
-            <Pressable onPress={() => dictionary.refetch()}><Text style={s.link}>{t('dict.retry')}</Text></Pressable>
+          <View className="mt-4 items-center gap-3 rounded-[22px] border border-[#C9EDFF] bg-white p-7">
+            <TriangleAlert size={36} color="#219EC6" />
+            <Text className="text-center font-nunito-extrabold text-lg text-[#172B43]">{t('dict.load_failed')}</Text>
+            <Pressable accessibilityRole="button" onPress={() => dictionary.refetch()} className="min-h-11 justify-center px-4"><Text className="font-nunito-extrabold text-sm text-[#1685B5]">{t('dict.retry')}</Text></Pressable>
           </View>
         ) : entries.length === 0 ? (
-          <View style={[s.empty, glass]}>
-            <BookOpen size={38} color="#FFD84A" />
-            <Text style={s.emptyTitle}>{query ? t('fc.nothing_found') : t('dict.preparing')}</Text>
-            <Text style={s.emptyText}>{query ? t('dict.change_query') : t('dict.empty')}</Text>
+          <View className="mt-4 items-center gap-3 rounded-[22px] border border-[#C9EDFF] bg-white p-7">
+            <BookOpen size={38} color="#219EC6" />
+            <Text className="text-center font-nunito-extrabold text-lg text-[#172B43]">{query ? t('fc.nothing_found') : t('dict.preparing')}</Text>
+            <Text className="text-center font-nunito-semibold text-sm leading-5 text-[#536B7B]">{query ? t('dict.change_query') : t('dict.empty')}</Text>
           </View>
         ) : (
-          <View style={{ gap: 10 }}>
-            <View style={s.listHeader}>
-              <Text style={s.count}>{t('dict.words_count', { count: dictionary.data?.total ?? entries.length })}</Text>
+          <View className="gap-3">
+            <View className="px-1">
+              <Text className="font-nunito-extrabold text-sm text-[#536B7B]">{t('dict.words_count', { count: dictionary.data?.total ?? entries.length })}</Text>
             </View>
             {entries.map((entry) => {
               return (
                 <View
                   key={entry.vocabulary.id}
-                  style={[s.word, glass]}
+                  className="flex-row items-center gap-3 rounded-[20px] border border-b-[3px] border-[#C9EDFF] bg-white p-4"
                 >
-                  <View style={{ flex: 1 }}>
-                    <Text style={s.wordTitle}>{entry.vocabulary.word}</Text>
-                    <Text style={s.translation}>{entry.vocabulary.translation}</Text>
-                    {!!entry.vocabulary.transcription && <Text style={s.transcription}>{entry.vocabulary.transcription}</Text>}
+                  <View className="flex-1">
+                    <Text className="font-nunito-extrabold text-lg text-[#172B43]">{entry.vocabulary.word}</Text>
+                    <Text className="mt-1 font-nunito-semibold text-sm text-[#536B7B]">{entry.vocabulary.translation}</Text>
+                    {!!entry.vocabulary.transcription && <Text className="mt-1 font-nunito-semibold text-xs text-[#1685B5]">{entry.vocabulary.transcription}</Text>}
                   </View>
-                  {entry.added && <Text style={s.added}>{t('dict.in_library')}</Text>}
+                  {entry.added && <Text className="rounded-full bg-[#E4F8EF] px-2 py-1 font-nunito-extrabold text-[10px] text-[#287654]">{t('dict.in_library')}</Text>}
                 </View>
               );
             })}
@@ -85,35 +83,14 @@ export default function TrackDictionaryScreen() {
         )}
 
         {entries.some((entry) => entry.added) && (
-          <Pressable onPress={() => router.push('/flashcards' as never)} style={s.libraryLink}>
-            <Text style={s.libraryLinkText}>{t('dict.open_my')}</Text>
+          <Pressable accessibilityRole="button" onPress={() => router.push('/flashcards' as never)} className="min-h-11 items-center justify-center py-3">
+            <Text className="font-nunito-extrabold text-sm text-[#1685B5]">{t('dict.open_my')}</Text>
           </Pressable>
         )}
+      </View>
       </ScrollView>
-</KeyboardLift>
+      </KeyboardLift>
 
     </View>
   );
 }
-
-const s = StyleSheet.create({
-  content: { padding: 18, paddingBottom: 120, gap: 16 },
-  title: { color: '#fff', fontSize: 26, fontWeight: '900' },
-  subtitle: { color: 'rgba(255,255,255,0.75)', fontSize: 13, lineHeight: 19, marginTop: 7 },
-  search: { flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: 17, paddingHorizontal: 14, paddingVertical: 12 },
-  searchInput: { flex: 1, color: '#fff', fontSize: 15 },
-  listHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 2 },
-  count: { color: 'rgba(255,255,255,0.68)', fontSize: 13, fontWeight: '800' },
-  link: { color: '#FFD84A', fontSize: 13, fontWeight: '900' },
-  word: { flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: 19, padding: 14 },
-  wordTitle: { color: '#fff', fontSize: 17, fontWeight: '900' },
-  translation: { color: 'rgba(255,255,255,0.78)', fontSize: 14, marginTop: 3 },
-  transcription: { color: 'rgba(255,216,74,0.7)', fontSize: 12, marginTop: 3 },
-  added: { color: '#9BE7AC', fontSize: 10, fontWeight: '900' },
-  empty: { alignItems: 'center', gap: 9, borderRadius: 22, padding: 28, marginTop: 18 },
-  emptyEmoji: { fontSize: 38 },
-  emptyTitle: { color: '#fff', fontSize: 17, fontWeight: '900', textAlign: 'center' },
-  emptyText: { color: 'rgba(255,255,255,0.7)', fontSize: 13, textAlign: 'center', lineHeight: 18 },
-  libraryLink: { alignItems: 'center', paddingVertical: 10 },
-  libraryLinkText: { color: '#FFD84A', fontWeight: '900' },
-});

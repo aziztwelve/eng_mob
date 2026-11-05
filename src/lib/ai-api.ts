@@ -1,4 +1,5 @@
 import { Platform } from 'react-native';
+import { fetch as streamingFetch } from 'expo/fetch';
 
 import { ApiClient, handleUnauthorized, tryRefreshTokens } from './api-client';
 import { AuthService } from './auth-service';
@@ -69,8 +70,89 @@ async function postMultipart(url: string, body: FormData): Promise<Response> {
   return res;
 }
 
+/**
+ * POST /ai/conversations/:id/stream (SSE). Events: user | delta | done | error.
+ * RN's global fetch cannot read a body incrementally, expo/fetch can. On 401
+ * the tokens are refreshed once, like in postMultipart.
+ */
+async function streamConversationMessage(
+  conversationId: string,
+  req: SendMessageRequest,
+  onDelta: (delta: string) => void,
+  onAvatarEmotion?: (emotion: string) => void,
+): Promise<SendMessageResponse> {
+  const url = `${API_BASE_URL}/ai/conversations/${encodeURIComponent(conversationId)}/stream`;
+  const open = async () => {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      Accept: 'text/event-stream',
+    };
+    const token = await AuthService.getAccessToken();
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    return streamingFetch(url, { method: 'POST', headers, body: JSON.stringify(req) });
+  };
+
+  let res = await open();
+  if (res.status === 401 && (await tryRefreshTokens())) res = await open();
+  if (!res.ok || !res.body) {
+    const text = await res.text().catch(() => '');
+    let message = text;
+    try { message = (JSON.parse(text) as { error?: string }).error ?? text; } catch { /* plain text */ }
+    throw new Error(message || `HTTP ${res.status}`);
+  }
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let done: SendMessageResponse | null = null;
+
+  const handleEvent = (block: string) => {
+    let event = 'message';
+    const dataLines: string[] = [];
+    for (const line of block.split('\n')) {
+      if (line.startsWith('event:')) event = line.slice(6).trim();
+      else if (line.startsWith('data:')) dataLines.push(line.slice(5).trimStart());
+    }
+    if (dataLines.length === 0) return;
+    const data = JSON.parse(dataLines.join('\n')) as Record<string, unknown>;
+    if (event === 'delta') onDelta(String(data.delta ?? ''));
+    else if (event === 'avatar_emotion' && typeof data.emotion === 'string') onAvatarEmotion?.(data.emotion);
+    else if (event === 'done') done = data as unknown as SendMessageResponse;
+    else if (event === 'error') throw new Error(String(data.error ?? 'stream error'));
+  };
+
+  for (;;) {
+    const { value, done: finished } = await reader.read();
+    if (value) buffer += decoder.decode(value, { stream: true });
+    let sep: number;
+    while ((sep = buffer.indexOf('\n\n')) !== -1) {
+      const block = buffer.slice(0, sep);
+      buffer = buffer.slice(sep + 2);
+      handleEvent(block);
+    }
+    if (finished) break;
+  }
+  if (buffer.trim()) handleEvent(buffer);
+  if (!done) throw new Error('stream ended without result');
+  return done;
+}
+
+/**
+ * Opens the connection that the chat stream will reuse while the user is
+ * still talking: a fresh TLS handshake on a mobile link costs seconds.
+ */
+export function warmStreamConnection(): void {
+  const origin = API_BASE_URL.replace(/\/api\/v\d+\/?$/, '');
+  void streamingFetch(`${origin}/health`, { method: 'GET' })
+    .then((r) => r.text())
+    .catch(() => {});
+}
+
 export const AIApi = {
+  streamMessage: streamConversationMessage,
+
   // === Conversations ===
+  reserveFreeTalk: (id: string) => ApiClient.post<{ allowed: boolean; unlimited: boolean; expires_at_ms?: number | string; resets_at_ms: number | string; server_now_ms: number | string }>(`/ai/conversations/${encodeURIComponent(id)}/free-talk-session`, {}),
   startConversation: (req: StartConversationRequest) =>
     ApiClient.post<StartConversationResponse>('/ai/conversations', req),
 

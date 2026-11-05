@@ -1,5 +1,7 @@
 import { twMerge } from 'tailwind-merge';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
+import { achievementText } from '@/lib/achievement-text';
 import { View, Text, Image } from 'react-native';
 import { Award, Lock } from 'lucide-react-native';
 import type { Achievement, UserAchievement } from '@/types/api';
@@ -13,6 +15,8 @@ export interface AchievementCardProps {
 }
 
 export function AchievementCard({ achievement: a, user }: AchievementCardProps) {
+  const { t, i18n } = useTranslation();
+  const text = achievementText(a, t);
   const unlocked = !!user;
   const unlockedAt = user ? tsToDate(user.unlocked_at) : null;
 
@@ -32,15 +36,15 @@ export function AchievementCard({ achievement: a, user }: AchievementCardProps) 
         </View>
       )}
 
-      <Text className="text-mieo-heading text-[14px] font-nunito-black text-center" numberOfLines={2}>{a.title}</Text>
-      <Text className="text-mieo-body text-[11px] font-nunito-medium text-center mt-[4px] leading-[15px]" numberOfLines={2}>{a.description}</Text>
+      <Text className="text-mieo-heading text-[14px] font-nunito-black text-center">{text.title}</Text>
+      <Text className="text-mieo-body text-[11px] font-nunito-medium text-center mt-[4px] leading-[15px]">{text.description}</Text>
 
       <View className="flex-row flex-wrap justify-center gap-[5px] mt-[8px]">
         <View className="rounded-[999px] bg-[#F0F9FF] border-[1px] border-mieo-stroke px-[8px] py-[2px]">
-          <Text className="text-mieo-body text-[10px] font-nunito-extrabold uppercase">{TIER_LABEL[a.tier] ?? 'tier'}</Text>
+          <Text className="text-mieo-body text-[10px] font-nunito-extrabold uppercase">{t(`ach.tier_${TIER_LABEL[a.tier]}`, { defaultValue: TIER_LABEL[a.tier] ?? '—' })}</Text>
         </View>
         <View className="rounded-[999px] bg-[#F0F9FF] border-[1px] border-mieo-stroke px-[8px] py-[2px]">
-          <Text className="text-mieo-body text-[10px] font-nunito-extrabold uppercase">{a.category}</Text>
+          <Text className="text-mieo-body text-[10px] font-nunito-extrabold uppercase">{a.category === 'xp' ? 'XP' : t(`ach.cat_${a.category}`, { defaultValue: a.category })}</Text>
         </View>
         {a.xp_reward > 0 && (
           <View className="rounded-[999px] border-[1px] px-[8px] py-[2px] bg-[rgba(255,216,74,0.22)] border-[rgba(255,216,74,0.5)]">
@@ -50,7 +54,7 @@ export function AchievementCard({ achievement: a, user }: AchievementCardProps) 
       </View>
 
       {unlockedAt && (
-        <Text className="text-mieo-body text-[10px] font-nunito-semibold mt-[6px]">{unlockedAt.toLocaleDateString()}</Text>
+        <Text className="text-mieo-body text-[10px] font-nunito-semibold mt-[6px]">{unlockedAt.toLocaleDateString(i18n.language)}</Text>
       )}
     </View>
   );

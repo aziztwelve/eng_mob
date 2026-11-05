@@ -15,7 +15,7 @@ interface ListenChooseWordContent {
   audio_text: string;
   language: string;
   audio_url?: string;
-  options: Array<{ id: string; audio_text: string; audio_url?: string; is_correct: boolean }>;
+  options: { id: string; audio_text: string; audio_url?: string; is_correct: boolean }[];
   explanation?: string;
 }
 

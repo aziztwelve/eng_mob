@@ -1,5 +1,5 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
-import { GamificationApi } from '@/lib/api-client';
+import { GamificationApi, getXPDaily } from '@/lib/api-client';
 import { useIsAuthenticated } from '@/hooks/use-auth';
 
 const PAGE_SIZE = 20;
@@ -29,4 +29,9 @@ export function useXPHistoryInfinite(pageSize = PAGE_SIZE) {
     },
     staleTime: 30 * 1000,
   });
+}
+
+export function useXPDaily(days = 14) {
+ const { isAuthenticated } = useIsAuthenticated();
+ return useQuery({ queryKey: ['xp-daily', days], queryFn: () => getXPDaily(days), enabled: isAuthenticated, staleTime: 30_000 });
 }

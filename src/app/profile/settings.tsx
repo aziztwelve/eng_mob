@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Modal, Pressable, ScrollView, Switch, Text, View, useWindowDimensions } from 'react-native';
+import { Linking, Modal, Pressable, ScrollView, Switch, Text, View, useWindowDimensions } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import Toast from 'react-native-toast-message';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Bell, Check, ChevronLeft, ChevronRight, FileText, HelpCircle, Languages, LogOut, Moon, Shield, Trash2, User, Volume2 } from 'lucide-react-native';
+import { Bell, Check, ChevronLeft, ChevronRight, FileText, HelpCircle, Languages, LogOut, Shield, Trash2, User, Volume2 } from 'lucide-react-native';
 import { useFxPreferences } from '@/lib/fx-prefs';
+import { PROFILE_LINKS } from '@/lib/profile-links';
 import { fx } from '@/lib/fx';
 import { getCurrentLang, setUiLang, type UiLang } from '@/lib/i18n';
 import { useLogout } from '@/hooks/use-auth';
@@ -46,7 +47,7 @@ export default function SettingsScreen() {
 
   const [langOpen, setLangOpen] = useState(false);
 
-  const comingSoon = () => Toast.show({ type: 'info', text1: t('profile.coming_soon') });
+  const openLink = async (url: string) => { try { await Linking.openURL(url); } catch { Toast.show({ type: 'error', text1: t('profile.open_failed') }); } };
 
   return (
     <View className="flex-1 bg-mieo-bg">
@@ -66,19 +67,17 @@ export default function SettingsScreen() {
             <Divider />
             <Row icon={<Bell size={24} color="#171A1C" />} label={t('profile.disable_notifications')} right={<ChevronRight size={20} color="#171A1C" />} onPress={() => router.push('/profile/notifications')} />
             <Divider />
-            <Row icon={<Moon size={24} color="#171A1C" />} label={t('profile.dark_mode')} right={<Switch value={false} disabled />} onPress={comingSoon} />
-            <Divider />
             <Row icon={<Languages size={24} color="#171A1C" />} label={t('profile.language')} right={<Text className="font-nunito-semibold text-sm text-mieo-body">{LANG_NAMES[lang]}</Text>} onPress={() => setLangOpen(true)} />
             <Divider />
-            <Row icon={<Volume2 size={24} color="#171A1C" />} label={t('profile.sounds')} right={<Switch value={prefs.sounds} onValueChange={(v) => setPrefs({ sounds: v })} />} />
+            <Row icon={<Volume2 size={24} color="#171A1C" />} label={t('profile.sounds')} right={<Switch accessibilityLabel={t('profile.sounds')} value={prefs.sounds} onValueChange={(v) => setPrefs({ sounds: v })} />} />
             <Divider />
-            <Row icon={<Volume2 size={24} color="#171A1C" />} label={t('profile.haptics')} right={<Switch value={prefs.haptics} onValueChange={(v) => setPrefs({ haptics: v })} />} />
+            <Row icon={<Volume2 size={24} color="#171A1C" />} label={t('profile.haptics')} right={<Switch accessibilityLabel={t('profile.haptics')} value={prefs.haptics} onValueChange={(v) => setPrefs({ haptics: v })} />} />
             <Divider />
-            <Row icon={<HelpCircle size={24} color="#171A1C" />} label={t('profile.help_support')} right={<ChevronRight size={20} color="#171A1C" />} onPress={comingSoon} />
+            <Row icon={<HelpCircle size={24} color="#171A1C" />} label={t('profile.help_support')} right={<ChevronRight size={20} color="#171A1C" />} onPress={() => router.push('/profile/help')} />
             <Divider />
-            <Row icon={<FileText size={24} color="#171A1C" />} label={t('profile.terms')} right={<ChevronRight size={20} color="#171A1C" />} onPress={comingSoon} />
+            <Row icon={<FileText size={24} color="#171A1C" />} label={t('profile.terms')} right={PROFILE_LINKS.terms ? <ChevronRight size={20} color="#171A1C" /> : <Text className="max-w-[110px] font-nunito-medium text-xs text-mieo-body">{t('profile.unavailable')}</Text>} onPress={PROFILE_LINKS.terms ? () => { void openLink(PROFILE_LINKS.terms); } : undefined} />
             <Divider />
-            <Row icon={<Shield size={24} color="#171A1C" />} label={t('profile.privacy')} right={<ChevronRight size={20} color="#171A1C" />} onPress={comingSoon} />
+            <Row icon={<Shield size={24} color="#171A1C" />} label={t('profile.privacy')} right={<ChevronRight size={20} color="#171A1C" />} onPress={() => { void openLink(PROFILE_LINKS.privacy); }} />
             <Divider />
             <Row icon={<LogOut size={24} color="#E26A6A" />} label={logout.isPending ? t('profile.logging_out') : t('profile.logout')} onPress={() => logout.mutate()} disabled={logout.isPending} />
             <Divider />

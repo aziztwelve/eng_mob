@@ -20,6 +20,8 @@ import {
   useNotificationPreferences,
   useUpdateNotificationPreferences,
 } from '@/hooks/use-notifications';
+import { notificationPreferences } from '@/lib/notification-preferences';
+import { useAccountProfile } from '@/hooks/use-account-profile';
 import { usePushSubscription } from '@/hooks/use-push-subscription';
 import { tsToDate } from '@/lib/api-client';
 import {
@@ -39,27 +41,19 @@ export default function NotificationsSettingsScreen() {
   const devices = useNotificationDevices();
   const updatePrefs = useUpdateNotificationPreferences();
   const push = usePushSubscription();
+  const profile = useAccountProfile();
 
   const [form, setForm] = useState<UpdatePreferencesRequest | null>(null);
 
   useEffect(() => {
     if (!prefs.data || form) return;
     const p = prefs.data.prefs;
-    setForm({
-      practice_reminder_enabled: p.practice_reminder_enabled,
-      streak_risk_enabled: p.streak_risk_enabled,
-      daily_goal_enabled: p.daily_goal_enabled,
-      achievement_enabled: p.achievement_enabled,
-      friend_request_enabled: p.friend_request_enabled,
-      quiet_hours_start: p.quiet_hours_start,
-      quiet_hours_end: p.quiet_hours_end,
-      timezone: p.timezone ?? '',
-    });
-  }, [prefs.data, form]);
+    setForm(notificationPreferences(p, profile.data?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'));
+  }, [prefs.data, form, profile.data?.timezone]);
 
   const isDirty = useMemo(() => {
     if (!form || !prefs.data) return false;
-    const p = prefs.data.prefs;
+    const p = notificationPreferences(prefs.data.prefs, '');
     return (
       form.practice_reminder_enabled !== p.practice_reminder_enabled ||
       form.streak_risk_enabled !== p.streak_risk_enabled ||
@@ -75,7 +69,8 @@ export default function NotificationsSettingsScreen() {
   const onSave = async () => {
     if (!form) return;
     try {
-      await updatePrefs.mutateAsync(form);
+      const result = await updatePrefs.mutateAsync(form);
+      setForm(notificationPreferences(result.prefs, form.timezone || 'UTC'));
       Toast.show({ type: 'success', text1: t('common.saved') });
     } catch (err) {
       Toast.show({
@@ -88,6 +83,8 @@ export default function NotificationsSettingsScreen() {
 
   const onSubscribe = async () => {
     try {
+      if (!form) return;
+      await updatePrefs.mutateAsync(form);
       await push.subscribe();
       Toast.show({ type: 'success', text1: t('notif.push_on') });
     } catch (err) {
@@ -138,7 +135,7 @@ export default function NotificationsSettingsScreen() {
         <PushSubCard
           state={push.state}
           ready={push.ready}
-          isSubscribing={push.isSubscribing}
+          isSubscribing={push.isSubscribing || updatePrefs.isPending || !form}
           lastError={push.lastError}
           onSubscribe={onSubscribe}
         />
@@ -187,6 +184,7 @@ export default function NotificationsSettingsScreen() {
             <View className="bg-mieo-surface border-[1.5px] border-[#C9EDFF] rounded-[24px] p-[16px] gap-[4px]">
               <Text className="text-mieo-heading font-nunito-black text-[16px] mb-[4px]">{t('notif.quiet')}</Text>
               <Text className="text-mieo-body text-[13px] leading-[18px] font-nunito-medium">{t('notif.quiet_d')}</Text>
+              <Text className="font-nunito-semibold text-xs text-mieo-body">{t('profile.timezone')}: {form.timezone}</Text>
               <View className="flex-row gap-[12px] mt-[12px]">
                 <HourStepper
                   label={t('notif.from')}

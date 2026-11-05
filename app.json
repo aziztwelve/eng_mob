@@ -4,11 +4,11 @@
     "slug": "engmob",
     "version": "1.0",
     "orientation": "default",
-    "icon": "./store-assets/final-icon/lingoiq-icon-1024-appstore.png",
+    "icon": "./assets/images/icon.png",
     "scheme": "engmob",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./store-assets/final-icon/lingoiq-icon-1024-appstore.png",
+      "icon": "./assets/images/icon.png",
       "bundleIdentifier": "com.aziztwelve.engmob",
       "usesAppleSignIn": true,
       "infoPlist": {

@@ -9,7 +9,7 @@ import { stepInstruction } from '@/lib/step-titles';
 
 interface ChooseDefinitionContent {
   word: string;
-  options: Array<{ id: string; text: string; is_correct: boolean }>;
+  options: { id: string; text: string; is_correct: boolean }[];
   explanation?: string;
 }
 

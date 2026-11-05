@@ -1,127 +1,86 @@
-# LingoIQ (eng_mob) — структура приложения
+# LingoIQ — структура мобильного приложения
 
-Источник: код `src/app` на 2026-10-14. Статусы: **Figma** — перенесено по макету, **старое** — оформление не менялось, **кандидат на удаление** — не используется или дубль.
+Источник: код eng_mob, проверка от 2026-11-05. Список заменяет устаревшее описание от октября.
 
-## 1. Вход и регистрация (стек `auth`, онбординг)
+В `src/app` осталось 49 файлов маршрутов без `_layout`. Это включает стартовые и совместимые перенаправления, а не только самостоятельные экраны. Два `/` намеренно различаются группой `(tabs)`: корневой маршрут выбирает вход/онбординг, главный экран находится внутри вкладок.
 
-| Маршрут | Назначение | Основные блоки | Статус |
-|---|---|---|---|
-| `/auth/login` | Вход | Заголовок, Email, Password (показ/скрытие), «Забыли пароль?», кнопка «Войти», разделитель, Google / Apple | **Figma** |
-| `/auth/register` | Регистрация (Create Profile) | Имя (`username`), Email, Пароль, Пол (полноэкранный список), Возраст (по умолчанию 8), кнопка «Отправить», назад | **Figma** (пол и возраст пока не отправляются) |
-| `/onboarding/welcome` | Приветствие | Бренд, переключатель языка интерфейса, CTA, вход, юридические ссылки | старое |
-| `/onboarding/value-prop` | Ценность | Список преимуществ | старое |
-| `/onboarding/add-language` | Выбор изучаемого языка | Список языков (кроме текущего) | старое |
-| `/onboarding/level` | Уровень | Выбор уровня (CEFR) | старое |
-| `/onboarding/placement-test` | Тест уровня | Вопросы, финальная отправка (пропускается, если вопросов нет) | старое |
-| `/onboarding/goal` | Цель | Выбор цели | старое |
-| `/onboarding/daily-commit` | Ежедневная цель | Выбор XP в день | старое |
-| `/onboarding/reminder-time` | Время напоминаний | Выбор времени | старое |
-| `/onboarding/notifications` | Уведомления | Каналы, статус | старое |
-| `/onboarding/age` | Возраст | Ввод возраста | старое |
-| `/onboarding/building` | Сборка плана | Прогресс, карусель | старое |
-| `/onboarding/roadmap`, `plan`, `projection` | План и прогноз | Карточки плана | старое |
-| `/onboarding/paywall` | Подписка | Преимущества, тарифы, CTA | старое |
-| `/onboarding/signup` | Регистрация после онбординга | Email-форма, OAuth | старое, **дубль** `/auth/register` — решить |
-| `/onboarding/done` | Финал | Анимация «готово», переход в приложение | старое |
+## Нижнее меню
 
-## 2. Основные вкладки (нижнее меню)
-
-| Вкладка | Маршрут | Назначение | Статус |
-|---|---|---|---|
-| Главная | `(tabs)/index` → `home-candy` | Статистика, герой, быстрый старт, повторение, треки | старое |
-| Практика | `(tabs)/practice` | Статистика и аватар, вкладки, уровни CEFR, треки, баннер, цели | старое |
-| AI | `(tabs)/ai` | Строка «спросить», категории, инструменты, прогресс | старое |
-| Лига | `(tabs)/social` | Вкладки: друзья, лидерборд, лиги | старое |
-| Профиль | `(tabs)/profile` | Hero, имя и email, курс, XP / streak / самоцветы / сердца, ошибки, достижения, настройки | **Figma** |
-
-Скрытые маршруты (не в меню): `tracks`, `courses`, `home-neon`, `home-ruya`, `home-ruya-pro`.
-
-## 3. Главная и варианты
-
-| Маршрут | Статус |
+| Пункт | Что открывает |
 |---|---|
-| `(tabs)/home-candy` — **активная** главная | старое |
-| `(tabs)/home-neon`, `home-ruya`, `home-ruya-pro` | **кандидаты на удаление** (варианты, скрыты) |
-| `index-old`, `index-backup` (в корне `app/`) | **кандидаты на удаление** |
-| `explore`, `figma/index` (галерея макетов) | **кандидаты на удаление** (служебные) |
+| Главная | Выбранный вариант 10, прямой Free Talk, темы, быстрые ссылки на учебные разделы |
+| Практика | Треки / банк слов / мои слова / курсы «Скоро» |
+| AI | Темы A1–C2, Free Talk, отдельная кнопка истории |
+| Social | «Скоро», переход нижнего меню выключен; друзья доступны из профиля |
+| Профиль | Данные аккаунта, статистика, достижения, ошибки, настройки и дополнительные разделы |
 
-## 4. Практика (`(tabs)/practice`)
+Истории AI на главной нет. Нажатие Free Talk создаёт разговор и запускает серверную сессию; просмотр истории сам по себе её не запускает.
 
-| Маршрут | Назначение | Блоки |
+## Все маршруты
+
+| Маршрут | Назначение | Исходник |
 |---|---|---|
-| `practice/index` | Хаб практики | Статистика, аватар, вкладки, уровни CEFR, треки по уровню, баннер, геймификация |
-| `practice/session` | Сессия SRS | Карточки заданий (`StepRenderer`), прогресс, результат |
-| `practice/srs` | Повторение | Карточка «Сейчас к повторению», XP, режимы (2 колонки), блок ошибок |
-| `practice/mistakes` | Ошибки | Вкладки (все / нерешённые / решённые), список, пагинация |
-| `practice/vocabulary/all` | Банк слов | Список слов |
-| `practice/vocabulary/[externalId]` | Слово | Карточка слова, переходы |
-| `practice/vocabulary/[externalId]/learn` | Учить слово | Карточка, озвучка, варианты |
+| `/ai/chat/[id]` | Диалог из истории: ролевые и другие сохранённые разговоры | `src/app/(tabs)/ai/chat/[id].tsx` |
+| `/ai/chat` | Прокручиваемая история AI | `src/app/(tabs)/ai/chat/index.tsx` |
+| `/ai` | Темы по уровням, Free Talk, вход в историю | `src/app/(tabs)/ai/index.tsx` |
+| `/` | Главная / стартовый переход по состоянию входа | `src/app/(tabs)/index.tsx` |
+| `/practice` | Треки, банк слов, мои слова, курсы «Скоро» | `src/app/(tabs)/practice/index.tsx` |
+| `/practice/mistakes` | Разбор ошибок | `src/app/(tabs)/practice/mistakes.tsx` |
+| `/practice/session` | Повторение SRS | `src/app/(tabs)/practice/session.tsx` |
+| `/practice/srs` | Выбор повторения | `src/app/(tabs)/practice/srs.tsx` |
+| `/practice/vocabulary/[externalId]/learn` | Плеер занятий со словом | `src/app/(tabs)/practice/vocabulary/[externalId]/learn.tsx` |
+| `/practice/vocabulary/[externalId]` | Карточка слова | `src/app/(tabs)/practice/vocabulary/[externalId].tsx` |
+| `/practice/vocabulary/all` | Полный банк слов | `src/app/(tabs)/practice/vocabulary/all.tsx` |
+| `/profile` | Профиль | `src/app/(tabs)/profile.tsx` |
+| `/social` | Социальный раздел; пункт нижнего меню «Скоро» | `src/app/(tabs)/social/index.tsx` |
+| `/tracks/[id]/dictionary` | Словарь трека | `src/app/(tabs)/tracks/[id]/dictionary.tsx` |
+| `/tracks/[id]` | Уроки выбранного трека | `src/app/(tabs)/tracks/[id].tsx` |
+| `/tracks` | Каталог треков | `src/app/(tabs)/tracks/index.tsx` |
+| `/auth/login` | Вход | `src/app/auth/login.tsx` |
+| `/auth/register` | Совместимость: перенаправление на /onboarding/signup | `src/app/auth/register.tsx` |
+| `/flashcards` | Библиотека флеш-карточек | `src/app/flashcards/index.tsx` |
+| `/flashcards/results` | Результат повторения | `src/app/flashcards/results.tsx` |
+| `/flashcards/session` | Сессия флеш-карточек | `src/app/flashcards/session.tsx` |
+| `/free-talk/[id]` | Свободный разговор или практика темы с аватаром | `src/app/free-talk/[id].tsx` |
+| `/friends` | Друзья из профиля | `src/app/friends/index.tsx` |
+| `/friends/leaderboard` | Рейтинг друзей | `src/app/friends/leaderboard.tsx` |
+| `/friends/pending` | Входящие и исходящие заявки | `src/app/friends/pending.tsx` |
+| `/friends/search` | Поиск друзей | `src/app/friends/search.tsx` |
+| `/` | Главная / стартовый переход по состоянию входа | `src/app/index.tsx` |
+| `/leagues/history` | История лиг | `src/app/leagues/history.tsx` |
+| `/leagues` | Лиги | `src/app/leagues/index.tsx` |
+| `/learn/[lessonId]` | Плеер урока | `src/app/learn/[lessonId].tsx` |
+| `/onboarding/[...retired]` | Совместимость: старые шаги перенаправляются на текущие | `src/app/onboarding/[...retired].tsx` |
+| `/onboarding/add-language` | Выбор языка | `src/app/onboarding/add-language.tsx` |
+| `/onboarding/age` | Возраст | `src/app/onboarding/age.tsx` |
+| `/onboarding/goal` | Цель | `src/app/onboarding/goal.tsx` |
+| `/onboarding/level` | Уровень | `src/app/onboarding/level.tsx` |
+| `/onboarding/reminder-time` | Время напоминаний | `src/app/onboarding/reminder-time.tsx` |
+| `/onboarding/signup` | Текущая регистрация / сохранение выбора пользователя | `src/app/onboarding/signup.tsx` |
+| `/onboarding/welcome` | Приветствие | `src/app/onboarding/welcome.tsx` |
+| `/profile/achievements` | Достижения | `src/app/profile/achievements.tsx` |
+| `/profile/delete-account` | Удаление аккаунта: экран подтверждения | `src/app/profile/delete-account.tsx` |
+| `/profile/edit` | Редактирование профиля | `src/app/profile/edit.tsx` |
+| `/profile/help` | Помощь и контакты | `src/app/profile/help.tsx` |
+| `/profile/lockscreen-words` | Слова на экране блокировки | `src/app/profile/lockscreen-words.tsx` |
+| `/profile/notifications` | Настройки уведомлений | `src/app/profile/notifications.tsx` |
+| `/profile/settings` | Настройки, язык, звук, выход | `src/app/profile/settings.tsx` |
+| `/profile/stats` | Статистика и история XP | `src/app/profile/stats.tsx` |
+| `/profile/streak` | Серия занятий | `src/app/profile/streak.tsx` |
+| `/profile/strength` | Сила навыков | `src/app/profile/strength.tsx` |
+| `/profile/subscription` | Экран Premium $15.99/месяц; покупка пока недоступна | `src/app/profile/subscription.tsx` |
 
-## 5. Треки и курсы
+## Что исключено
 
-| Маршрут | Назначение | Блоки |
-|---|---|---|
-| `tracks/index` | Список треков по уровню | Прогресс цели, список треков |
-| `tracks/[id]` | Трек | Прогресс трека, словарь трека, уроки (карточки) |
-| `tracks/[id]/dictionary` | Словарь трека | Список слов трека |
-| `courses/index` | Каталог курсов (скрыт) | Поиск, фильтры уровня, список |
-| `courses/[id]` | Курс (скрыт) | Шапка, мета, что изучим, модули, кнопка «Записаться» |
-| `learn/[lessonId]` | Урок (плеер) | Шапка, прогресс, шаги урока, оверлеи геймификации |
+- Старые home-candy, home-neon, home-ruya, home-ruya-pro, index-old, index-backup, Explore и галерея Figma.
+- Четыре старые страницы AI: roleplay, tutor, writing, pronunciation. История сохраняет возможность открыть ранее созданные разговоры.
+- Отдельный старый каталог курсов и карточка курса. В Практике осталась согласованная текущая вкладка «Курсы — скоро». Копия исходников каталога сохранена в `design-explorations/retired-release-2026-11-05/courses-source.tar.gz`, вне маршрутов и архива EAS.
+- Старая отдельная форма регистрации заменена перенаправлением; для регистрации используется один текущий экран.
 
-## 6. AI (`(tabs)/ai`)
+## Проверка перед следующей сборкой
 
-| Маршрут | Назначение | Блоки |
-|---|---|---|
-| `ai/index` | Хаб AI | Строка «спросить» (текст + голос), категории, инструменты, прогресс |
-| `ai/chat/index` | Список диалогов | Новый чат, история |
-| `ai/chat/[id]` | Диалог | Сообщения, поле ввода, голосовой режим |
-| `ai/roleplay` | Ролевые сценарии | Фильтры, карточки сценариев |
-| `ai/tutor` | Репетитор | Вопрос, ответ, выбор языков |
-| `ai/writing` | Проверка письма | Настройки, задание, текст, результат |
-| `ai/pronunciation` | Произношение | Ввод фразы, запись, общий счёт, фразы |
+```sh
+npm run check:release
+```
 
-## 7. Социальное (`(tabs)/social`, `leagues`, `friends`)
-
-| Маршрут | Назначение | Блоки |
-|---|---|---|
-| `social/index` | Вкладки: друзья, лидерборд, лиги | Список друзей, лидерборд, лиги |
-| `leagues/index` | Лига | Hero, зоны повышения, лидерборд, таймер цикла |
-| `leagues/history` | История лиг | Список выступлений, пагинация |
-| `friends/index` | Друзья | Быстрые действия, список |
-| `friends/search` | Поиск | Поле, результаты, действия |
-| `friends/pending` | Заявки | Входящие, исходящие |
-| `friends/leaderboard` | Лидерборд друзей | Список |
-
-## 8. Флеш-карточки (`flashcards`)
-
-| Маршрут | Назначение | Блоки |
-|---|---|---|
-| `flashcards/index` | Библиотека | Заголовок, статистика (кольцо цели), CTA, поиск, список |
-| `flashcards/session` | Сессия | Карточка с переворотом, очередь, отмена |
-| `flashcards/results` | Итоги | Результаты |
-
-## 9. Профиль (`profile`, стек)
-
-| Маршрут | Назначение | Статус |
-|---|---|---|
-| `(tabs)/profile` | Главный профиль | **Figma** |
-| `profile/edit` | Редактирование (имя, email, пол, возраст) | **Figma** (сохранение не подключено) |
-| `profile/settings` | Другие настройки (переключатели, язык, звуки, выход, удаление) | **Figma** |
-| `profile/notifications` | Уведомления (push, каналы, тихие часы, устройства) | старое |
-| `profile/stats` | Статистика (XP за 14 дней, история) | старое |
-| `profile/streak` | Streak | старое |
-| `profile/strength` | Сила навыков | старое |
-| `profile/achievements` | Все достижения | старое |
-| `profile/lockscreen-words` | Слова на экране блокировки | старое |
-
-## 10. Данные и backend (сводка)
-
-- Пользователь: `/auth/me`. Имя, email — из аккаунта. Пол и возраст — **в backend нет** (нужен endpoint и поле в `user-service`).
-- Статистика: `useUserStats` (XP, streak, самоцветы, сердца). Ошибки: `useMistakes`. Достижения: `useMyAchievements` / `useAchievements`. Онбординг: `useOnboardingState` (курс, уровень).
-- Подписки и подписчики в API **нет**.
-
-## 11. Что нужно решить
-
-1. Удалить варианты главной (`home-neon`, `home-ruya`, `home-ruya-pro`) и `index-old`, `index-backup`, `explore`, галерею `figma/index`?
-2. Онбординг: оставить текущий или заменить по макетам (включая дубль регистрации `onboarding/signup`)?
-3. Остальные страницы профиля, лиги, AI и практики — переносить по макетам Figma по очереди?
+Команда проверяет TypeScript, ESLint, локальные регрессии и назначения статических ссылок; также запрещает возвращение удалённых маршрутов. Подробности готовности, фактический состав экспорта и ограничения — в `docs/release-audit-2026-11-05.md`.

@@ -47,9 +47,9 @@ export function LangPills({
 const s = StyleSheet.create({
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginTop: 4 },
   pill: { paddingHorizontal: 13, paddingVertical: 7, borderRadius: 13, flexDirection: 'row', alignItems: 'center', gap: 4 },
-  pillActive: { backgroundColor: '#A8243F', borderWidth: 0 },
+  pillActive: { backgroundColor: '#2FA8E6', borderWidth: 0 },
   pillDisabled: { opacity: 0.4 },
-  pillText: { color: 'rgba(255,255,255,0.8)', fontSize: 13, fontWeight: '700' },
+  pillText: { color: '#5D686F', fontSize: 13, fontFamily: 'Nunito_700Bold' },
   pillTextActive: { color: '#fff' },
-  soonText: { color: 'rgba(255,255,255,0.45)', fontSize: 9, fontWeight: '800', textTransform: 'uppercase' },
+  soonText: { color: '#5D686F', fontSize: 9, fontFamily: 'Nunito_800ExtraBold', textTransform: 'uppercase' },
 });

@@ -1,4 +1,6 @@
 import {
+  AccountProfile,
+  XPDailyResponse,
   AcceptFriendRequestResponse,
   AchievementsResponse,
   ApiError,
@@ -70,6 +72,35 @@ import { Platform } from 'react-native';
 import { AuthService } from './auth-service';
 import Constants from 'expo-constants';
 import { getCurrentLang } from './i18n';
+
+// =========================================================================
+// Onboarding — local before registration, synced after account creation.
+// Маршруты gateway:
+//   POST   /auth/register                 — create registered account
+//   GET    /onboarding                    — read current state
+//   PATCH  /onboarding                    — partial update (после каждого шага)
+//   POST   /onboarding/complete           — финал онбординга
+// =========================================================================
+
+import type { OnboardingStateResponse, PatchOnboardingRequest, RegisterRequest, AuthResponse ,
+  Flashcard,
+  FlashcardStats,
+  ListFlashcardsRequest,
+  ListFlashcardsResponse,
+  CreateFlashcardRequest,
+  UpdateFlashcardRequest,
+  BulkCreateFlashcardsRequest,
+  BulkCreateFlashcardsResponse,
+  PinForTodayRequest,
+  ListTodayQueueResponse,
+  FlashcardReviewRequest,
+  FlashcardReviewResponse,
+} from '@/types/api';
+
+// =========================================================================
+// Phase 7: Word Flashcards API
+// =========================================================================
+
 
 /** Версия приложения для X-App-Version: сервер различает старые и новые
  *  APK (compat-шимы / adoption-аналитика). В собранном APK — нативная
@@ -354,6 +385,8 @@ export class ApiClient {
 }
 
 export const AccountApi = {
+  getProfile: () => ApiClient.get<AccountProfile>('/users/me/profile'),
+  updateProfile: (body: Partial<AccountProfile>) => ApiClient.patch<AccountProfile>('/users/me/profile', body),
   deleteAccount: () => ApiClient.delete<{ deleted: boolean }>('/users/me'),
 };
 
@@ -839,17 +872,6 @@ export const FriendsApi = {
   },
 };
 
-// =========================================================================
-// Onboarding — local before registration, synced after account creation.
-// Маршруты gateway:
-//   POST   /auth/register                 — create registered account
-//   GET    /onboarding                    — read current state
-//   PATCH  /onboarding                    — partial update (после каждого шага)
-//   POST   /onboarding/complete           — финал онбординга
-// =========================================================================
-
-import type { OnboardingStateResponse, PatchOnboardingRequest, RegisterRequest, AuthResponse } from '@/types/api';
-
 export const AuthApi = {
   register: (req: RegisterRequest) =>
     ApiClient.post<AuthResponse>('/auth/register', req),
@@ -862,25 +884,6 @@ export const OnboardingApi = {
     ApiClient.patch<OnboardingStateResponse>('/onboarding', patch),
   complete: () => ApiClient.post<OnboardingStateResponse>('/onboarding/complete', {}),
 };
-
-// =========================================================================
-// Phase 7: Word Flashcards API
-// =========================================================================
-
-import type {
-  Flashcard,
-  FlashcardStats,
-  ListFlashcardsRequest,
-  ListFlashcardsResponse,
-  CreateFlashcardRequest,
-  UpdateFlashcardRequest,
-  BulkCreateFlashcardsRequest,
-  BulkCreateFlashcardsResponse,
-  PinForTodayRequest,
-  ListTodayQueueResponse,
-  FlashcardReviewRequest,
-  FlashcardReviewResponse,
-} from '@/types/api';
 
 export const FlashcardsApi = {
   list: (params?: ListFlashcardsRequest) => {
@@ -943,3 +946,5 @@ export const FlashcardsApi = {
   },
 
 };
+
+export const getXPDaily = (days = 14) => ApiClient.get<XPDailyResponse>(`/gamification/xp/daily?days=${days}`);

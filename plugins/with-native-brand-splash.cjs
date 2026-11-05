@@ -18,7 +18,9 @@ module.exports = function withNativeBrandSplash(config) {
   config = withMainActivity(config, mod => {
     const addition = '\n    // LingoIQ: keep the launch artwork behind React while it initializes.\n    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {\n      window.setBackgroundDrawableResource(R.drawable.lingoiq_launch_background)\n    }';
     if (!mod.modResults.contents.includes('// LingoIQ: keep the launch artwork')) {
-      mod.modResults.contents = mod.modResults.contents.replace('SplashScreenManager.registerOnActivity(this)', 'SplashScreenManager.registerOnActivity(this)' + addition);
+      // The splash-screen plugin may inject registerOnActivity after this mod.
+      // The native template's onCreate call is present regardless of mod order.
+      mod.modResults.contents = mod.modResults.contents.replace('super.onCreate(null)', 'super.onCreate(null)' + addition);
     }
     return mod;
   });

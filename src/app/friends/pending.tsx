@@ -69,37 +69,37 @@ export default function FriendsPendingScreen() {
   };
 
   return (
-    <View className="flex-1 bg-background">
+    <View className="flex-1 bg-transparent">
       <Stack.Screen options={{ title: t('friends.requests') }} />
       <ScrollView contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 80 }}>
         <Pressable
           onPress={() => router.back()}
           className="flex-row items-center gap-1 self-start active:opacity-60"
         >
-          <ArrowLeft size={16} color="#9ca3af" />
-          <Text className="text-muted-foreground font-bold">{t('friends.to_friends')}</Text>
+          <ArrowLeft size={16} color="#5D686F" />
+          <Text className="text-mieo-body font-nunito-bold">{t('friends.to_friends')}</Text>
         </Pressable>
 
         <View className="gap-2">
           <View className="flex-row items-center gap-2">
-            <Bell size={28} color="#36E3FF" />
-            <Text className="text-foreground font-black text-3xl">{t('friends.requests')}</Text>
+            <Bell size={28} color="#2FA8E6" />
+            <Text className="text-mieo-heading font-nunito-black text-3xl">{t('friends.requests')}</Text>
           </View>
-          <Text className="text-muted-foreground font-medium">
+          <Text className="text-mieo-body font-nunito-medium">
             {t('friends.requests_desc')}
           </Text>
         </View>
 
         {pending.isLoading ? (
-          <View className="bg-card rounded-3xl border-4 border-border p-12 items-center">
-            <ActivityIndicator color="#00FFA3" />
+          <View className="bg-mieo-surface rounded-3xl border-[1.5px] border-b-4 border-mieo-stroke p-12 items-center">
+            <ActivityIndicator color="#2FA8E6" />
           </View>
         ) : list.length === 0 ? (
-          <View className="bg-card rounded-3xl border-4 border-border p-8 items-center gap-2">
-            <Text className="text-foreground font-black text-xl">
+          <View className="bg-mieo-surface rounded-3xl border-[1.5px] border-b-4 border-mieo-stroke p-8 items-center gap-2">
+            <Text className="text-mieo-heading font-nunito-black text-xl">
               {t('friends.no_pending')}
             </Text>
-            <Text className="text-muted-foreground font-medium text-center">
+            <Text className="text-mieo-body font-nunito-medium text-center">
               {t('friends.no_pending_desc')}
             </Text>
           </View>
@@ -120,17 +120,17 @@ export default function FriendsPendingScreen() {
                           className="bg-emerald-500 rounded-xl px-3 py-2 flex-row items-center gap-1 active:opacity-80"
                         >
                           <Check size={14} color="#fff" />
-                          <Text className="text-white font-bold text-xs">
+                          <Text className="text-white font-nunito-bold text-xs">
                             {t('friends.accept')}
                           </Text>
                         </Pressable>
                         <Pressable
                           onPress={() => onReject(f)}
                           disabled={reject.isPending}
-                          className="bg-card border-2 border-border rounded-xl px-3 py-2 flex-row items-center gap-1 active:opacity-80"
+                          className="bg-mieo-surface border-2 border-mieo-stroke rounded-xl px-3 py-2 flex-row items-center gap-1 active:opacity-80"
                         >
-                          <X size={14} color="#9ca3af" />
-                          <Text className="text-muted-foreground font-bold text-xs">
+                          <X size={14} color="#5D686F" />
+                          <Text className="text-mieo-body font-nunito-bold text-xs">
                             {t('friends.reject')}
                           </Text>
                         </Pressable>
@@ -152,10 +152,10 @@ export default function FriendsPendingScreen() {
                       <Pressable
                         onPress={() => onReject(f, true)}
                         disabled={reject.isPending}
-                        className="bg-card border-2 border-border rounded-xl px-3 py-2 flex-row items-center gap-1 active:opacity-80"
+                        className="bg-mieo-surface border-2 border-mieo-stroke rounded-xl px-3 py-2 flex-row items-center gap-1 active:opacity-80"
                       >
-                        <X size={14} color="#9ca3af" />
-                        <Text className="text-muted-foreground font-bold text-xs">
+                        <X size={14} color="#5D686F" />
+                        <Text className="text-mieo-body font-nunito-bold text-xs">
                           {t('friends.cancel_req')}
                         </Text>
                       </Pressable>
@@ -183,11 +183,11 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <View className="bg-card rounded-3xl border-4 border-border overflow-hidden">
-      <View className="px-4 py-3 bg-muted/30 flex-row items-center justify-between border-b border-border">
-        <Text className="text-foreground font-black">{title}</Text>
-        <View className="border-2 border-border rounded-xl px-2 py-0.5">
-          <Text className="text-muted-foreground font-bold tabular-nums">
+    <View className="bg-mieo-surface rounded-3xl border-[1.5px] border-b-4 border-mieo-stroke overflow-hidden">
+      <View className="px-4 py-3 bg-mieo-bg/30 flex-row items-center justify-between border-b border-mieo-stroke">
+        <Text className="text-mieo-heading font-nunito-black">{title}</Text>
+        <View className="border-2 border-mieo-stroke rounded-xl px-2 py-0.5">
+          <Text className="text-mieo-body font-nunito-bold tabular-nums">
             {count}
           </Text>
         </View>
@@ -209,15 +209,15 @@ function Row({
   return (
     <View
       className={`px-4 py-3 flex-row items-center gap-3 ${
-        !isLast ? 'border-b border-border' : ''
+        !isLast ? 'border-b border-mieo-stroke' : ''
       }`}
     >
       <Avatar uri={friend.avatar_url} name={friendDisplayName(friend)} size={44} />
       <View className="flex-1 min-w-0">
-        <Text className="text-foreground font-bold" numberOfLines={1}>
+        <Text className="text-mieo-heading font-nunito-bold" numberOfLines={1}>
           {friendDisplayName(friend)}
         </Text>
-        <Text className="text-muted-foreground font-medium text-xs" numberOfLines={1}>
+        <Text className="text-mieo-body font-nunito-medium text-xs" numberOfLines={1}>
           {friend.username ? `@${friend.username}` : '—'}
         </Text>
       </View>

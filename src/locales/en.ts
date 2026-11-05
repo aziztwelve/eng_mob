@@ -2,6 +2,136 @@
  * English translations. Same key structure as ru.ts.
  */
 const en = {
+  achievement: {
+  "first_step": {
+    "title": "First Step",
+    "description": "Complete your very first step"
+  },
+  "eager_learner": {
+    "title": "Eager Learner",
+    "description": "Complete 10 steps"
+  },
+  "step_machine": {
+    "title": "Step Machine",
+    "description": "Complete 100 steps"
+  },
+  "lesson_starter": {
+    "title": "Lesson Starter",
+    "description": "Complete your first lesson"
+  },
+  "lesson_pro": {
+    "title": "Lesson Pro",
+    "description": "Complete 25 lessons"
+  },
+  "course_crusher": {
+    "title": "Course Crusher",
+    "description": "Complete 1 course"
+  },
+  "course_marathoner": {
+    "title": "Course Marathoner",
+    "description": "Complete 5 courses"
+  },
+  "perfectionist": {
+    "title": "Perfectionist",
+    "description": "Pass 10 quizzes with 100% score"
+  },
+  "polyglot": {
+    "title": "Polyglot",
+    "description": "Study 2+ languages simultaneously"
+  },
+  "sparked": {
+    "title": "Sparked",
+    "description": "3-day streak"
+  },
+  "on_fire": {
+    "title": "On Fire",
+    "description": "7-day streak"
+  },
+  "dedicated": {
+    "title": "Dedicated",
+    "description": "14-day streak"
+  },
+  "month_master": {
+    "title": "Month Master",
+    "description": "30-day streak"
+  },
+  "half_year": {
+    "title": "Half Year Hero",
+    "description": "180-day streak"
+  },
+  "century_club": {
+    "title": "Century Club",
+    "description": "100-day streak"
+  },
+  "dragon": {
+    "title": "Dragon",
+    "description": "365-day streak — Legendary"
+  },
+  "first_hundred": {
+    "title": "First Hundred",
+    "description": "Earn 100 total XP"
+  },
+  "first_thousand": {
+    "title": "First Thousand",
+    "description": "Earn 1,000 total XP"
+  },
+  "ten_thousand": {
+    "title": "Ten Thousand",
+    "description": "Earn 10,000 total XP"
+  },
+  "master": {
+    "title": "Master",
+    "description": "Earn 100,000 total XP"
+  },
+  "early_bird": {
+    "title": "Early Bird",
+    "description": "Complete a lesson before 8:00"
+  },
+  "night_owl": {
+    "title": "Night Owl",
+    "description": "Complete a lesson after 22:00"
+  },
+  "lunch_break": {
+    "title": "Lunch Break",
+    "description": "Complete a lesson between 12:00 and 14:00"
+  },
+  "new_year": {
+    "title": "New Year",
+    "description": "Complete a lesson on January 1st"
+  },
+  "valentine": {
+    "title": "Valentine",
+    "description": "Complete a lesson on February 14th"
+  },
+  "birthday": {
+    "title": "Birthday",
+    "description": "Complete a lesson on your birthday"
+  },
+  "weekend_warrior": {
+    "title": "Weekend Warrior",
+    "description": "Complete lessons on Saturday and Sunday"
+  },
+  "comeback_kid": {
+    "title": "Comeback Kid",
+    "description": "Return after a 7+ day break"
+  },
+  "first_quiz": {
+    "title": "First Quiz",
+    "description": "Complete your first quiz"
+  },
+  "quiz_master": {
+    "title": "Quiz Master",
+    "description": "Complete 50 quizzes"
+  },
+  "daily_goal_1": {
+    "title": "Goal Getter",
+    "description": "Hit your daily goal for the first time"
+  },
+  "daily_goal_30": {
+    "title": "Goal Crusher",
+    "description": "Hit your daily goal 30 times"
+  }
+},
   onboarding: {
     common: {
       continue: 'Continue',
@@ -362,7 +492,83 @@ const en = {
       listening_shadowing: 'Listening & Shadowing',
     },
   },
+  aiTopics: {
+    objective: 'Lesson goal',
+    vocabulary: 'Words and phrases',
+    grammar: 'Grammar',
+    generated_hint: 'AI will prepare explanations and exercises for this lesson.',
+    start_lesson: 'Start lesson',
+
+    resume_title: 'Continue lesson?',
+    resume_hint: 'You have already started this lesson. Continue the conversation or start again.',
+    start_again: 'Start again',
+    resume: 'Continue',
+
+    five_topics: '5 topics',
+    five_lessons: '5 lessons',
+    lecture: 'Lecture',
+    practice: 'Practice',
+    five_minutes: '5 min',
+
+    title: 'AI and topics',
+    subtitle: 'Choose a topic and learn at your own pace',
+    free_talk_hint: 'Talk about anything with your AI conversation partner',
+    open_free_talk: 'Open Free Talk',
+    levels_title: 'Topics by level',
+    levels_hint: 'Choose your English level',
+    speaking_topics: 'Speaking practice',
+    other_topics: 'More learning topics',
+    no_topics: 'No topics have been published for this level yet.',
+  },
+
+  freeTalk: {
+    session_start: 'Start 5-minute session',
+    session_hint: 'One free session per day. The timer continues if you leave. Daily reset is at 00:00 UTC.',
+    session_ended: 'Your free session for today has already been used or has ended.',
+    session_failed: 'Could not start the session. Try again.',
+    session_starting: 'Starting…',
+    session_remaining: 'Time left',
+
+    choose_avatar: 'Choose avatar',
+    avatar_saved_device: 'Saved on this device',
+    avatar_number: 'Robot {{number}}',
+    change_avatar: 'Change avatar',
+    avatar_save_failed: 'Could not save avatar',
+
+    recording_locked: 'Recording · tap the arrow to send',
+    hold_hint: 'Hold the microphone to speak',
+    discard_recording: 'Discard recording',
+    "start": "Start Free Talk",
+    "starting": "Getting ready…",
+    "close": "End Free Talk",
+    "elapsed": "Practice time",
+    "speed": "Playback speed: {{rate}}",
+    "avatar_space": "Your AI speaking partner",
+    "expand": "Expand partner area",
+    "collapse": "Collapse partner area",
+    "section": "Speaking practice",
+    "type": "Type",
+    "voice": "Speak",
+    "send": "Send message",
+    "inspire": "Inspire",
+    "listening": "Release to send · swipe left to discard",
+    "speaking": "Your partner is speaking…",
+    "tap_to_speak": "Tap the microphone to speak",
+    "finish_recording": "Stop recording and send",
+    "message_placeholder": "Write your message…",
+    "welcome": "Let’s talk!",
+    "welcome_hint": "Tell me about your day, or pick an idea below. Speak or type to start.",
+    "inspire_title": "What shall we talk about?",
+    "inspire_hint": "Choose an idea, then edit it or send it when you are ready.",
+    "audio_unavailable": "Audio is unavailable. You can read the reply in the chat.",
+    "recording_failed": "Could not save the recording. Please try again.",
+    "no_speech": "No speech detected. Please try again."
+},
   ai: {
+    history_title: 'AI history',
+    history_hint: 'Your conversations with AI. Open a conversation to view it or continue.',
+    history_empty_hint: 'Conversations you start in Free Talk or lessons will appear here.',
+    history_messages: 'Messages: {{count}}',
     lang: 'Language',
     level: 'Level',
     task: 'Prompt (optional)',
@@ -382,6 +588,10 @@ const en = {
     check_err: 'Check failed. Try again.',
     limit_chats: 'Daily chat limit reached. Try tomorrow.',
     soon: 'Soon',
+    scene_case: 'Situation',
+    scene_tasks: 'Tasks',
+    scene_start: 'Start chat',
+    tasks_progress: 'Tasks ({{done}}/{{total}})',
     coming_soon_desc: 'The AI assistant is on the way. Tips and smart practice will appear here soon.',
     no_scenarios: 'No scenarios found',
     no_scenarios_sub: 'Try other filters or reset them.',
@@ -697,6 +907,45 @@ const en = {
     },
   },
   profile: {
+    email: 'Email',
+    updating: 'Saving…',
+    push_failed: 'Could not register this device for push notifications.',
+    push_denied: 'Allow notifications in your phone settings.',
+    push_missing_config: 'Push is not configured in this build.',
+    goal_saved: 'Daily goal updated',
+
+    freeze_auto: 'Available freezes protect your streak automatically when you miss a day.',
+    birthday: "Date of birth",
+    timezone: "Time zone",
+    timezone_hint: "Used for your daily goals, streak and activity dates.",
+    unspecified: "Not specified",
+    invalid_name: "Enter a name of up to 100 characters.",
+    invalid_birthday: "Enter a valid birth date as YYYY-MM-DD, or leave it empty.",
+    invalid_timezone: "Enter a valid time zone, for example Asia/Dushanbe.",
+    friends: "Friends",
+    weekly_xp: "Weekly XP",
+    level_label: "Level {{level}}",
+    xp_step: "Step",
+    xp_lesson: "Lesson",
+    xp_goal: "Daily goal",
+    xp_achievement: "Achievement",
+    xp_streak: "Streak bonus",
+    xp_practice: "Practice",
+    more: "More",
+    help_title: "Help & support",
+    help_recording: "Recording is not checked",
+    help_recording_body: "Allow microphone access in your phone settings. Record a clear phrase, then tap Check. Keep the app open until the result arrives. If the connection fails, keep your recording and try again.",
+    help_notifications: "Notifications are not arriving",
+    help_notifications_body: "Enable notifications in your phone settings and register this device under Notifications. Check quiet hours and channel switches.",
+    help_sync: "Progress did not update",
+    help_sync_body: "Check your internet connection and retry the failed action. Open the lesson again to load progress from the server.",
+    contact_support: "Write to support",
+    unavailable: "Not available yet",
+    terms_unavailable: "The terms have not been provided yet. Contact support if you need them.",
+    open_failed: "Could not open the link.",
+    xp_chart_incomplete: "Some history pages could not be loaded.",
+    xp_other: "Activity",
+
     other_settings: 'Other Settings',
     edit_profile: 'Edit Profile',
     disable_notifications: 'Notifications',
@@ -1056,6 +1305,10 @@ const en = {
     add_failed: 'Failed to add words',
   },
   ach: {
+    tier_bronze: 'Bronze',
+    tier_silver: 'Silver',
+    tier_gold: 'Gold',
+
     cat_all: 'All',
     cat_learning: 'Learning',
     cat_streak: 'Streak',

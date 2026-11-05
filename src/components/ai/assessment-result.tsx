@@ -96,29 +96,29 @@ function categoryColor(c: string) { return c === 'grammar' ? '#f43f5e' : c === '
 
 const s = StyleSheet.create({
   card: { borderRadius: 22, padding: 16, gap: 12 },
-  label: { color: 'rgba(255,255,255,0.55)', fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.6 },
-  sectionTitle: { color: '#fff', fontSize: 15, fontWeight: '800' },
+  label: { color: '#5D686F', fontSize: 10, fontFamily: 'Nunito_700Bold', textTransform: 'uppercase', letterSpacing: 0.6 },
+  sectionTitle: { color: '#171A1C', fontSize: 15, fontFamily: 'Nunito_800ExtraBold' },
 
   overallRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 },
-  bigScore: { fontSize: 46, fontWeight: '900', lineHeight: 52 },
-  bigScoreDenom: { fontSize: 20, color: 'rgba(255,255,255,0.4)', fontWeight: '600' },
+  bigScore: { fontSize: 46, fontFamily: 'Nunito_900Black', lineHeight: 52 },
+  bigScoreDenom: { fontSize: 20, color: '#5D686F', fontFamily: 'Nunito_600SemiBold' },
   badgeWrap: { borderRadius: 12, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1 },
-  badgeText: { fontSize: 13, fontWeight: '800' },
+  badgeText: { fontSize: 13, fontFamily: 'Nunito_800ExtraBold' },
 
   barsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   barItem: { gap: 4, width: '47%' },
   barHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  barLabel: { color: 'rgba(255,255,255,0.55)', fontSize: 10, fontWeight: '700', textTransform: 'uppercase' },
-  barValue: { fontSize: 14, fontWeight: '900' },
-  barBg: { height: 5, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.12)', overflow: 'hidden' },
+  barLabel: { color: '#5D686F', fontSize: 10, fontFamily: 'Nunito_700Bold', textTransform: 'uppercase' },
+  barValue: { fontSize: 14, fontFamily: 'Nunito_900Black' },
+  barBg: { height: 5, borderRadius: 4, backgroundColor: '#EAF8FF', overflow: 'hidden' },
   barFill: { height: '100%', borderRadius: 4 },
 
   correctedBox: { backgroundColor: 'rgba(16,185,129,0.06)', borderRadius: 14, padding: 12, borderWidth: 1, borderColor: 'rgba(16,185,129,0.2)' },
-  correctedText: { color: '#fff', fontSize: 14, fontWeight: '500', lineHeight: 22 },
+  correctedText: { color: '#171A1C', fontSize: 14, fontFamily: 'Nunito_600SemiBold', lineHeight: 22 },
 
   feedbackRow: { borderRadius: 16, padding: 12, gap: 5 },
   catBadge: { alignSelf: 'flex-start', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
-  catText: { fontSize: 10, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5 },
-  feedbackIssue: { color: '#fff', fontSize: 13, fontWeight: '700' },
-  feedbackSugg: { color: 'rgba(255,255,255,0.6)', fontSize: 12, fontWeight: '500' },
+  catText: { fontSize: 10, fontFamily: 'Nunito_800ExtraBold', textTransform: 'uppercase', letterSpacing: 0.5 },
+  feedbackIssue: { color: '#171A1C', fontSize: 13, fontFamily: 'Nunito_700Bold' },
+  feedbackSugg: { color: '#5D686F', fontSize: 12, fontFamily: 'Nunito_600SemiBold' },
 });

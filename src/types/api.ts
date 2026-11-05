@@ -218,7 +218,7 @@ export interface TaskContent {
 
 export interface BrainGameContent {
   game_type: 'matching' | 'memory' | 'flashcards';
-  pairs: Array<{ word: string; translation: string }>;
+  pairs: { word: string; translation: string }[];
 }
 
 export interface AIWritingContent {
@@ -295,7 +295,7 @@ export interface StoryScene {
   translation?: string;
   type?: 'narrative' | 'choice';
   question?: string;
-  options?: Array<{ text: string; is_correct: boolean }>;
+  options?: { text: string; is_correct: boolean }[];
 }
 
 export interface StoryContent {
@@ -731,6 +731,8 @@ export interface StreakDay {
 }
 
 export interface StreakHistory {
+  today?: string;
+  timezone?: string;
   user_id: string;
   days: StreakDay[];
 }
@@ -1488,6 +1490,8 @@ export interface StartConversationResponse {
 export interface SendMessageRequest {
   content: string;
   want_audio?: boolean;
+  include_avatar_emotion?: boolean;
+  free_talk_session?: boolean;
 }
 
 export interface SendMessageResponse {
@@ -1767,7 +1771,7 @@ export interface FlashcardReviewResponse {
 }
 
 export interface BulkCreateFlashcardsRequest {
-  items: Array<{
+  items: {
     word: string;
     translation: string;
     language: string;
@@ -1776,7 +1780,7 @@ export interface BulkCreateFlashcardsRequest {
     example_sentence?: string;
     source?: 'manual' | 'lesson' | 'bank';
     vocabulary_id?: string;
-  }>;
+  }[];
 }
 
 export interface BulkCreateFlashcardsResponse {
@@ -1793,3 +1797,10 @@ export interface ListTodayQueueResponse {
   items: Flashcard[];
   queued_for_date: string;
 }
+
+export interface AccountProfile {
+ first_name?: string; last_name?: string; gender?: '' | 'male' | 'female';
+ date_of_birth?: string; timezone?: string; avatar_url?: string;
+ native_lang?: string; target_lang?: string; bio?: string;
+}
+export interface XPDailyResponse { days: { date: string; xp: number }[]; timezone: string; }

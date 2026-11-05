@@ -1,27 +1,31 @@
 import React from "react";
-import { View, Text, StyleSheet, Pressable } from "react-native";
+import { View, Text, StyleSheet, Pressable, StatusBar } from "react-native";
 import { Stack } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTranslation } from "react-i18next";
-import Svg, { Path, Circle, Ellipse, Line } from "react-native-svg";
+import Svg, { Path, Circle, Ellipse } from "react-native-svg";
 import { useUserStats } from "@/hooks/use-user-stats";
+import { useHearts } from '@/hooks/use-hearts';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useIsFocused } from '@react-navigation/native';
+import { Search, ChevronRight, LockKeyhole } from 'lucide-react-native';
+import { SKY } from '@/components/lesson/sky-lesson-header';
+import { IconFlame, IconHeart, IconGem } from '@/components/ui/icons';
+import { StatPill } from '@/components/practice/practice-ui';
 
-/**
- * Shared "Sunset Lava" design language.
- * Single source of truth for the gradient backdrop, nested-stack chrome and
- * the common UI building blocks (header, tabs, cards, CTA) so AI / League /
- * Profile look exactly like the Lessons screen.
- */
-export const SUNSET = ["#2E0A4A", "#6A1252", "#A8243F", "#C9521F"] as const;
-export const SUNSET_LOC = [0, 0.38, 0.7, 0.96] as const;
-export const CTA = ["#A8243F", "#CC5A1F"] as const;
-export const GOLD = ["#FFDF5E", "#FFB338"] as const;
-export const FILL = ["#FFF066", "#FFD84A"] as const;
+/** Compatibility exports for existing routes, using the Practice sky design. */
+export const SUNSET = [SKY.top, SKY.mid, '#FFFFFF'] as const;
+export const SUNSET_LOC = [0, 0.3, 0.6] as const;
+export const CTA = [SKY.blue, SKY.blueDark] as const;
+export const GOLD = ['#FFDF5E', '#FFB338'] as const;
+export const FILL = [SKY.blue, SKY.blueDark] as const;
 
 export const glass = {
-  backgroundColor: "rgba(255,255,255,0.14)",
-  borderWidth: 1,
-  borderColor: "rgba(255,255,255,0.22)",
+  backgroundColor: '#FFFFFF',
+  borderWidth: 1.5,
+  borderBottomWidth: 4,
+  borderColor: SKY.line,
+  borderBottomColor: SKY.card,
 } as const;
 
 /* ------------------------------------------------------------------ */
@@ -36,17 +40,22 @@ export function SunsetBg({ children }: { children: React.ReactNode }) {
 }
 
 export const sunsetStackOptions = {
-  headerStyle: { backgroundColor: "#2E0A4A" },
+  headerStyle: { backgroundColor: SKY.top },
   headerShadowVisible: false,
-  headerTintColor: "#ffffff",
-  headerTitleStyle: { fontWeight: "900" as const },
+  headerTintColor: SKY.ink,
+  headerTitleStyle: { fontFamily: "Nunito_900Black" },
   contentStyle: { backgroundColor: "transparent" },
 };
 
 export default function SunsetStack() {
+  const insets = useSafeAreaInsets();
+  const focused = useIsFocused();
   return (
     <SunsetBg>
-      <Stack screenOptions={sunsetStackOptions} />
+      {focused && <StatusBar barStyle="dark-content" />}
+      <View style={{ flex: 1, paddingBottom: insets.bottom }}>
+        <Stack screenOptions={sunsetStackOptions} />
+      </View>
     </SunsetBg>
   );
 }
@@ -70,15 +79,6 @@ export function SunsetOwl({ size = 78 }: { size?: number }) {
   );
 }
 
-function SearchIcon() {
-  return (
-    <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={2.2} strokeLinecap="round">
-      <Circle cx={11} cy={11} r={7} />
-      <Line x1={21} y1={21} x2={16.5} y2={16.5} />
-    </Svg>
-  );
-}
-
 /* ------------------------------------------------------------------ */
 /* Header: stats bar + title (+ optional search)                       */
 /* ------------------------------------------------------------------ */
@@ -91,22 +91,13 @@ export function SunsetStats({
   hearts?: number;
   gems?: number;
 }) {
-  // Реальные данные из gamification-stats; пропсы переопределяют (для preview).
   const { data } = useUserStats();
-  const streakVal = streak ?? data?.current_streak ?? 0;
-  const heartsVal = hearts ?? data?.hearts ?? 0;
-  const gemsVal = gems ?? data?.gems ?? 0;
+  const { data: heartData } = useHearts();
   return (
     <View style={st.top}>
-      <View style={st.stats}>
-        <View style={[st.stat, glass]}><Text style={st.statText}>🔥 {streakVal}</Text></View>
-        <View style={[st.stat, glass]}><Text style={st.statText}>♥ {heartsVal}</Text></View>
-        <View style={[st.stat, glass]}><Text style={st.statText}>💎 {gemsVal}</Text></View>
-      </View>
-      <View style={st.avatar}>
-        <Text style={{ fontSize: 24 }}>🧒</Text>
-        <Text style={st.crown}>👑</Text>
-      </View>
+      <StatPill value={streak ?? data?.current_streak ?? 0}><IconFlame size={16} color="#FF8A2B" /></StatPill>
+      <StatPill value={hearts ?? (heartData?.unlimited ? '∞' : heartData?.hearts ?? data?.hearts ?? 0)}><IconHeart size={16} color={SKY.red} /></StatPill>
+      <StatPill value={gems ?? data?.gems ?? 0}><IconGem size={16} color={SKY.blue} /></StatPill>
     </View>
   );
 }
@@ -130,7 +121,7 @@ export function SunsetHeader({
         <Text style={st.title}>{title}</Text>
         {search ? (
           <Pressable onPress={onSearch} style={[st.search, glass]}>
-            <SearchIcon />
+            <Search size={18} color={SKY.blueDark} />
             <Text style={st.searchText}>{t('practice.search')}</Text>
           </Pressable>
         ) : null}
@@ -140,7 +131,7 @@ export function SunsetHeader({
 }
 
 /* ------------------------------------------------------------------ */
-/* Segmented tabs (crimson-gradient active)                            */
+/* Segmented tabs (blue active)                            */
 /* ------------------------------------------------------------------ */
 export function SunsetTabs({
   tabs,
@@ -156,7 +147,7 @@ export function SunsetTabs({
       {tabs.map((tab) => {
         const isActive = tab.key === active;
         return (
-          <Pressable key={tab.key} onPress={() => onChange(tab.key)}>
+          <Pressable key={tab.key} accessibilityRole="tab" accessibilityState={{ selected: isActive }} onPress={() => onChange(tab.key)}>
             {isActive ? (
               <LinearGradient colors={CTA} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[st.tab, st.tabActive]}>
                 <Text style={[st.tabText, st.tabTextActive]}>{tab.label}</Text>
@@ -201,19 +192,21 @@ export function SunsetSubhead({
 }
 
 /* ------------------------------------------------------------------ */
-/* Crimson CTA button                                                  */
+/* Sky CTA button                                                  */
 /* ------------------------------------------------------------------ */
 export function CtaButton({
   label,
   onPress,
   block,
+  disabled = false,
 }: {
   label: string;
   onPress?: () => void;
   block?: boolean;
+  disabled?: boolean;
 }) {
   return (
-    <Pressable onPress={onPress} style={[st.ctaWrap, block && { alignSelf: "stretch" }]}>
+    <Pressable accessibilityRole="button" accessibilityState={{ disabled }} disabled={disabled} onPress={onPress} style={[st.ctaWrap, block && { alignSelf: "stretch" }, disabled && { opacity: 0.45 }]}>
       <LinearGradient colors={CTA} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={st.cta}>
         <Text style={st.ctaText}>{label}</Text>
       </LinearGradient>
@@ -228,13 +221,13 @@ export function GoArrow({ locked }: { locked?: boolean }) {
   if (locked) {
     return (
       <View style={[st.go, st.goLock]}>
-        <Text style={{ fontSize: 16 }}>🔒</Text>
+        <LockKeyhole size={18} color={SKY.muted} />
       </View>
     );
   }
   return (
     <LinearGradient colors={CTA} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={st.go}>
-      <Text style={st.goText}>›</Text>
+      <ChevronRight size={22} color="#FFFFFF" />
     </LinearGradient>
   );
 }
@@ -242,37 +235,27 @@ export function GoArrow({ locked }: { locked?: boolean }) {
 /* ------------------------------------------------------------------ */
 const st = StyleSheet.create({
   top: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 8 },
-  stats: { flexDirection: "row", gap: 8, flex: 1 },
-  stat: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 16 },
-  statText: { color: "#fff", fontWeight: "800", fontSize: 14 },
-  avatar: {
-    width: 46, height: 46, borderRadius: 23, backgroundColor: "#FFD16A",
-    borderWidth: 2, borderColor: "rgba(255,255,255,0.7)",
-    alignItems: "center", justifyContent: "center",
-  },
-  crown: { position: "absolute", top: -9, right: -6, fontSize: 15, transform: [{ rotate: "18deg" }] },
-
   titleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 20 },
-  title: { color: "#fff", fontSize: 30, fontWeight: "900" },
+  title: { flex: 1, color: SKY.ink, fontSize: 30, fontFamily: "Nunito_900Black" },
   search: { flexDirection: "row", alignItems: "center", gap: 7, paddingHorizontal: 15, paddingVertical: 9, borderRadius: 18 },
-  searchText: { color: "#fff", fontSize: 14, fontWeight: "700" },
+  searchText: { color: SKY.ink, fontSize: 14, fontFamily: "Nunito_700Bold" },
 
-  tabs: { flexDirection: "row", gap: 10, marginTop: 18 },
-  tab: { paddingHorizontal: 18, paddingVertical: 9, borderRadius: 16 },
-  tabActive: { borderWidth: 0, shadowColor: "#A8243F", shadowOpacity: 0.4, shadowRadius: 12, shadowOffset: { width: 0, height: 8 }, elevation: 4 },
-  tabText: { fontSize: 14, fontWeight: "800", color: "rgba(255,255,255,0.8)" },
-  tabTextActive: { color: "#fff" },
+  tabs: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 18 },
+  tab: { minHeight: 44, justifyContent: "center", paddingHorizontal: 18, paddingVertical: 9, borderRadius: 16 },
+  tabActive: { borderWidth: 1.5, borderColor: SKY.blueDark, borderBottomWidth: 4, borderBottomColor: SKY.blueDark },
+  tabText: { fontSize: 14, fontFamily: "Nunito_800ExtraBold", color: SKY.muted },
+  tabTextActive: { color: "#FFFFFF" },
 
   subhead: { flexDirection: "row", alignItems: "center", marginTop: 22, marginBottom: 14 },
-  subheadTitle: { color: "#fff", fontSize: 18, fontWeight: "800" },
+  subheadTitle: { color: SKY.ink, fontSize: 18, fontFamily: "Nunito_800ExtraBold" },
   subheadUnderline: { width: 38, height: 3, borderRadius: 2, marginTop: 6 },
-  subheadLink: { color: "#fff", fontSize: 13, fontWeight: "700", opacity: 0.92 },
+  subheadLink: { color: SKY.ink, fontSize: 13, fontFamily: "Nunito_700Bold", opacity: 0.92 },
 
-  ctaWrap: { borderRadius: 16, overflow: "hidden", shadowColor: "#A8243F", shadowOpacity: 0.45, shadowRadius: 18, shadowOffset: { width: 0, height: 8 }, elevation: 4 },
-  cta: { paddingVertical: 15, paddingHorizontal: 24, alignItems: "center", justifyContent: "center" },
-  ctaText: { color: "#fff", fontWeight: "900", fontSize: 15, letterSpacing: 0.3 },
+  ctaWrap: { borderRadius: 16, overflow: "hidden", borderBottomWidth: 4, borderBottomColor: SKY.blueDark },
+  cta: { minHeight: 52, paddingVertical: 15, paddingHorizontal: 24, alignItems: "center", justifyContent: "center" },
+  ctaText: { color: "#FFFFFF", fontFamily: "Nunito_900Black", fontSize: 15, letterSpacing: 0.3 },
 
   go: { width: 42, height: 42, borderRadius: 21, alignItems: "center", justifyContent: "center" },
-  goText: { color: "#fff", fontSize: 22, fontWeight: "900", marginTop: -2 },
-  goLock: { backgroundColor: "rgba(255,255,255,0.16)" },
+  goText: { color: SKY.ink, fontSize: 22, fontFamily: "Nunito_900Black", marginTop: -2 },
+  goLock: { backgroundColor: SKY.card },
 });

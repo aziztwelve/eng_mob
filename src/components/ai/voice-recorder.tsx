@@ -187,7 +187,7 @@ function LightRecording({
 export function VoiceRecorder({
   loading = false,
   minDurationSec = 0,
-  light = false,
+  light = true,
   onSubmit,
 }: {
   light?: boolean;
@@ -206,6 +206,7 @@ export function VoiceRecorder({
   const stopRef = useRef<() => Promise<void>>(async () => {});
 
   useEffect(() => {
+    const sound = soundRef.current;
     return () => {
       // expo-audio may already have released the recorder on unmount.
       try {
@@ -213,9 +214,9 @@ export function VoiceRecorder({
       } catch {
         /* released */
       }
-      soundRef.current.stop();
+      sound.stop();
     };
-  }, []);
+  }, [recorder]);
 
   // Timer driven by wall-clock time (not by counting interval ticks), so the
   // counter keeps moving even if a tick is delayed or the component re-renders.

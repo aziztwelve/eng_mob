@@ -1,1 +1,1 @@
-export { default } from "@/components/home/home-map";
+export { default } from '@/components/home/ai-home';

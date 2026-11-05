@@ -6,6 +6,7 @@ type PlayOptions = {
   /** Keep the player after playback ends, so it can be replayed via `toggle()`. */
   keep?: boolean;
   onFinish?: () => void;
+  onPlaybackChange?: (playing: boolean) => void;
 };
 
 /**
@@ -17,14 +18,19 @@ type PlayOptions = {
 export class SoundSlot {
   private player: AudioPlayer | null = null;
   private subscription: { remove(): void } | null = null;
+  private onPlaybackChange: ((playing: boolean) => void) | null = null;
+  private reportedPlaying = false;
 
   play(source: AudioSource, opts: PlayOptions = {}) {
     this.stop();
     const player = createAudioPlayer(source);
     this.player = player;
+    this.onPlaybackChange = opts.onPlaybackChange ?? null;
     if (opts.volume != null) player.volume = opts.volume;
     if (opts.rate != null && opts.rate !== 1) player.setPlaybackRate(opts.rate, 'high');
     this.subscription = player.addListener('playbackStatusUpdate', (status) => {
+      const playing = status.playing && !status.didJustFinish;
+      if (playing !== this.reportedPlaying) { this.reportedPlaying = playing; this.onPlaybackChange?.(playing); }
       if (!status.didJustFinish) return;
       opts.onFinish?.();
       if (!opts.keep && this.player === player) this.stop();
@@ -33,6 +39,9 @@ export class SoundSlot {
   }
 
   stop() {
+    if (this.reportedPlaying) this.onPlaybackChange?.(false);
+    this.reportedPlaying = false;
+    this.onPlaybackChange = null;
     this.subscription?.remove();
     this.subscription = null;
     this.player?.remove();
@@ -51,6 +60,11 @@ export class SoundSlot {
     if (duration > 0 && currentTime >= duration - 0.05) await player.seekTo(0);
     player.play();
     return true;
+  }
+
+  /** Changes the current utterance without restarting it. */
+  setRate(rate: number) {
+    this.player?.setPlaybackRate(rate, 'high');
   }
 
   get isPlaying() {

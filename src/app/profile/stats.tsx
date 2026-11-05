@@ -7,35 +7,17 @@ import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useUserStats } from '@/hooks/use-user-stats';
 import { useDailyGoal, useUpdateDailyGoal } from '@/hooks/use-daily-goal';
-import { useXPHistoryInfinite } from '@/hooks/use-xp-history';
+import { useXPHistoryInfinite, useXPDaily } from '@/hooks/use-xp-history';
 import { DailyGoalRing } from '@/components/gamification';
 import { tsToDate } from '@/lib/api-client';
-import type { XPTransaction } from '@/types/api';
 
 const GOAL_PRESETS = [10, 20, 30, 50];
 
-const REASON_NUMERIC: Record<number, string> = {
-  1: 'Step',
-  2: 'Lesson',
-  3: 'Daily goal',
-  4: 'Achievement',
-  5: 'Streak bonus',
-  6: 'Practice',
+const REASON_KEY: Record<string, string> = {
+ '1': 'xp_step', '2': 'xp_lesson', '3': 'xp_goal', '4': 'xp_achievement', '5': 'xp_streak', '6': 'xp_practice', '7': 'xp_other',
+ XP_REASON_STEP_COMPLETED: 'xp_step', XP_REASON_LESSON_COMPLETED: 'xp_lesson', XP_REASON_DAILY_GOAL: 'xp_goal',
+ XP_REASON_ACHIEVEMENT: 'xp_achievement', XP_REASON_STREAK_BONUS: 'xp_streak', XP_REASON_PRACTICE: 'xp_practice',
 };
-
-const REASON_LABEL: Record<string, string> = {
-  XP_REASON_STEP_COMPLETED: 'Step',
-  XP_REASON_LESSON_COMPLETED: 'Lesson',
-  XP_REASON_DAILY_GOAL: 'Daily goal',
-  XP_REASON_ACHIEVEMENT: 'Achievement',
-  XP_REASON_STREAK_BONUS: 'Streak bonus',
-  XP_REASON_PRACTICE: 'Practice',
-};
-
-function reasonLabel(r: XPTransaction['reason']): string {
-  if (typeof r === 'number') return REASON_NUMERIC[r] ?? '—';
-  return REASON_LABEL[r] ?? '—';
-}
 
 export default function StatsScreen() {
   const { t } = useTranslation();
@@ -46,31 +28,14 @@ export default function StatsScreen() {
   const goal = goalQuery.data;
   const updateGoal = useUpdateDailyGoal();
   const xp = useXPHistoryInfinite();
+  const daily = useXPDaily(14);
 
   const transactions = useMemo(
     () => xp.data?.pages?.flatMap((p) => p.transactions) ?? [],
     [xp.data]
   );
 
-  const byDay = useMemo(() => {
-    const m = new Map<string, number>();
-    transactions.forEach((tx) => {
-      const d = tsToDate(tx.created_at);
-      if (!d) return;
-      const iso = d.toISOString().slice(0, 10);
-      m.set(iso, (m.get(iso) ?? 0) + tx.amount);
-    });
-    const out: { date: string; xp: number }[] = [];
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    for (let i = 13; i >= 0; i--) {
-      const d = new Date(today);
-      d.setDate(today.getDate() - i);
-      const iso = d.toISOString().slice(0, 10);
-      out.push({ date: iso, xp: m.get(iso) ?? 0 });
-    }
-    return out;
-  }, [transactions]);
+  const byDay = daily.data?.days ?? [];
 
   const maxBar = Math.max(10, ...byDay.map((d) => d.xp));
 
@@ -119,7 +84,7 @@ export default function StatsScreen() {
             {/* Level XP bar */}
             <View className="gap-[5px]">
               <View className="flex-row justify-between">
-                <Text className="text-mieo-heading font-nunito-extrabold text-[12px]">Lv {lvl}</Text>
+                <Text className="text-mieo-heading font-nunito-extrabold text-[12px]">{t('profile.level_label', { level: lvl })}</Text>
                 <Text className="text-mieo-body font-nunito-bold text-[12px]">{into} / {span} XP</Text>
               </View>
               <View className="h-[10px] rounded-[6px] bg-[#F0F9FF] overflow-hidden">
@@ -135,10 +100,10 @@ export default function StatsScreen() {
         {/* XP за 14 дней */}
         <View className="bg-mieo-surface border-[1.5px] border-[#C9EDFF] rounded-[24px] p-[16px] gap-[14px]">
           <Text className="text-mieo-heading font-nunito-black text-[18px]">{t('profile.xp14')}</Text>
-          <View className="flex-row items-end justify-between gap-[4px] h-[110px]">
+          {daily.isError ? <ProfileQueryError onRetry={() => { void daily.refetch(); }} /> : daily.isLoading ? <ActivityIndicator color="#1AB3FF" /> : <View className="flex-row items-end justify-between gap-[4px] h-[110px]">
             {byDay.map((d) => {
               const pct = Math.max((d.xp / maxBar) * 100, 2);
-              const day = new Date(d.date).getDate();
+              const day = Number(d.date.slice(-2));
               return (
                 <View key={d.date} className="flex-1 items-center h-[100%] justify-end">
                   <View className="w-[100%] h-[90px] justify-end">
@@ -154,10 +119,10 @@ export default function StatsScreen() {
                 </View>
               );
             })}
-          </View>
-          <View className="flex-row justify-between">
-            <Text className="text-mieo-body text-[12px] font-nunito-bold">Total: {stats?.total_xp ?? 0} XP</Text>
-            <Text className="text-mieo-body text-[12px] font-nunito-bold">Weekly: {stats?.weekly_xp ?? 0} XP</Text>
+          </View>}
+          <View className="flex-row justify-between flex-wrap gap-2">
+            <Text className="text-mieo-body text-[12px] font-nunito-bold">{t('profile.total_xp')}: {statsQuery.isError ? '—' : stats?.total_xp ?? '…'} XP</Text>
+            <Text className="text-mieo-body text-[12px] font-nunito-bold">{t('profile.weekly_xp')}: {statsQuery.isError ? '—' : stats?.weekly_xp ?? '…'} XP</Text>
           </View>
         </View>
 
@@ -171,7 +136,7 @@ export default function StatsScreen() {
               const d = tsToDate(tx.created_at);
               return (
                 <View key={tx.id} className="flex-row items-center justify-between py-[9px] border-b-[1px] border-b-[#E3E6E8]">
-                  <Text className="text-mieo-heading font-nunito-extrabold text-[14px]">⚡ {reasonLabel(tx.reason)}</Text>
+                  <Text className="text-mieo-heading font-nunito-extrabold text-[14px]">⚡ {t(`profile.${REASON_KEY[String(tx.reason)] ?? 'xp_other'}`)}</Text>
                   <View className="flex-row items-center gap-[12px]">
                     <Text className="text-mieo-body text-[12px]">{d ? d.toLocaleDateString() : '—'}</Text>
                     <Text className="text-mieo-heading font-nunito-black text-[14px]">+{tx.amount}</Text>

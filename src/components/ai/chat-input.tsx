@@ -1,71 +1,19 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { Mic, Send, Square } from 'lucide-react-native';
 import {
-  AudioQuality,
-  IOSOutputFormat,
   requestRecordingPermissionsAsync,
   setAudioModeAsync,
   useAudioRecorder,
-  type RecordingOptions,
 } from 'expo-audio';
 import Toast from 'react-native-toast-message';
 import { LinearGradient } from 'expo-linear-gradient';
 import { glass, CTA } from '@/components/sunset';
 import { useTranscribeAudio } from '@/hooks/use-ai';
+import { STT_RECORDING_OPTIONS as STT_RECORDING_OPTIONS_SHARED, sttFormatMeta } from '@/lib/stt-recording';
 import { useTranslation } from 'react-i18next';
 
 const MAX_STT_SEC = 60;
-const STT_SAMPLE_RATE = 16000;
-
-// Google STT recognize НЕ поддерживает m4a/AAC (пресет HIGH_QUALITY), поэтому
-// пишем в формат, который Google умеет декодировать на каждой платформе:
-//   • Android — AMR_WB @ 16 kHz (encoder/format AMR_WB)
-//   • iOS     — LINEAR16 WAV @ 16 kHz (LinearPCM)
-//   • Web     — WEBM/Opus (MediaRecorder по умолчанию, 48 kHz)
-const STT_RECORDING_OPTIONS: RecordingOptions = {
-  isMeteringEnabled: false,
-  numberOfChannels: 1,
-  extension: '.wav',
-  sampleRate: STT_SAMPLE_RATE,
-  bitRate: 23850, // AMR-WB max mode (Android); ignored for LINEARPCM on iOS
-  android: {
-    extension: '.amr',
-    outputFormat: 'amrwb',
-    audioEncoder: 'amr_wb',
-    sampleRate: STT_SAMPLE_RATE,
-  },
-  ios: {
-    extension: '.wav',
-    outputFormat: IOSOutputFormat.LINEARPCM,
-    audioQuality: AudioQuality.HIGH,
-    sampleRate: STT_SAMPLE_RATE,
-    linearPCMBitDepth: 16,
-    linearPCMIsBigEndian: false,
-    linearPCMIsFloat: false,
-  },
-  web: {
-    mimeType: 'audio/webm',
-    bitsPerSecond: 128000,
-  },
-};
-
-// sttFormatMeta — Google STT encoding + sample_rate + meta файла под текущую ОС.
-function sttFormatMeta(): {
-  encoding: string;
-  sampleRate: number;
-  type: string;
-  name: string;
-} {
-  if (Platform.OS === 'ios') {
-    return { encoding: 'LINEAR16', sampleRate: STT_SAMPLE_RATE, type: 'audio/wav', name: 'recording.wav' };
-  }
-  if (Platform.OS === 'web') {
-    return { encoding: 'WEBM_OPUS', sampleRate: 48000, type: 'audio/webm', name: 'recording.webm' };
-  }
-  // android
-  return { encoding: 'AMR_WB', sampleRate: STT_SAMPLE_RATE, type: 'audio/amr-wb', name: 'recording.amr' };
-}
 
 export function ChatInput({
   onSend,
@@ -73,7 +21,7 @@ export function ChatInput({
   placeholder,
   showMic = true,
   language,
-  light = false,
+  light = true,
 }: {
   /** Светлое (sky) оформление для шагов урока. */
   light?: boolean;
@@ -92,7 +40,7 @@ export function ChatInput({
 
   // === Голосовой ввод (STT) ===
   const [recording, setRecording] = useState(false);
-  const recorder = useAudioRecorder(STT_RECORDING_OPTIONS);
+  const recorder = useAudioRecorder(STT_RECORDING_OPTIONS_SHARED);
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const transcribeMut = useTranscribeAudio();
   const transcribing = transcribeMut.isPending;
@@ -106,18 +54,20 @@ export function ChatInput({
         /* released */
       }
     };
-  }, []);
+  }, [recorder]);
 
   const submit = async () => {
     if (submittingRef.current || loading) return;
     const trimmed = text.trim();
     if (!trimmed) return;
     submittingRef.current = true;
-    setText('');
     try {
       // want_audio=false — озвучка реплик идёт on-demand через Google TTS
       // (кнопка «Прослушать»), серверный OpenAI-TTS не дёргаем.
       await onSend(trimmed, false);
+      setText(current => current.trim() === trimmed ? '' : current);
+    } catch (error) {
+      Toast.show({ type: 'error', text1: t('ai.send_err'), text2: error instanceof Error ? error.message : undefined });
     } finally {
       submittingRef.current = false;
     }

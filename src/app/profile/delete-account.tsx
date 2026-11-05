@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
@@ -15,11 +15,13 @@ export default function DeleteAccountScreen() {
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
+  const busy = useRef(false);
   const [confirming, setConfirming] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const deleteAccount = async () => {
-    if (isDeleting) return;
+    if (busy.current) return;
+    busy.current = true;
     setIsDeleting(true);
     try {
       await AccountApi.deleteAccount();
@@ -27,6 +29,7 @@ export default function DeleteAccountScreen() {
       queryClient.clear();
       router.replace('/auth/login');
     } catch (error) {
+      busy.current = false;
       setIsDeleting(false);
       Toast.show({
         type: 'error',

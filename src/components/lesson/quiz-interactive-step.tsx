@@ -14,7 +14,7 @@ import { parseStepContent, type StepComponentProps } from './step-types';
 interface QuizContentNew {
   instruction?: string;
   question: string;
-  options: Array<{ text: string; is_correct: boolean }>;
+  options: { text: string; is_correct: boolean }[];
   explanation?: string;
 }
 

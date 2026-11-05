@@ -1,9 +1,8 @@
-import { useCallback } from 'react';
+import { useCallback , useMemo } from 'react';
 import { useActiveTrack, useTracks, useTrack, useTrackProgress } from './use-tracks';
 import { useCompletedLessons } from '@/lib/lesson-progress';
 import { buildHomePath } from '@/lib/home-path';
 import { useOnboardingState } from '@/hooks/use-onboarding';
-import { useMemo } from 'react';
 
 export function useHomePath() {
   const onboarding = useOnboardingState();
@@ -32,7 +31,8 @@ export function useHomePath() {
     if (id) { void refetchDetails(); void refetchProgress(); }
   }, [id, refetchPlan, refetchActive, refetchLocal, refetchDetails, refetchProgress]);
   const completed = new Set([...(progress.data ?? []), ...(local.data ?? [])]);
-  const error = plan.error || details.error || progress.error;
+  // Progress needs auth; a 401 there must not hide the path itself.
+  const error = plan.error || details.error;
   const loading = onboarding.isLoading || (active.isLoading && plan.isLoading) || (!!id && (details.isLoading || progress.isLoading)) || local.isLoading;
   return {
     track: details.data ?? selected,
